@@ -47,8 +47,6 @@ import com.alibaba.rocketmq.store.config.MessageStoreConfig;
 
 
 /**
- * Broker启动入口
- * 
  * @author shijia.wxr<vintage.wang@gmail.com>
  * @since 2013-7-26
  */
@@ -153,6 +151,7 @@ public class BrokerStartup {
                     BrokerPathConfigHelper.setBrokerConfigPath(file);
 
                     System.out.println("load config properties file OK, " + file);
+                    in.close();
                 }
             }
 

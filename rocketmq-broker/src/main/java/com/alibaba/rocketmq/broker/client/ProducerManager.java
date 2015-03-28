@@ -35,7 +35,7 @@ import com.alibaba.rocketmq.remoting.common.RemotingUtil;
 
 /**
  * 管理Producer组及各个Producer连接
- * 
+ *
  * @author shijia.wxr<vintage.wang@gmail.com>
  * @since 2013-7-26
  */
@@ -53,7 +53,20 @@ public class ProducerManager {
 
 
     public HashMap<String, HashMap<Channel, ClientChannelInfo>> getGroupChannelTable() {
-        return groupChannelTable;
+        HashMap<String /* group name */, HashMap<Channel, ClientChannelInfo>> newGroupChannelTable =
+                new HashMap<String, HashMap<Channel, ClientChannelInfo>>();
+        try {
+            if (this.groupChannelLock.tryLock(LockTimeoutMillis, TimeUnit.MILLISECONDS)){
+                try {
+                    newGroupChannelTable.putAll(groupChannelTable);
+                } finally {
+                    groupChannelLock.unlock();
+                }
+            }
+        } catch (InterruptedException e) {
+           log.error("",e);
+        }
+        return newGroupChannelTable;
     }
 
 
@@ -111,9 +124,10 @@ public class ProducerManager {
                                     clientChannelInfoTable.remove(channel);
                             if (clientChannelInfo != null) {
                                 log.info(
-                                    "NETTY EVENT: remove channel[{}][{}] from ProducerManager groupChannelTable, producer group: {}",
-                                    clientChannelInfo.toString(), remoteAddr, group);
+                                        "NETTY EVENT: remove channel[{}][{}] from ProducerManager groupChannelTable, producer group: {}",
+                                        clientChannelInfo.toString(), remoteAddr, group);
                             }
+
                         }
                     }
                     finally {

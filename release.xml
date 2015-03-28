@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <assembly>
+	<id>alibaba-rocketmq</id>
 	<baseDirectory>alibaba-rocketmq</baseDirectory>
 	<formats>
 		<format>dir</format>
@@ -13,6 +14,8 @@
 				<include>conf/*/*</include>
 				<include>test/*</include>
 				<include>benchmark/*</include>
+				<include>issues/*</include>
+				<include>wiki/*</include>
 				<include>LICENSE.txt</include>
 			</includes>
 		</fileSet>

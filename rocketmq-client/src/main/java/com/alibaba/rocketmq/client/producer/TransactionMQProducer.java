@@ -17,27 +17,17 @@ package com.alibaba.rocketmq.client.producer;
 
 import com.alibaba.rocketmq.client.exception.MQClientException;
 import com.alibaba.rocketmq.common.message.Message;
+import com.alibaba.rocketmq.remoting.RPCHook;
 
 
 /**
- * 支持分布式事务Producer
- * 
  * @author shijia.wxr<vintage.wang@gmail.com>
  * @since 2013-7-25
  */
 public class TransactionMQProducer extends DefaultMQProducer {
     private TransactionCheckListener transactionCheckListener;
-    /**
-     * 事务回查最小并发数
-     */
     private int checkThreadPoolMinSize = 1;
-    /**
-     * 事务回查最大并发数
-     */
     private int checkThreadPoolMaxSize = 1;
-    /**
-     * 事务回查队列数
-     */
     private int checkRequestHoldMax = 2000;
 
 
@@ -48,7 +38,9 @@ public class TransactionMQProducer extends DefaultMQProducer {
     public TransactionMQProducer(final String producerGroup) {
         super(producerGroup);
     }
-
+    public TransactionMQProducer(final String producerGroup,RPCHook rpcHook) {
+        super(producerGroup,rpcHook);
+    }
 
     @Override
     public void start() throws MQClientException {

@@ -15,27 +15,7 @@
  */
 package com.alibaba.rocketmq.store;
 
-import com.alibaba.rocketmq.common.ServiceThread;
-import com.alibaba.rocketmq.common.SystemClock;
-import com.alibaba.rocketmq.common.ThreadFactoryImpl;
-import com.alibaba.rocketmq.common.UtilAll;
-import com.alibaba.rocketmq.common.constant.LoggerName;
-import com.alibaba.rocketmq.common.message.MessageConst;
-import com.alibaba.rocketmq.common.message.MessageDecoder;
-import com.alibaba.rocketmq.common.message.MessageExt;
-import com.alibaba.rocketmq.common.protocol.heartbeat.SubscriptionData;
-import com.alibaba.rocketmq.common.running.RunningStats;
-import com.alibaba.rocketmq.common.sysflag.MessageSysFlag;
-import com.alibaba.rocketmq.store.config.BrokerRole;
-import com.alibaba.rocketmq.store.config.MessageStoreConfig;
-import com.alibaba.rocketmq.store.config.StorePathConfigHelper;
-import com.alibaba.rocketmq.store.ha.HAService;
-import com.alibaba.rocketmq.store.index.IndexService;
-import com.alibaba.rocketmq.store.index.QueryOffsetResult;
-import com.alibaba.rocketmq.store.schedule.ScheduleMessageService;
-import com.alibaba.rocketmq.store.stats.BrokerStatsManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.alibaba.rocketmq.store.config.BrokerRole.SLAVE;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,7 +35,28 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.alibaba.rocketmq.store.config.BrokerRole.SLAVE;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.alibaba.rocketmq.common.ServiceThread;
+import com.alibaba.rocketmq.common.SystemClock;
+import com.alibaba.rocketmq.common.ThreadFactoryImpl;
+import com.alibaba.rocketmq.common.UtilAll;
+import com.alibaba.rocketmq.common.constant.LoggerName;
+import com.alibaba.rocketmq.common.message.MessageConst;
+import com.alibaba.rocketmq.common.message.MessageDecoder;
+import com.alibaba.rocketmq.common.message.MessageExt;
+import com.alibaba.rocketmq.common.protocol.heartbeat.SubscriptionData;
+import com.alibaba.rocketmq.common.running.RunningStats;
+import com.alibaba.rocketmq.common.sysflag.MessageSysFlag;
+import com.alibaba.rocketmq.store.config.BrokerRole;
+import com.alibaba.rocketmq.store.config.MessageStoreConfig;
+import com.alibaba.rocketmq.store.config.StorePathConfigHelper;
+import com.alibaba.rocketmq.store.ha.HAService;
+import com.alibaba.rocketmq.store.index.IndexService;
+import com.alibaba.rocketmq.store.index.QueryOffsetResult;
+import com.alibaba.rocketmq.store.schedule.ScheduleMessageService;
+import com.alibaba.rocketmq.store.stats.BrokerStatsManager;
 
 
 /**
@@ -275,7 +276,7 @@ public class DefaultMessageStore implements MessageStore {
                             maxCLOffsetInConsumeQueue);
 
                         DefaultMessageStore.this.commitLog.removeQueurFromTopicQueueTable(nextQT.getValue()
-                                .getTopic(), nextQT.getValue().getQueueId());
+                            .getTopic(), nextQT.getValue().getQueueId());
 
                         nextQT.getValue().destroy();
                         itQT.remove();
@@ -550,7 +551,7 @@ public class DefaultMessageStore implements MessageStore {
                                         diskFallRecorded = true;
                                         long fallBehind = consumeQueue.getMaxPhysicOffset() - offsetPy;
                                         brokerStatsManager.recordDiskFallBehind(group, topic, queueId,
-                                                fallBehind);
+                                            fallBehind);
                                     }
                                 }
                                 else {
@@ -1728,17 +1729,11 @@ public class DefaultMessageStore implements MessageStore {
             for (boolean doNext = true; doNext;) {
                 SelectMapedBufferResult result = DefaultMessageStore.this.commitLog.getData(reputFromOffset);
                 if (result != null) {
-
-                    // In case reputFromOffset == 0, the mapped file fetched may be the last one on master due to
-                    // <code>returnFirstOnNotFound</code> being true regarding {@link CommitLog#getData(long, boolean)}.
-                    // So we need to set value of reputOffset to startOffset of the fetched mapped file. Otherwise,
-                    // <code>reputFromOffset</code> will be a relative value while {@link CommitLog#getData(long)}
-                    // expects an absolute value of commit log logic position.
-                    if (0 == reputFromOffset || reputFromOffset < result.getStartOffset()) {
-                        reputFromOffset = result.getStartOffset();
-                    }
-
                     try {
+                        // 当主机有很多数据，备机没有数据时，此时启动备机，备机会从主机的末尾开始拉数据
+                        // 这时reputFromOffset的初始值和commitlog的值不匹配。
+                        this.reputFromOffset = result.getStartOffset();
+
                         for (int readSize = 0; readSize < result.getSize() && doNext;) {
                             DispatchRequest dispatchRequest =
                                     DefaultMessageStore.this.commitLog.checkMessageAndReturnSize(
@@ -1752,7 +1747,7 @@ public class DefaultMessageStore implements MessageStore {
                                 this.reputFromOffset += size;
                                 readSize += size;
                                 DefaultMessageStore.this.storeStatsService
-                                        .getSinglePutMessageTopicTimesTotal(dispatchRequest.getTopic())
+                                    .getSinglePutMessageTopicTimesTotal(dispatchRequest.getTopic())
                                     .incrementAndGet();
                                 DefaultMessageStore.this.storeStatsService.getSinglePutMessageTopicSizeTotal(
                                     dispatchRequest.getTopic()).addAndGet(dispatchRequest.getMsgSize());

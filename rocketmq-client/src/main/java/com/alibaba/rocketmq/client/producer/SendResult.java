@@ -21,8 +21,6 @@ import com.alibaba.rocketmq.common.message.MessageQueue;
 
 
 /**
- * 发送消息结果
- * 
  * @author shijia.wxr<vintage.wang@gmail.com>
  * @since 2013-7-25
  */
@@ -31,6 +29,8 @@ public class SendResult {
     private String msgId;
     private MessageQueue messageQueue;
     private long queueOffset;
+    private String transactionId;
+
 
 
     public SendResult() {
@@ -43,7 +43,6 @@ public class SendResult {
         this.msgId = msgId;
         this.messageQueue = messageQueue;
         this.queueOffset = queueOffset;
-        // 清除虚拟运行环境相关的projectGroupPrefix
         if (!UtilAll.isBlank(projectGroupPrefix)) {
             this.messageQueue.setTopic(VirtualEnvUtil.clearProjectGroup(this.messageQueue.getTopic(),
                 projectGroupPrefix));
@@ -90,6 +89,14 @@ public class SendResult {
         this.queueOffset = queueOffset;
     }
 
+
+    public String getTransactionId() {
+        return transactionId;
+    }
+
+    public void setTransactionId(String transactionId) {
+        this.transactionId = transactionId;
+    }
 
     @Override
     public String toString() {
