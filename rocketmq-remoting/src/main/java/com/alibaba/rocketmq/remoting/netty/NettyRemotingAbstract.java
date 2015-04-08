@@ -247,8 +247,8 @@ public abstract class NettyRemotingAbstract {
         final ResponseFuture responseFuture = responseTable.get(cmd.getOpaque());
         if (responseFuture != null) {
             responseFuture.setResponseCommand(cmd);
-
             responseFuture.release();
+            responseTable.remove(cmd.getOpaque());
 
             if (responseFuture.getInvokeCallback() != null) {
                 boolean runInThisThread = false;
@@ -295,7 +295,6 @@ public abstract class NettyRemotingAbstract {
             plog.warn(cmd.toString());
         }
 
-        responseTable.remove(cmd.getOpaque());
     }
 
 
