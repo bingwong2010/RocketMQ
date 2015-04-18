@@ -42,7 +42,7 @@ It offers a variety of features as follows:
 * vintagewang([@vintagewang](https://github.com/vintagewang))
 * vongosling([@vongosling](https://github.com/vongosling))
 * manhong
-* lansheng
+* allenzhu([@allenzhu](https://github.com/allenzhu))
 * longji
 * fuchong
 * mouyu
