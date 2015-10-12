@@ -21,8 +21,6 @@ It offers a variety of features as follows:
 * Documentation: <https://github.com/alibaba/RocketMQ/wiki>
 * Wiki: <https://github.com/alibaba/RocketMQ/wiki>
 * Issues: <https://github.com/alibaba/RocketMQ/issues>
-* QQ Group: [364685175](http://shang.qq.com/wpa/qunwpa?idkey=c386219ae9be2d5b6904a8f5e27b96c8792e01586262ff2f7dee20d9ea9fdefb)
-* Weibo <http://q.weibo.com/1628465>
 * [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/alibaba/RocketMQ?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
  
 
