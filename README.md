@@ -1,6 +1,6 @@
 ## RocketMQ -- Alibaba's MQ [![Build Status](https://travis-ci.org/alibaba/RocketMQ.svg?branch=master)](https://travis-ci.org/alibaba/RocketMQ)
-[![Maven Central](https://img.shields.io/badge/rocketmq-maven--central-green.svg)](http://search.maven.org/#search%7Cga%7C1%7Crocketmq-client)
-[![GitHub release](https://img.shields.io/badge/rocketmq-download-green.svg)](https://github.com/alibaba/RocketMQ/releases)
+[![Maven Central](https://img.shields.io/badge/maven--center-stable--version-green.svg)](http://search.maven.org/#search%7Cga%7C1%7Ccom.alibaba.rocketmq)
+[![GitHub release](https://img.shields.io/badge/release-download-orange.svg)](https://github.com/alibaba/RocketMQ/releases)
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 **RocketMQ is a fast, reliable, scalable, easy to use message oriented middleware breeding from alibaba massive messaging business.**
