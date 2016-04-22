@@ -32,12 +32,13 @@ import java.util.zip.CRC32;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
+import com.alibaba.rocketmq.common.utils.PureJavaCrc32;
 import com.alibaba.rocketmq.remoting.common.RemotingHelper;
 
 
 /**
  * 各种方法大杂烩
- * 
+ *
  * @author shijia.wxr<vintage.wang@gmail.com>
  */
 public class UtilAll {
@@ -190,7 +191,7 @@ public class UtilAll {
     /**
      * 返回日期时间格式，精度到秒<br>
      * 格式如下：2013122305190000
-     * 
+     *
      * @param t
      * @return
      */
@@ -248,7 +249,7 @@ public class UtilAll {
 
 
     public static final int crc32(byte[] array, int offset, int length) {
-        CRC32 crc32 = new CRC32();
+        PureJavaCrc32 crc32 = new PureJavaCrc32();
         crc32.update(array, offset, length);
         return (int) (crc32.getValue() & 0x7FFFFFFF);
     }
