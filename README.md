@@ -14,7 +14,10 @@ It offers a variety of features as follows:
 * Over a variety of messaging protocols.such as JMS,MQTT etc.
 * Distributed clustering, support fault-tolerance
 * Docker images for isolated testing and cloud Isolated clusters
-* Feature-rich administrative dashboard for configuration and monitoring
+* Feature-rich administrative dashboard for configuration,metrics and monitoring [![Cloud Charge](https://img.shields.io/badge/cloud-charge-red.svg)](https://www.aliyun.com/product/ons/?spm=5176.7960203.237031.135.67OdNO)
+* Message full-link tracking[![Cloud Charge] (https://img.shields.io/badge/cloud-charge-red.svg)](https://www.aliyun.com/product/ons/?spm=5176.7960203.237031.135.67OdNO)
+* Producer transaction message,making producer and local database transaction in one atomic operation [![Cloud Charge](https://img.shields.io/badge/cloud-charge-red.svg)](https://www.aliyun.com/product/ons/?spm=5176.7960203.237031.135.67OdNO)
+* Message Schedule delivery,similar JMS2 spec's delivery delay[![Cloud Charge] (https://img.shields.io/badge/cloud-charge-red.svg)](https://www.aliyun.com/product/ons/?spm=5176.7960203.237031.135.67OdNO)
 
 
 ----------
