@@ -7,18 +7,17 @@
 
 It offers a variety of features as follows:
 
-* Reliable FIFO and strict sequential messaging
 * Pub/Sub and P2P messaging model
+* Reliable FIFO and strict sequential messaging in the same queue
+* Long pull queue model,also support push consumption style
 * Million message accumulation ability in single queue
-* Pull queues and push queues
-* Over a variety of messaging protocols.such as JMS,MQTT etc.
-* Distributed clustering, support fault-tolerance
+* Over a variety of messaging protocols.such as JMS,MQTT,HTTP2 etc.
+* Distributed high available deploy architecture, meets at least once message delivery semantics
 * Docker images for isolated testing and cloud Isolated clusters
 * Feature-rich administrative dashboard for configuration,metrics and monitoring [![Cloud Charge](https://img.shields.io/badge/cloud-charge-red.svg)](https://www.aliyun.com/product/ons/?spm=5176.7960203.237031.135.67OdNO)
-* Message full-link tracking[![Cloud Charge] (https://img.shields.io/badge/cloud-charge-red.svg)](https://www.aliyun.com/product/ons/?spm=5176.7960203.237031.135.67OdNO)
+* Message full-link tracking [![Cloud Charge] (https://img.shields.io/badge/cloud-charge-red.svg)](https://www.aliyun.com/product/ons/?spm=5176.7960203.237031.135.67OdNO)
 * Producer transaction message,making producer and local database transaction in one atomic operation [![Cloud Charge](https://img.shields.io/badge/cloud-charge-red.svg)](https://www.aliyun.com/product/ons/?spm=5176.7960203.237031.135.67OdNO)
-* Message Schedule delivery,similar JMS2 spec's delivery delay[![Cloud Charge] (https://img.shields.io/badge/cloud-charge-red.svg)](https://www.aliyun.com/product/ons/?spm=5176.7960203.237031.135.67OdNO)
-
+* Message Schedule delivery,similar JMS2 spec's delivery delay [![Cloud Charge] (https://img.shields.io/badge/cloud-charge-red.svg)](https://www.aliyun.com/product/ons/?spm=5176.7960203.237031.135.67OdNO)
 
 ----------
 
@@ -40,29 +39,21 @@ It offers a variety of features as follows:
 * [`Docker images`](https://registry.hub.docker.com/u/vongosling/rocketmq/)
 * [Integrate with Alibaba JStorm](https://github.com/alibaba/jstorm)
 * [Integrate with Alibaba Canal](https://github.com/alibaba/canal)
+* [RocketMQ Community Projects](https://github.com/rocketmq)
 
 ----------
 
-## Development team in Alibaba
+## PMC members & Committers
 * vintagewang([@vintagewang](https://github.com/vintagewang))
 * vongosling([@vongosling](https://github.com/vongosling))
-* manhong
-* allenzhu([@allenzhu](https://github.com/allenzhu))
-* longji
-* fuchong
-* mouyu
+* manhong([@YangJodie](https://github.com/YangJodie))
+* mouyu([@lollipopjin](https://github.com/lollipopjin))
 
 ----------
 
-## Contributors in RocketMQ community
-* [@lizhanhui](https://github.com/lizhanhui) fixed several important bugs.
-* [@vongosling](https://github.com/vongosling) developed [rocketmq-storm](https://github.com/rocketmq/rocketmq-storm) for rocketmq
-* [@majinkai](https://github.com/majinkai) developed [rocketmq-flume](https://github.com/rocketmq/rocketmq-flume) for rocketmq
-* [@kangliqiang](https://github.com/kangliqiang) developed [rocketmq-client4cpp](https://github.com/rocketmq/rocketmq-client4cpp) for rocketmq
-* [@yankai913](https://github.com/yankai913) developed [rocketmq-console](https://github.com/rocketmq/rocketmq-console) for rocketmq
-* [@calvinzhan](https://github.com/calvinzhan) developed [rocketmq-jmsclient](https://github.com/rocketmq/rocketmq-jmsclient) for rocketmq
-
+## Contributing
+We are always very happy to have contributions, whether for trivial cleanups,big new features or other material rewards. more details see [here](https://github.com/alibaba/RocketMQ/wiki/How-to-donate) 
+ 
 ----------
-
 ## License
 [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html) Copyright (C) 2010-2013 Alibaba Group Holding Limited
