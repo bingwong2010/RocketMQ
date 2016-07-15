@@ -1,3 +1,20 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.rocketmq.tools.command.stats;
 
 import org.apache.commons.cli.CommandLine;
@@ -62,9 +79,8 @@ public class StatsAllSubCommand implements SubCommand {
     }
 
 
-    public static void printTopicDetail(final DefaultMQAdminExt admin, final String topic,
-            final boolean activeTopic) throws RemotingException, MQClientException, InterruptedException,
-            MQBrokerException {
+    public static void printTopicDetail(final DefaultMQAdminExt admin, final String topic, final boolean activeTopic)
+            throws RemotingException, MQClientException, InterruptedException, MQBrokerException {
         TopicRouteData topicRouteData = admin.examineTopicRouteInfo(topic);
 
         GroupList groupList = admin.queryTopicConsumeByWho(topic);
@@ -73,13 +89,11 @@ public class StatsAllSubCommand implements SubCommand {
 
         long inMsgCntToday = 0;
 
-        // 统计Topic写入
         for (BrokerData bd : topicRouteData.getBrokerDatas()) {
             String masterAddr = bd.getBrokerAddrs().get(MixAll.MASTER_ID);
             if (masterAddr != null) {
                 try {
-                    BrokerStatsData bsd =
-                            admin.ViewBrokerStatsData(masterAddr, BrokerStatsManager.TOPIC_PUT_NUMS, topic);
+                    BrokerStatsData bsd = admin.ViewBrokerStatsData(masterAddr, BrokerStatsManager.TOPIC_PUT_NUMS, topic);
                     inTPS += bsd.getStatsMinute().getTps();
                     inMsgCntToday += compute24HourSum(bsd);
                 }
@@ -89,7 +103,6 @@ public class StatsAllSubCommand implements SubCommand {
         }
 
         if (groupList != null && !groupList.getGroupList().isEmpty()) {
-            // 统计订阅
             for (String group : groupList.getGroupList()) {
                 double outTPS = 0;
                 long outMsgCntToday = 0;
@@ -99,9 +112,7 @@ public class StatsAllSubCommand implements SubCommand {
                     if (masterAddr != null) {
                         try {
                             String statsKey = String.format("%s@%s", topic, group);
-                            BrokerStatsData bsd =
-                                    admin.ViewBrokerStatsData(masterAddr, BrokerStatsManager.GROUP_GET_NUMS,
-                                        statsKey);
+                            BrokerStatsData bsd = admin.ViewBrokerStatsData(masterAddr, BrokerStatsManager.GROUP_GET_NUMS, statsKey);
                             outTPS += bsd.getStatsMinute().getTps();
                             outMsgCntToday += compute24HourSum(bsd);
                         }
@@ -112,7 +123,6 @@ public class StatsAllSubCommand implements SubCommand {
 
                 if (!activeTopic || (inMsgCntToday > 0) || //
                         (outMsgCntToday > 0)) {
-                    // 打印
                     System.out.printf("%-32s  %-32s %11.2f %11.2f %14d %14d\n",//
                         UtilAll.frontStringAtLeast(topic, 32),//
                         UtilAll.frontStringAtLeast(group, 32),//
@@ -124,10 +134,8 @@ public class StatsAllSubCommand implements SubCommand {
                 }
             }
         }
-        // 没有订阅者
         else {
             if (!activeTopic || (inMsgCntToday > 0)) {
-                // 打印
                 System.out.printf("%-32s  %-32s %11.2f %11s %14d %14s\n",//
                     UtilAll.frontStringAtLeast(topic, 32),//
                     "",//
@@ -164,8 +172,7 @@ public class StatsAllSubCommand implements SubCommand {
             boolean activeTopic = commandLine.hasOption('a');
 
             for (String topic : topicList.getTopicList()) {
-                if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)
-                        || topic.startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX)) {
+                if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX) || topic.startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX)) {
                     continue;
                 }
 

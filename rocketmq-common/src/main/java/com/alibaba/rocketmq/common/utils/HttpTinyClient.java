@@ -1,4 +1,23 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.rocketmq.common.utils;
+
+import com.alibaba.rocketmq.common.MQVersion;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -8,20 +27,9 @@ import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.List;
 
-import com.alibaba.rocketmq.common.MQVersion;
-
-
-/**
- * HTTP 简易客户端
- * 
- * @author manhong.yqd<jodie.yqd@gmail.com>
- */
 
 public class HttpTinyClient {
 
-    /**
-     * 发送GET请求。
-     */
     static public HttpResult httpGet(String url, List<String> headers, List<String> paramValues,
             String encoding, long readTimeoutMs) throws IOException {
         String encodedContent = encodingParams(paramValues, encoding);
@@ -36,7 +44,7 @@ public class HttpTinyClient {
             setHeaders(conn, headers, encoding);
 
             conn.connect();
-            int respCode = conn.getResponseCode(); // 这里内部发送请求
+            int respCode = conn.getResponseCode();
             String resp = null;
 
             if (HttpURLConnection.HTTP_OK == respCode) {
@@ -54,22 +62,6 @@ public class HttpTinyClient {
         }
     }
 
-
-    /**
-     * 发送POST请求。
-     * 
-     * @param url
-     * @param headers
-     *            请求Header，可以为null
-     * @param paramValues
-     *            参数，可以为null
-     * @param encoding
-     *            URL编码使用的字符集
-     * @param readTimeoutMs
-     *            响应超时
-     * @return
-     * @throws java.io.IOException
-     */
     static public HttpResult httpPost(String url, List<String> headers, List<String> paramValues,
             String encoding, long readTimeoutMs) throws IOException {
         String encodedContent = encodingParams(paramValues, encoding);
@@ -86,7 +78,7 @@ public class HttpTinyClient {
 
             conn.getOutputStream().write(encodedContent.getBytes());
 
-            int respCode = conn.getResponseCode(); // 这里内部发送请求
+            int respCode = conn.getResponseCode();
             String resp = null;
 
             if (HttpURLConnection.HTTP_OK == respCode) {
@@ -114,7 +106,6 @@ public class HttpTinyClient {
         conn.addRequestProperty("Client-Version", MQVersion.getVersionDesc(MQVersion.CurrentVersion));
         conn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + encoding);
 
-        // 其它
         String ts = String.valueOf(System.currentTimeMillis());
         conn.addRequestProperty("Metaq-Client-RequestTS", ts);
     }

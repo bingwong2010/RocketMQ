@@ -1,9 +1,31 @@
 /**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/**
  * $Id: RecoverTest.java 1831 2013-05-16 01:39:51Z shijia.wxr $
  */
 package com.alibaba.rocketmq.store;
 
-import static org.junit.Assert.assertTrue;
+import com.alibaba.rocketmq.common.message.MessageDecoder;
+import com.alibaba.rocketmq.common.message.MessageExt;
+import com.alibaba.rocketmq.store.config.MessageStoreConfig;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -12,25 +34,14 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.alibaba.rocketmq.common.message.MessageDecoder;
-import com.alibaba.rocketmq.common.message.MessageExt;
-import com.alibaba.rocketmq.store.config.MessageStoreConfig;
+import static org.junit.Assert.assertTrue;
 
 
 public class RecoverTest {
-    // 队列个数
     private static int QUEUE_TOTAL = 10;
-    // 发往哪个队列
     private static AtomicInteger QueueId = new AtomicInteger(0);
-    // 发送主机地址
     private static SocketAddress BornHost;
-    // 存储主机地址
     private static SocketAddress StoreHost;
-    // 消息体
     private static byte[] MessageBody;
 
     private static final String StoreMessage = "Once, there was a chance for me!aaaaaaaaaaaaaaaaaaaaaaaa";
@@ -71,23 +82,17 @@ public class RecoverTest {
 
     private void destroy() {
         if (storeWrite1 != null) {
-            // 关闭存储服务
             storeWrite1.shutdown();
-            // 删除文件
             storeWrite1.destroy();
         }
 
         if (storeWrite2 != null) {
-            // 关闭存储服务
             storeWrite2.shutdown();
-            // 删除文件
             storeWrite2.destroy();
         }
 
         if (storeRead != null) {
-            // 关闭存储服务
             storeRead.shutdown();
-            // 删除文件
             storeRead.destroy();
         }
     }
@@ -98,17 +103,14 @@ public class RecoverTest {
         long totalMsgs = 1000;
         QUEUE_TOTAL = 3;
 
-        // 构造消息体
         MessageBody = StoreMessage.getBytes();
 
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
-        // 每个物理映射文件
         messageStoreConfig.setMapedFileSizeCommitLog(1024 * 32);
-        // 每个逻辑映射文件
         messageStoreConfig.setMapedFileSizeConsumeQueue(100 * 20);
         messageStoreConfig.setMessageIndexEnable(false);
 
-        MessageStore messageStore = new DefaultMessageStore(messageStoreConfig, null);
+        MessageStore messageStore = new DefaultMessageStore(messageStoreConfig, null, null, null);
         if (first) {
             this.storeWrite1 = messageStore;
         }
@@ -116,14 +118,11 @@ public class RecoverTest {
             this.storeWrite2 = messageStore;
         }
 
-        // 第一步，load已有数据
         boolean loadResult = messageStore.load();
         assertTrue(loadResult);
 
-        // 第二步，启动服务
         messageStore.start();
 
-        // 第三步，发消息
         for (long i = 0; i < totalMsgs; i++) {
 
             PutMessageResult result = messageStore.putMessage(buildMessage());
@@ -132,7 +131,6 @@ public class RecoverTest {
         }
 
         if (normal) {
-            // 关闭存储服务
             messageStore.shutdown();
         }
 
@@ -143,8 +141,8 @@ public class RecoverTest {
     private void veryReadMessage(int queueId, long queueOffset, List<ByteBuffer> byteBuffers) {
         for (ByteBuffer byteBuffer : byteBuffers) {
             MessageExt msg = MessageDecoder.decode(byteBuffer);
-            System.out.println("request queueId " + queueId + ", request queueOffset " + queueOffset
-                    + " msg queue offset " + msg.getQueueOffset());
+            System.out.println("request queueId " + queueId + ", request queueOffset " + queueOffset + " msg queue offset "
+                    + msg.getQueueOffset());
 
             assertTrue(msg.getQueueOffset() == queueOffset);
 
@@ -157,30 +155,23 @@ public class RecoverTest {
         System.out.println("================================================================");
         QUEUE_TOTAL = 3;
 
-        // 构造消息体
         MessageBody = StoreMessage.getBytes();
 
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
-        // 每个物理映射文件
         messageStoreConfig.setMapedFileSizeCommitLog(1024 * 32);
-        // 每个逻辑映射文件
         messageStoreConfig.setMapedFileSizeConsumeQueue(100 * 20);
         messageStoreConfig.setMessageIndexEnable(false);
 
-        storeRead = new DefaultMessageStore(messageStoreConfig, null);
-        // 第一步，load已有数据
+        storeRead = new DefaultMessageStore(messageStoreConfig, null, null, null);
         boolean loadResult = storeRead.load();
         assertTrue(loadResult);
 
-        // 第二步，启动服务
         storeRead.start();
 
-        // 第三步，收消息
         long readCnt = 0;
         for (int queueId = 0; queueId < QUEUE_TOTAL; queueId++) {
             for (long offset = 0;;) {
-                GetMessageResult result =
-                        storeRead.getMessage("GROUP_A", "TOPIC_A", queueId, offset, 1024 * 1024, null);
+                GetMessageResult result = storeRead.getMessage("GROUP_A", "TOPIC_A", queueId, offset, 1024 * 1024, null);
                 if (result.getStatus() == GetMessageStatus.FOUND) {
                     System.out.println(queueId + "\t" + result.getMessageCount());
                     this.veryReadMessage(queueId, offset, result.getMessageBufferList());
@@ -200,10 +191,6 @@ public class RecoverTest {
         System.out.println("========================readMessage OK========================================");
     }
 
-
-    /**
-     * 正常关闭后，重启恢复消息，验证是否有消息丢失
-     */
     @Test
     public void test_recover_normally() throws Exception {
         this.writeMessage(true, true);
@@ -213,9 +200,6 @@ public class RecoverTest {
     }
 
 
-    /**
-     * 正常关闭后，重启恢复消息，并再次写入消息，验证是否有消息丢失
-     */
     @Test
     public void test_recover_normally_write() throws Exception {
         this.writeMessage(true, true);
@@ -226,10 +210,6 @@ public class RecoverTest {
         this.destroy();
     }
 
-
-    /**
-     * 异常关闭后，重启恢复消息，验证是否有消息丢失
-     */
     @Test
     public void test_recover_abnormally() throws Exception {
         this.writeMessage(false, true);
@@ -238,10 +218,6 @@ public class RecoverTest {
         this.destroy();
     }
 
-
-    /**
-     * 异常关闭后，重启恢复消息，并再次写入消息，验证是否有消息丢失
-     */
     @Test
     public void test_recover_abnormally_write() throws Exception {
         this.writeMessage(false, true);

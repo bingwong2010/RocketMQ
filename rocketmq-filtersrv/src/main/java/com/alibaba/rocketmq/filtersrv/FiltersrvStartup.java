@@ -1,36 +1,23 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.filtersrv;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.PosixParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
-
 import com.alibaba.rocketmq.common.MQVersion;
 import com.alibaba.rocketmq.common.MixAll;
 import com.alibaba.rocketmq.common.conflict.PackageConflictDetect;
@@ -39,13 +26,23 @@ import com.alibaba.rocketmq.remoting.netty.NettyServerConfig;
 import com.alibaba.rocketmq.remoting.netty.NettySystemConfig;
 import com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
 import com.alibaba.rocketmq.srvutil.ServerUtil;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.PosixParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
- * Filter server 启动入口
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2014-4-10
+ *
+ * @author shijia.wxr
  */
 public class FiltersrvStartup {
     public static Logger log;
@@ -70,7 +67,6 @@ public class FiltersrvStartup {
 
 
     public static FiltersrvController start(FiltersrvController controller) {
-        // 启动服务
         try {
             controller.start();
         }
@@ -90,21 +86,17 @@ public class FiltersrvStartup {
     public static FiltersrvController createController(String[] args) {
         System.setProperty(RemotingCommand.RemotingVersionKey, Integer.toString(MQVersion.CurrentVersion));
 
-        // Socket发送缓冲区大小
         if (null == System.getProperty(NettySystemConfig.SystemPropertySocketSndbufSize)) {
             NettySystemConfig.SocketSndbufSize = 65535;
         }
 
-        // Socket接收缓冲区大小
         if (null == System.getProperty(NettySystemConfig.SystemPropertySocketRcvbufSize)) {
             NettySystemConfig.SocketRcvbufSize = 1024;
         }
 
         try {
-            // 检测包冲突
             PackageConflictDetect.detectFastjson();
 
-            // 解析命令行
             Options options = ServerUtil.buildCommandlineOptions(new Options());
             final CommandLine commandLine =
                     ServerUtil.parseCmdLine("mqfiltersrv", args, buildCommandlineOptions(options),
@@ -114,7 +106,6 @@ public class FiltersrvStartup {
                 return null;
             }
 
-            // 初始化配置文件
             final FiltersrvConfig filtersrvConfig = new FiltersrvConfig();
             final NettyServerConfig nettyServerConfig = new NettyServerConfig();
 
@@ -135,7 +126,6 @@ public class FiltersrvStartup {
                 }
             }
 
-            // 强制设置为0，自动分配端口号
             nettyServerConfig.setListenPort(0);
 
             nettyServerConfig.setServerAsyncSemaphoreValue(filtersrvConfig.getFsServerAsyncSemaphoreValue());
@@ -143,7 +133,6 @@ public class FiltersrvStartup {
                 .getFsServerCallbackExecutorThreads());
             nettyServerConfig.setServerWorkerThreads(filtersrvConfig.getFsServerWorkerThreads());
 
-            // 打印默认配置
             if (commandLine.hasOption('p')) {
                 MixAll.printObjectProperties(null, filtersrvConfig);
                 MixAll.printObjectProperties(null, nettyServerConfig);
@@ -158,7 +147,6 @@ public class FiltersrvStartup {
                 System.exit(-2);
             }
 
-            // 初始化Logback
             LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
             JoranConfigurator configurator = new JoranConfigurator();
             configurator.setContext(lc);
@@ -166,7 +154,6 @@ public class FiltersrvStartup {
             configurator.doConfigure(filtersrvConfig.getRocketmqHome() + "/conf/logback_filtersrv.xml");
             log = LoggerFactory.getLogger(LoggerName.FiltersrvLoggerName);
 
-            // 初始化服务控制对象
             final FiltersrvController controller =
                     new FiltersrvController(filtersrvConfig, nettyServerConfig);
             boolean initResult = controller.initialize();

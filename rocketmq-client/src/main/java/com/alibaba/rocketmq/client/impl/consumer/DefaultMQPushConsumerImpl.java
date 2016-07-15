@@ -1,17 +1,18 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.client.impl.consumer;
 
@@ -66,8 +67,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-6-15
+ * @author shijia.wxr
  */
 public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     /**
@@ -299,6 +299,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         return false;
     }
 
+
     private void correctTagsOffset(final PullRequest pullRequest) {
         if (0L == pullRequest.getProcessQueue().getMsgCount().get()) {
             this.offsetStore.updateOffset(pullRequest.getMessageQueue(), pullRequest.getNextOffset(), true);
@@ -358,7 +359,6 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         final SubscriptionData subscriptionData =
                 this.rebalanceImpl.getSubscriptionInner().get(pullRequest.getMessageQueue().getTopic());
         if (null == subscriptionData) {
-            // 由于并发关系，即使找不到订阅关系，也要重试下，防止丢失PullRequest
             this.executePullRequestLater(pullRequest, PullTimeDelayMillsWhenException);
             log.warn("find the consumer's subscription failed, {}", pullRequest);
             return;
@@ -436,7 +436,6 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                     case OFFSET_ILLEGAL:
                         log.warn("the pull request offset illegal, {} {}",//
                             pullRequest.toString(), pullResult.toString());
-
                         pullRequest.setNextOffset(pullResult.getNextBeginOffset());
 
                         pullRequest.getProcessQueue().setDropped(true);
@@ -530,6 +529,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         }
     }
 
+
     public void executePullRequestImmediately(final PullRequest pullRequest) {
         this.mQClientFactory.getPullMessageService().executePullRequestImmediately(pullRequest);
     }
@@ -538,6 +538,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     public void executeTaskLater(final Runnable r, final long timeDelay) {
         this.mQClientFactory.getPullMessageService().executeTaskLater(r, timeDelay);
     }
+
 
     private void executePullRequestLater(final PullRequest pullRequest, final long timeDelay) {
         this.mQClientFactory.getPullMessageService().executePullRequestLater(pullRequest, timeDelay);
@@ -1056,6 +1057,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         return msgAccTotal;
     }
 
+
     public void adjustThreadPool() {
         long computeAccTotal = this.computeAccumulationTotal();
         long adjustThreadPoolNumsThreshold = this.defaultMQPushConsumer.getAdjustThreadPoolNumsThreshold();
@@ -1120,15 +1122,15 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     }
 
 
-    public Set<QueueTimeSpan> queryConsumeTimeSpan(final String topic) throws RemotingException,
+    public List<QueueTimeSpan> queryConsumeTimeSpan(final String topic) throws RemotingException,
             MQClientException, InterruptedException, MQBrokerException {
-        Set<QueueTimeSpan> queueTimeSpan = new HashSet<QueueTimeSpan>();
+        List<QueueTimeSpan> queueTimeSpan = new ArrayList<QueueTimeSpan>();
         TopicRouteData routeData =
                 this.mQClientFactory.getMQClientAPIImpl().getTopicRouteInfoFromNameServer(topic, 3000);
         for (BrokerData brokerData : routeData.getBrokerDatas()) {
             String addr = brokerData.selectBrokerAddr();
             queueTimeSpan.addAll(this.mQClientFactory.getMQClientAPIImpl().queryConsumeTimeSpan(addr, topic,
-                groupName(), 3000l));
+                    groupName(), 3000l));
         }
 
         return queueTimeSpan;

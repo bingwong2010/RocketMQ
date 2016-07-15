@@ -1,56 +1,20 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.remoting.netty;
-
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.timeout.IdleState;
-import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.concurrent.DefaultEventExecutorGroup;
-
-import java.net.SocketAddress;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.alibaba.rocketmq.remoting.ChannelEventListener;
 import com.alibaba.rocketmq.remoting.InvokeCallback;
@@ -64,13 +28,29 @@ import com.alibaba.rocketmq.remoting.exception.RemotingSendRequestException;
 import com.alibaba.rocketmq.remoting.exception.RemotingTimeoutException;
 import com.alibaba.rocketmq.remoting.exception.RemotingTooMuchRequestException;
 import com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.SocketAddress;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
- * Remoting客户端实现
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-7-13
+ * @author shijia.wxr
  */
 public class NettyRemotingClient extends NettyRemotingAbstract implements RemotingClient {
     private static final Logger log = LoggerFactory.getLogger(RemotingHelper.RemotingLogName);
@@ -86,16 +66,13 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
     private final ConcurrentHashMap<String /* addr */, ChannelWrapper> channelTables =
             new ConcurrentHashMap<String, ChannelWrapper>();
 
-    // 定时器
     private final Timer timer = new Timer("ClientHouseKeepingService", true);
 
-    // Name server相关
     private final AtomicReference<List<String>> namesrvAddrList = new AtomicReference<List<String>>();
     private final AtomicReference<String> namesrvAddrChoosed = new AtomicReference<String>();
     private final AtomicInteger namesrvIndex = new AtomicInteger(initValueIndex());
     private final Lock lockNamesrvChannel = new ReentrantLock();
 
-    // 处理Callback应答器
     private final ExecutorService publicExecutor;
 
     private final ChannelEventListener channelEventListener;
@@ -272,6 +249,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
 
                 private AtomicInteger threadIndex = new AtomicInteger(0);
 
+
                 @Override
                 public Thread newThread(Runnable r) {
                     return new Thread(r, "NettyClientWorkerThread_" + this.threadIndex.incrementAndGet());
@@ -425,27 +403,22 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
             return cw.getChannel();
         }
 
-        // 进入临界区后，不能有阻塞操作，网络连接采用异步方式
         if (this.lockChannelTables.tryLock(LockTimeoutMillis, TimeUnit.MILLISECONDS)) {
             try {
                 boolean createNewConnection = false;
                 cw = this.channelTables.get(addr);
                 if (cw != null) {
-                    // channel正常
                     if (cw.isOK()) {
                         return cw.getChannel();
                     }
-                    // 正在连接，退出锁等待
                     else if (!cw.getChannelFuture().isDone()) {
                         createNewConnection = false;
                     }
-                    // 说明连接不成功
                     else {
                         this.channelTables.remove(addr);
                         createNewConnection = true;
                     }
                 }
-                // ChannelWrapper不存在
                 else {
                     createNewConnection = true;
                 }
@@ -621,8 +594,8 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                 }
                 RemotingCommand response = this.invokeSyncImpl(channel, request, timeoutMillis);
                 if (this.rpcHook != null) {
-                    this.rpcHook.doAfterResponse(RemotingHelper.parseChannelRemoteAddr(channel),
-                        request, response);
+                    this.rpcHook.doAfterResponse(RemotingHelper.parseChannelRemoteAddr(channel), request,
+                        response);
                 }
                 return response;
             }
@@ -649,6 +622,12 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
             RemotingTooMuchRequestException, RemotingTimeoutException, RemotingSendRequestException {
         final Channel channel = this.getAndCreateChannel(addr);
         if (channel != null && channel.isActive()) {
+            // test the channel writable or not
+            if (!channel.isWritable()) {
+                throw new RemotingTooMuchRequestException(String.format(
+                    "the channel[%s] is not writable now", channel.toString()));
+            }
+
             try {
                 if (this.rpcHook != null) {
                     this.rpcHook.doBeforeRequest(addr, request);
@@ -674,6 +653,12 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
             RemotingTimeoutException, RemotingSendRequestException {
         final Channel channel = this.getAndCreateChannel(addr);
         if (channel != null && channel.isActive()) {
+            // test the channel writable or not
+            if (!channel.isWritable()) {
+                throw new RemotingTooMuchRequestException(String.format(
+                    "the channel[%s] is not writable now", channel.toString()));
+            }
+
             try {
                 if (this.rpcHook != null) {
                     this.rpcHook.doBeforeRequest(addr, request);

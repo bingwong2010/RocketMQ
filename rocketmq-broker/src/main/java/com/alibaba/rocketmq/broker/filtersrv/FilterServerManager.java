@@ -1,6 +1,30 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.rocketmq.broker.filtersrv;
 
+import com.alibaba.rocketmq.broker.BrokerController;
+import com.alibaba.rocketmq.broker.BrokerStartup;
+import com.alibaba.rocketmq.common.ThreadFactoryImpl;
+import com.alibaba.rocketmq.common.constant.LoggerName;
+import com.alibaba.rocketmq.remoting.common.RemotingUtil;
 import io.netty.channel.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -11,22 +35,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.rocketmq.broker.BrokerController;
-import com.alibaba.rocketmq.broker.BrokerStartup;
-import com.alibaba.rocketmq.common.ThreadFactoryImpl;
-import com.alibaba.rocketmq.common.constant.LoggerName;
-import com.alibaba.rocketmq.remoting.common.RemotingUtil;
-
 
 public class FilterServerManager {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BrokerLoggerName);
-    // Filter Server最大空闲时间
     public static final long FilterServerMaxIdleTimeMills = 30000;
 
-    private final ConcurrentHashMap<Channel/* 注册连接 */, FilterServerInfo/* filterServer监听端口 */> filterServerTable =
+    private final ConcurrentHashMap<Channel, FilterServerInfo> filterServerTable =
             new ConcurrentHashMap<Channel, FilterServerInfo>(16);
 
     private final BrokerController brokerController;
@@ -66,7 +80,6 @@ public class FilterServerManager {
 
 
     public void start() {
-        // 定时检查Filter Server个数，数量不符合，则创建
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
@@ -135,10 +148,9 @@ public class FilterServerManager {
 
 
     /**
-     * Filter Server 10s向Broker注册一次，Broker如果发现30s没有注册，则删除它
+     * Filter Server register to broker every 10s ,if over 30s,no registration info.,remove it
      */
     public void scanNotActiveChannel() {
-        // 单位毫秒
         Iterator<Entry<Channel, FilterServerInfo>> it = this.filterServerTable.entrySet().iterator();
         while (it.hasNext()) {
             Entry<Channel, FilterServerInfo> next = it.next();

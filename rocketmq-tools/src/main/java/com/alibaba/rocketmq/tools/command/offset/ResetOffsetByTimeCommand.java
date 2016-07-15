@@ -1,12 +1,21 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.rocketmq.tools.command.offset;
-
-import java.util.Iterator;
-import java.util.Map;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.PosixParser;
 
 import com.alibaba.rocketmq.client.exception.MQClientException;
 import com.alibaba.rocketmq.common.MixAll;
@@ -17,13 +26,17 @@ import com.alibaba.rocketmq.remoting.RPCHook;
 import com.alibaba.rocketmq.srvutil.ServerUtil;
 import com.alibaba.rocketmq.tools.admin.DefaultMQAdminExt;
 import com.alibaba.rocketmq.tools.command.SubCommand;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.PosixParser;
+
+import java.util.Iterator;
+import java.util.Map;
 
 
 /**
- * 根据时间设置消费进度，客户端无需重启。
- * 
- * @author: manhong.yqd<jodie.yqd@gmail.com>
- * @since: 13-9-12
+ * @author: manhong.yqd
  */
 public class ResetOffsetByTimeCommand implements SubCommand {
     @Override
@@ -50,11 +63,15 @@ public class ResetOffsetByTimeCommand implements SubCommand {
 
         opt =
                 new Option("s", "timestamp", true,
-                    "set the timestamp[currentTimeMillis|yyyy-MM-dd#HH:mm:ss:SSS]");
+                    "set the timestamp[now|currentTimeMillis|yyyy-MM-dd#HH:mm:ss:SSS]");
         opt.setRequired(true);
         options.addOption(opt);
 
         opt = new Option("f", "force", true, "set the force rollback by timestamp switch[true|false]");
+        opt.setRequired(false);
+        options.addOption(opt);
+
+        opt = new Option("c", "cplus", false, "reset c++ client offset");
         opt.setRequired(false);
         options.addOption(opt);
         return options;
@@ -64,30 +81,34 @@ public class ResetOffsetByTimeCommand implements SubCommand {
     @Override
     public void execute(CommandLine commandLine, Options options, RPCHook rpcHook) {
         DefaultMQAdminExt defaultMQAdminExt = new DefaultMQAdminExt(rpcHook);
-        defaultMQAdminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
-        try {
+            defaultMQAdminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
+            try {
             String group = commandLine.getOptionValue("g").trim();
             String topic = commandLine.getOptionValue("t").trim();
             String timeStampStr = commandLine.getOptionValue("s").trim();
-            long timestamp = 0;
+            long timestamp = timeStampStr.equals("now") ? System.currentTimeMillis() : 0;
+
             try {
-                // 直接输入 long 类型的 timestamp
                 timestamp = Long.valueOf(timeStampStr);
-            }
-            catch (NumberFormatException e) {
-                // 输入的为日期格式，精确到毫秒
+            } catch (NumberFormatException e) {
                 timestamp = UtilAll.parseDate(timeStampStr, UtilAll.yyyy_MM_dd_HH_mm_ss_SSS).getTime();
             }
+
 
             boolean force = true;
             if (commandLine.hasOption('f')) {
                 force = Boolean.valueOf(commandLine.getOptionValue("f").trim());
             }
 
+            boolean isC = false;
+            if (commandLine.hasOption('c')) {
+                isC = true;
+            }
+
             defaultMQAdminExt.start();
             Map<MessageQueue, Long> offsetTable;
             try {
-                offsetTable = defaultMQAdminExt.resetOffsetByTimestamp(topic, group, timestamp, force);
+                offsetTable = defaultMQAdminExt.resetOffsetByTimestamp(topic, group, timestamp, force, isC);
             }
             catch (MQClientException e) {
                 if (ResponseCode.CONSUMER_NOT_ONLINE == e.getResponseCode()) {

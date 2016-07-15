@@ -1,17 +1,18 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.broker.processor;
 
@@ -40,10 +41,7 @@ import com.alibaba.rocketmq.store.PutMessageResult;
 
 
 /**
- * Commit或Rollback事务
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-7-26
+ * @author shijia.wxr
  */
 public class EndTransactionProcessor implements NettyRequestProcessor {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BrokerLoggerName);
@@ -88,17 +86,13 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
 
 
     @Override
-    public RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request)
-            throws RemotingCommandException {
+    public RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         final EndTransactionRequestHeader requestHeader =
-                (EndTransactionRequestHeader) request
-                    .decodeCommandCustomHeader(EndTransactionRequestHeader.class);
+                (EndTransactionRequestHeader) request.decodeCommandCustomHeader(EndTransactionRequestHeader.class);
 
-        // 回查应答
         if (requestHeader.getFromTransactionCheck()) {
             switch (requestHeader.getCommitOrRollback()) {
-            // 不提交也不回滚
             case MessageSysFlag.TransactionNotType: {
                 logTransaction.warn("check producer[{}] transaction state, but it's pending status.\n"//
                         + "RequestHeader: {} Remark: {}",//
@@ -107,22 +101,18 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
                     request.getRemark());
                 return null;
             }
-            // 提交
             case MessageSysFlag.TransactionCommitType: {
-                logTransaction.warn(
-                    "check producer[{}] transaction state, the producer commit the message.\n"//
-                            + "RequestHeader: {} Remark: {}",//
+                logTransaction.warn("check producer[{}] transaction state, the producer commit the message.\n"//
+                        + "RequestHeader: {} Remark: {}",//
                     RemotingHelper.parseChannelRemoteAddr(ctx.channel()), //
                     requestHeader.toString(),//
                     request.getRemark());
 
                 break;
             }
-            // 回滚
             case MessageSysFlag.TransactionRollbackType: {
-                logTransaction.warn(
-                    "check producer[{}] transaction state, the producer rollback the message.\n"//
-                            + "RequestHeader: {} Remark: {}",//
+                logTransaction.warn("check producer[{}] transaction state, the producer rollback the message.\n"//
+                        + "RequestHeader: {} Remark: {}",//
                     RemotingHelper.parseChannelRemoteAddr(ctx.channel()), //
                     requestHeader.toString(),//
                     request.getRemark());
@@ -132,28 +122,22 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
                 return null;
             }
         }
-        // 正常提交回滚
         else {
             switch (requestHeader.getCommitOrRollback()) {
-            // 不提交也不回滚
             case MessageSysFlag.TransactionNotType: {
-                logTransaction.warn(
-                    "the producer[{}] end transaction in sending message,  and it's pending status.\n"//
-                            + "RequestHeader: {} Remark: {}",//
+                logTransaction.warn("the producer[{}] end transaction in sending message,  and it's pending status.\n"//
+                        + "RequestHeader: {} Remark: {}",//
                     RemotingHelper.parseChannelRemoteAddr(ctx.channel()), //
                     requestHeader.toString(),//
                     request.getRemark());
                 return null;
             }
-            // 提交
             case MessageSysFlag.TransactionCommitType: {
                 break;
             }
-            // 回滚
             case MessageSysFlag.TransactionRollbackType: {
-                logTransaction.warn(
-                    "the producer[{}] end transaction in sending message, rollback the message.\n"//
-                            + "RequestHeader: {} Remark: {}",//
+                logTransaction.warn("the producer[{}] end transaction in sending message, rollback the message.\n"//
+                        + "RequestHeader: {} Remark: {}",//
                     RemotingHelper.parseChannelRemoteAddr(ctx.channel()), //
                     requestHeader.toString(),//
                     request.getRemark());
@@ -164,11 +148,8 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
             }
         }
 
-        final MessageExt msgExt =
-                this.brokerController.getMessageStore().lookMessageByOffset(
-                    requestHeader.getCommitLogOffset());
+        final MessageExt msgExt = this.brokerController.getMessageStore().lookMessageByOffset(requestHeader.getCommitLogOffset());
         if (msgExt != null) {
-            // 校验Producer Group
             final String pgroupRead = msgExt.getProperty(MessageConst.PROPERTY_PRODUCER_GROUP);
             if (!pgroupRead.equals(requestHeader.getProducerGroup())) {
                 response.setCode(ResponseCode.SYSTEM_ERROR);
@@ -176,14 +157,12 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
                 return response;
             }
 
-            // 校验Transaction State Table Offset
             if (msgExt.getQueueOffset() != requestHeader.getTranStateTableOffset()) {
                 response.setCode(ResponseCode.SYSTEM_ERROR);
                 response.setRemark("the transaction state table offset wrong");
                 return response;
             }
 
-            // 校验Commit Log Offset
             if (msgExt.getCommitLogOffset() != requestHeader.getCommitLogOffset()) {
                 response.setCode(ResponseCode.SYSTEM_ERROR);
                 response.setRemark("the commit log offset wrong");
@@ -191,8 +170,7 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
             }
 
             MessageExtBrokerInner msgInner = this.endMessageTransaction(msgExt);
-            msgInner.setSysFlag(MessageSysFlag.resetTransactionValue(msgInner.getSysFlag(),
-                requestHeader.getCommitOrRollback()));
+            msgInner.setSysFlag(MessageSysFlag.resetTransactionValue(msgInner.getSysFlag(), requestHeader.getCommitOrRollback()));
 
             msgInner.setQueueOffset(requestHeader.getTranStateTableOffset());
             msgInner.setPreparedTransactionOffset(requestHeader.getCommitLogOffset());
@@ -220,8 +198,10 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
                     response.setRemark("create maped file failed.");
                     break;
                 case MESSAGE_ILLEGAL:
+                case PROPERTIES_SIZE_EXCEEDED:
                     response.setCode(ResponseCode.MESSAGE_ILLEGAL);
-                    response.setRemark("the message is illegal, maybe length not matched.");
+                    response
+                        .setRemark("the message is illegal, maybe msg body or properties length not matched. msg body length limit 128k, msg properties length limit 32k.");
                     break;
                 case SERVICE_NOT_AVAILABLE:
                     response.setCode(ResponseCode.SERVICE_NOT_AVAILABLE);

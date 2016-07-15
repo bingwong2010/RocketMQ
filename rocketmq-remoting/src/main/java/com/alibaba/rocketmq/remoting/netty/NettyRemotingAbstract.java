@@ -1,37 +1,20 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.remoting.netty;
-
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.alibaba.rocketmq.remoting.ChannelEventListener;
 import com.alibaba.rocketmq.remoting.InvokeCallback;
@@ -45,31 +28,34 @@ import com.alibaba.rocketmq.remoting.exception.RemotingTimeoutException;
 import com.alibaba.rocketmq.remoting.exception.RemotingTooMuchRequestException;
 import com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
 import com.alibaba.rocketmq.remoting.protocol.RemotingSysResponseCode;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.concurrent.*;
 
 
 /**
- * Server与Client公用抽象类
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-7-13
+ * @author shijia.wxr
  */
 public abstract class NettyRemotingAbstract {
     private static final Logger plog = LoggerFactory.getLogger(RemotingHelper.RemotingLogName);
 
-    // 信号量，Oneway情况会使用，防止本地Netty缓存请求过多
     protected final Semaphore semaphoreOneway;
 
-    // 信号量，异步调用情况会使用，防止本地Netty缓存请求过多
     protected final Semaphore semaphoreAsync;
 
-    // 缓存所有对外请求
     protected final ConcurrentHashMap<Integer /* opaque */, ResponseFuture> responseTable =
             new ConcurrentHashMap<Integer, ResponseFuture>(256);
 
-    // 默认请求代码处理器
     protected Pair<NettyRequestProcessor, ExecutorService> defaultRequestProcessor;
 
-    // 注册的各个RPC处理器
     protected final HashMap<Integer/* request code */, Pair<NettyRequestProcessor, ExecutorService>> processorTable =
             new HashMap<Integer, Pair<NettyRequestProcessor, ExecutorService>>(64);
 
@@ -189,7 +175,6 @@ public abstract class NettyRemotingAbstract {
                                 }
                             }
                             else {
-                                // 收到请求，但是没有返回应答，可能是processRequest中进行了应答，忽略这种情况
                             }
                         }
                     }
@@ -210,11 +195,9 @@ public abstract class NettyRemotingAbstract {
             };
 
             try {
-                // 这里需要做流控，要求线程池对应的队列必须是有大小限制的
                 pair.getObject2().submit(run);
             }
             catch (RejectedExecutionException e) {
-                // 每个线程10s打印一次
                 if ((System.currentTimeMillis() % 10000) == 0) {
                     plog.warn(RemotingHelper.parseChannelRemoteAddr(ctx.channel()) //
                             + ", too many requests and system thread pool busy, RejectedExecutionException " //
@@ -247,7 +230,9 @@ public abstract class NettyRemotingAbstract {
         final ResponseFuture responseFuture = responseTable.get(cmd.getOpaque());
         if (responseFuture != null) {
             responseFuture.setResponseCommand(cmd);
+
             responseFuture.release();
+
             responseTable.remove(cmd.getOpaque());
 
             if (responseFuture.getInvokeCallback() != null) {
@@ -294,7 +279,6 @@ public abstract class NettyRemotingAbstract {
                     + RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
             plog.warn(cmd.toString());
         }
-
     }
 
 

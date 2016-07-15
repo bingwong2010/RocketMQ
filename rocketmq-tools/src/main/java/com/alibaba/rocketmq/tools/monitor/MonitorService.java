@@ -1,16 +1,21 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.rocketmq.tools.monitor;
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Random;
-import java.util.TreeMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import org.slf4j.Logger;
 
 import com.alibaba.rocketmq.client.consumer.DefaultMQPullConsumer;
 import com.alibaba.rocketmq.client.consumer.DefaultMQPushConsumer;
@@ -36,6 +41,13 @@ import com.alibaba.rocketmq.common.protocol.topic.OffsetMovedEvent;
 import com.alibaba.rocketmq.remoting.RPCHook;
 import com.alibaba.rocketmq.remoting.exception.RemotingException;
 import com.alibaba.rocketmq.tools.admin.DefaultMQAdminExt;
+import org.slf4j.Logger;
+
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 
 public class MonitorService {
@@ -144,7 +156,6 @@ public class MonitorService {
         for (String topic : topicList.getTopicList()) {
             if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                 String consumerGroup = topic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
-                // 监控消费进度
                 try {
                     this.reportUndoneMsgs(consumerGroup);
                 }
@@ -152,7 +163,6 @@ public class MonitorService {
                     // log.error("reportUndoneMsgs Exception", e);
                 }
 
-                // 监控每个Consumer内存状态
                 try {
                     this.reportConsumerRunningInfo(consumerGroup);
                 }
@@ -173,7 +183,6 @@ public class MonitorService {
         TreeMap<String, ConsumerRunningInfo> infoMap = new TreeMap<String, ConsumerRunningInfo>();
         for (Connection c : cc.getConnectionSet()) {
             String clientId = c.getClientId();
-            // 低于3.1.8版本，不支持此功能
             if (c.getVersion() < MQVersion.Version.V3_1_8_SNAPSHOT.ordinal()) {
                 continue;
             }
@@ -216,7 +225,6 @@ public class MonitorService {
         }
 
         if (cs != null) {
-            // 按照Topic拆分
             HashMap<String/* Topic */, ConsumeStats> csByTopic = new HashMap<String, ConsumeStats>();
             {
                 Iterator<Entry<MessageQueue, OffsetWrapper>> it = cs.getOffsetTable().entrySet().iterator();
@@ -234,7 +242,6 @@ public class MonitorService {
                 }
             }
 
-            // 按照Topic开始报警
             {
                 Iterator<Entry<String, ConsumeStats>> it = csByTopic.entrySet().iterator();
                 while (it.hasNext()) {

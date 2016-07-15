@@ -1,31 +1,20 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.broker.topic;
-
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.alibaba.rocketmq.broker.BrokerController;
 import com.alibaba.rocketmq.broker.BrokerPathConfigHelper;
@@ -38,14 +27,22 @@ import com.alibaba.rocketmq.common.constant.PermName;
 import com.alibaba.rocketmq.common.protocol.body.KVTable;
 import com.alibaba.rocketmq.common.protocol.body.TopicConfigSerializeWrapper;
 import com.alibaba.rocketmq.common.sysflag.TopicSysFlag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
- * Topic配置管理
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @author lansheng.zj@taobao.com
- * @since 2013-7-26
+ * @author shijia.wxr
+ * @author lansheng.zj
  */
 public class TopicConfigManager extends ConfigManager {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BrokerLoggerName);
@@ -53,7 +50,6 @@ public class TopicConfigManager extends ConfigManager {
     private transient final Lock lockTopicConfigTable = new ReentrantLock();
     private transient BrokerController brokerController;
 
-    // Topic配置
     private final ConcurrentHashMap<String, TopicConfig> topicConfigTable =
             new ConcurrentHashMap<String, TopicConfig>(1024);
     private final DataVersion dataVersion = new DataVersion();
@@ -101,7 +97,6 @@ public class TopicConfigManager extends ConfigManager {
             this.topicConfigTable.put(topicConfig.getTopicName(), topicConfig);
         }
         {
-            // 集群名字
             String topic = this.brokerController.getBrokerConfig().getBrokerClusterName();
             TopicConfig topicConfig = new TopicConfig(topic);
             this.systemTopicList.add(topic);
@@ -113,7 +108,6 @@ public class TopicConfigManager extends ConfigManager {
             this.topicConfigTable.put(topicConfig.getTopicName(), topicConfig);
         }
         {
-            // 服务器名字
             String topic = this.brokerController.getBrokerConfig().getBrokerName();
             TopicConfig topicConfig = new TopicConfig(topic);
             this.systemTopicList.add(topic);
@@ -142,11 +136,9 @@ public class TopicConfigManager extends ConfigManager {
         return this.systemTopicList.contains(topic);
     }
 
-
     public Set<String> getSystemTopic() {
         return this.systemTopicList;
     }
-
 
     public boolean isTopicCanSendMessage(final String topic) {
         boolean reservedWords =
@@ -162,9 +154,6 @@ public class TopicConfigManager extends ConfigManager {
     }
 
 
-    /**
-     * 发消息时，如果Topic不存在，尝试创建
-     */
     public TopicConfig createTopicInSendMessageMethod(final String topic, final String defaultTopic,
             final String remoteAddress, final int clientDefaultTopicQueueNums, final int topicSysFlag) {
         TopicConfig topicConfig = null;
@@ -285,10 +274,6 @@ public class TopicConfigManager extends ConfigManager {
         return topicConfig;
     }
 
-
-    /**
-     * 更新 topic 的单元化标识
-     */
     public void updateTopicUnitFlag(final String topic, final boolean unit) {
 
         TopicConfig topicConfig = this.topicConfigTable.get(topic);
@@ -313,10 +298,6 @@ public class TopicConfigManager extends ConfigManager {
         }
     }
 
-
-    /**
-     * 更新 topic 是否有单元化订阅组
-     */
     public void updateTopicUnitSubFlag(final String topic, final boolean hasUnitSub) {
         TopicConfig topicConfig = this.topicConfigTable.get(topic);
         if (topicConfig != null) {
@@ -354,7 +335,6 @@ public class TopicConfigManager extends ConfigManager {
 
 
     public void updateOrderTopicConfig(final KVTable orderKVTableFromNs) {
-        // 根据 nameserver 上的 topic 配置同步检查更新 topic config 的顺序消息配置
         if (orderKVTableFromNs != null && orderKVTableFromNs.getTable() != null) {
             boolean isChange = false;
             Set<String> orderTopics = orderKVTableFromNs.getTable().keySet();

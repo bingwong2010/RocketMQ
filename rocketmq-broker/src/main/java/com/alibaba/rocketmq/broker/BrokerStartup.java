@@ -1,36 +1,23 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.broker;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.PosixParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
-
 import com.alibaba.rocketmq.common.BrokerConfig;
 import com.alibaba.rocketmq.common.MQVersion;
 import com.alibaba.rocketmq.common.MixAll;
@@ -44,11 +31,22 @@ import com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
 import com.alibaba.rocketmq.srvutil.ServerUtil;
 import com.alibaba.rocketmq.store.config.BrokerRole;
 import com.alibaba.rocketmq.store.config.MessageStoreConfig;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.PosixParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-7-26
+ * @author shijia.wxr
  */
 public class BrokerStartup {
     public static Properties properties = null;
@@ -82,21 +80,17 @@ public class BrokerStartup {
     public static BrokerController createBrokerController(String[] args) {
         System.setProperty(RemotingCommand.RemotingVersionKey, Integer.toString(MQVersion.CurrentVersion));
 
-        // Socket发送缓冲区大小
         if (null == System.getProperty(NettySystemConfig.SystemPropertySocketSndbufSize)) {
             NettySystemConfig.SocketSndbufSize = 131072;
         }
 
-        // Socket接收缓冲区大小
         if (null == System.getProperty(NettySystemConfig.SystemPropertySocketRcvbufSize)) {
             NettySystemConfig.SocketRcvbufSize = 131072;
         }
 
         try {
-            // 检测包冲突
             PackageConflictDetect.detectFastjson();
 
-            // 解析命令行
             Options options = ServerUtil.buildCommandlineOptions(new Options());
             commandLine =
                     ServerUtil.parseCmdLine("mqbroker", args, buildCommandlineOptions(options),
@@ -106,20 +100,17 @@ public class BrokerStartup {
                 return null;
             }
 
-            // 初始化配置文件
             final BrokerConfig brokerConfig = new BrokerConfig();
             final NettyServerConfig nettyServerConfig = new NettyServerConfig();
             final NettyClientConfig nettyClientConfig = new NettyClientConfig();
             nettyServerConfig.setListenPort(10911);
             final MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
 
-            // 如果是slave，修改默认值
             if (BrokerRole.SLAVE == messageStoreConfig.getBrokerRole()) {
                 int ratio = messageStoreConfig.getAccessMessageInMemoryMaxRatio() - 10;
                 messageStoreConfig.setAccessMessageInMemoryMaxRatio(ratio);
             }
 
-            // 打印默认配置
             if (commandLine.hasOption('p')) {
                 MixAll.printObjectProperties(null, brokerConfig);
                 MixAll.printObjectProperties(null, nettyServerConfig);
@@ -135,7 +126,6 @@ public class BrokerStartup {
                 System.exit(0);
             }
 
-            // 指定配置文件
             if (commandLine.hasOption('c')) {
                 String file = commandLine.getOptionValue('c');
                 if (file != null) {
@@ -163,7 +153,6 @@ public class BrokerStartup {
                 System.exit(-2);
             }
 
-            // 检测Name Server地址设置是否正确 IP:PORT
             String namesrvAddr = brokerConfig.getNamesrvAddr();
             if (null != namesrvAddr) {
                 try {
@@ -183,11 +172,9 @@ public class BrokerStartup {
                 }
             }
 
-            // BrokerId的处理
             switch (messageStoreConfig.getBrokerRole()) {
             case ASYNC_MASTER:
             case SYNC_MASTER:
-                // Master Id必须是0
                 brokerConfig.setBrokerId(MixAll.MASTER_ID);
                 break;
             case SLAVE:
@@ -201,10 +188,8 @@ public class BrokerStartup {
                 break;
             }
 
-            // Master监听Slave请求的端口，默认为服务端口+1
             messageStoreConfig.setHaListenPort(nettyServerConfig.getListenPort() + 1);
 
-            // 初始化Logback
             LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
             JoranConfigurator configurator = new JoranConfigurator();
             configurator.setContext(lc);
@@ -212,13 +197,11 @@ public class BrokerStartup {
             configurator.doConfigure(brokerConfig.getRocketmqHome() + "/conf/logback_broker.xml");
             log = LoggerFactory.getLogger(LoggerName.BrokerLoggerName);
 
-            // 打印启动参数
             MixAll.printObjectProperties(log, brokerConfig);
             MixAll.printObjectProperties(log, nettyServerConfig);
             MixAll.printObjectProperties(log, nettyClientConfig);
             MixAll.printObjectProperties(log, messageStoreConfig);
 
-            // 初始化服务控制对象
             final BrokerController controller = new BrokerController(//
                 brokerConfig, //
                 nettyServerConfig, //
@@ -263,11 +246,10 @@ public class BrokerStartup {
 
     public static BrokerController start(BrokerController controller) {
         try {
-            // 启动服务控制对象
             controller.start();
             String tip =
                     "The broker[" + controller.getBrokerConfig().getBrokerName() + ", "
-                            + controller.getBrokerAddr() + "] boot success.";
+                            + controller.getBrokerAddr() + "] boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
 
             if (null != controller.getBrokerConfig().getNamesrvAddr()) {
                 tip += " and name server is " + controller.getBrokerConfig().getNamesrvAddr();

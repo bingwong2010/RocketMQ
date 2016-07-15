@@ -1,9 +1,5 @@
 #!/bin/sh
 
-#
-# $Id: runclass.sh 857 2012-12-24 06:31:31Z shijia.wxr $
-#
-
 if [ $# -lt 1 ];
 then
   echo "USAGE: $0 classname opts"

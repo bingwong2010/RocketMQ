@@ -1,28 +1,20 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.tools.command.consumer;
-
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.slf4j.Logger;
 
 import com.alibaba.rocketmq.client.log.ClientLogger;
 import com.alibaba.rocketmq.common.MQVersion;
@@ -38,13 +30,19 @@ import com.alibaba.rocketmq.common.protocol.heartbeat.MessageModel;
 import com.alibaba.rocketmq.remoting.RPCHook;
 import com.alibaba.rocketmq.tools.admin.DefaultMQAdminExt;
 import com.alibaba.rocketmq.tools.command.SubCommand;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.slf4j.Logger;
+
+import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 
 
 /**
- * 查看订阅组消费状态，消费进度
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-8-11
+ * @author shijia.wxr
  */
 public class ConsumerProgressSubCommand implements SubCommand {
     private final Logger log = ClientLogger.getLog();
@@ -81,7 +79,6 @@ public class ConsumerProgressSubCommand implements SubCommand {
         try {
             defaultMQAdminExt.start();
 
-            // 查询特定consumer
             if (commandLine.hasOption('g')) {
                 String consumerGroup = commandLine.getOptionValue('g').trim();
                 ConsumeStats consumeStats = defaultMQAdminExt.examineConsumeStats(consumerGroup);
@@ -90,14 +87,14 @@ public class ConsumerProgressSubCommand implements SubCommand {
                 mqList.addAll(consumeStats.getOffsetTable().keySet());
                 Collections.sort(mqList);
 
-                System.out.printf("%-32s  %-32s  %-4s  %-20s  %-20s  %s\n",//
+                System.out.printf("%-32s  %-32s  %-4s  %-20s  %-20s  %-20s  %s\n",//
                     "#Topic",//
                     "#Broker Name",//
                     "#QID",//
                     "#Broker Offset",//
                     "#Consumer Offset",//
-                    "#Diff" //
-                );
+                    "#Diff", //
+                    "#LastTime");
 
                 long diffTotal = 0L;
 
@@ -107,21 +104,29 @@ public class ConsumerProgressSubCommand implements SubCommand {
                     long diff = offsetWrapper.getBrokerOffset() - offsetWrapper.getConsumerOffset();
                     diffTotal += diff;
 
-                    System.out.printf("%-32s  %-32s  %-4d  %-20d  %-20d  %d\n",//
-                        UtilAll.frontStringAtLeast(mq.getTopic(), 32),//
-                        UtilAll.frontStringAtLeast(mq.getBrokerName(), 32),//
-                        mq.getQueueId(),//
-                        offsetWrapper.getBrokerOffset(),//
-                        offsetWrapper.getConsumerOffset(),//
-                        diff //
-                        );
+                    String lastTime = "-";
+                    try {
+                        lastTime = UtilAll.formatDate(new Date(offsetWrapper.getLastTimestamp()), UtilAll.yyyy_MM_dd_HH_mm_ss);
+                    }
+                    catch (Exception e) {
+                        //
+                    }
+                    if (offsetWrapper.getLastTimestamp() > 0)
+                        System.out.printf("%-32s  %-32s  %-4d  %-20d  %-20d  %-20d  %s\n",//
+                            UtilAll.frontStringAtLeast(mq.getTopic(), 32),//
+                            UtilAll.frontStringAtLeast(mq.getBrokerName(), 32),//
+                            mq.getQueueId(),//
+                            offsetWrapper.getBrokerOffset(),//
+                            offsetWrapper.getConsumerOffset(),//
+                            diff, //
+                            lastTime//
+                            );
                 }
 
                 System.out.println("");
-                System.out.printf("Consume TPS: %d\n", consumeStats.getConsumeTps());
+                System.out.printf("Consume TPS: %s\n", consumeStats.getConsumeTps());
                 System.out.printf("Diff Total: %d\n", diffTotal);
             }
-            // 查询全部
             else {
                 System.out.printf("%-32s  %-6s  %-24s %-5s  %-14s  %-7s  %s\n",//
                     "#Group",//
@@ -180,8 +185,7 @@ public class ConsumerProgressSubCommand implements SubCommand {
                                 );
                         }
                         catch (Exception e) {
-                            log.warn("examineConsumeStats or examineConsumerConnectionInfo exception, "
-                                    + consumerGroup, e);
+                            log.warn("examineConsumeStats or examineConsumerConnectionInfo exception, " + consumerGroup, e);
                         }
                     }
                 }

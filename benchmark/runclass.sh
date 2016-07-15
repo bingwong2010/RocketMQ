@@ -1,9 +1,5 @@
 #!/bin/sh
 
-#
-# $Id: runserver.sh 1831 2013-05-16 01:39:51Z shijia.wxr $
-#
-
 if [ $# -lt 1 ];
 then
   echo "USAGE: $0 classname opts"

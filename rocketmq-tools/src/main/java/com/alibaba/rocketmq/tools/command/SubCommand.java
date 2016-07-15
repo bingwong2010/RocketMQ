@@ -1,12 +1,13 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,27 +16,20 @@
  */
 package com.alibaba.rocketmq.tools.command;
 
+import com.alibaba.rocketmq.remoting.RPCHook;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
-import com.alibaba.rocketmq.remoting.RPCHook;
-
 
 /**
- * 各个子命令的接口
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-7-25
+ * @author shijia.wxr
  */
 public interface SubCommand {
-    public String commandName();
+    String commandName();
 
+    String commandDesc();
 
-    public String commandDesc();
+    Options buildCommandlineOptions(final Options options);
 
-
-    public Options buildCommandlineOptions(final Options options);
-
-
-    public void execute(final CommandLine commandLine, final Options options, RPCHook rpcHook);
+    void execute(final CommandLine commandLine, final Options options, RPCHook rpcHook);
 }

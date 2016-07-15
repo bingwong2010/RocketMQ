@@ -1,27 +1,38 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.rocketmq.common.stats;
+
+import com.alibaba.rocketmq.common.UtilAll;
+import org.slf4j.Logger;
 
 import java.util.LinkedList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.slf4j.Logger;
-
-import com.alibaba.rocketmq.common.UtilAll;
-
 
 public class StatsItem {
-    // 具体的统计值
     private final AtomicLong value = new AtomicLong(0);
-    // 统计次数
     private final AtomicLong times = new AtomicLong(0);
-    // 最近一分钟内的镜像，数量6，10秒钟采样一次
     private final LinkedList<CallSnapshot> csListMinute = new LinkedList<CallSnapshot>();
 
-    // 最近一小时内的镜像，数量6，10分钟采样一次
     private final LinkedList<CallSnapshot> csListHour = new LinkedList<CallSnapshot>();
 
-    // 最近一天内的镜像，数量24，1小时采样一次
     private final LinkedList<CallSnapshot> csListDay = new LinkedList<CallSnapshot>();
 
     private final String statsName;
@@ -82,7 +93,6 @@ public class StatsItem {
 
 
     public void init() {
-        // 每隔10s执行一次
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
@@ -94,7 +104,6 @@ public class StatsItem {
             }
         }, 0, 10, TimeUnit.SECONDS);
 
-        // 每隔10分钟执行一次
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
@@ -106,7 +115,6 @@ public class StatsItem {
             }
         }, 0, 10, TimeUnit.MINUTES);
 
-        // 每隔1小时执行一次
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
@@ -118,7 +126,6 @@ public class StatsItem {
             }
         }, 0, 1, TimeUnit.HOURS);
 
-        // 分钟整点执行
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
@@ -131,7 +138,6 @@ public class StatsItem {
         }, Math.abs(UtilAll.computNextMinutesTimeMillis() - System.currentTimeMillis()), //
             1000 * 60, TimeUnit.MILLISECONDS);
 
-        // 小时整点执行
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
@@ -144,7 +150,6 @@ public class StatsItem {
         }, Math.abs(UtilAll.computNextHourTimeMillis() - System.currentTimeMillis()), //
             1000 * 60 * 60, TimeUnit.MILLISECONDS);
 
-        // 每天0点执行
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {

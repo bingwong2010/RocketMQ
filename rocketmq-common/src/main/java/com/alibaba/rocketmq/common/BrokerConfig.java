@@ -1,17 +1,18 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.common;
 
@@ -24,16 +25,14 @@ import java.net.UnknownHostException;
 
 
 /**
- * 服务器配置
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
+ * @author shijia.wxr
  */
 public class BrokerConfig {
     private String rocketmqHome = System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY,
-        System.getenv(MixAll.ROCKETMQ_HOME_ENV));
+            System.getenv(MixAll.ROCKETMQ_HOME_ENV));
     @ImportantField
     private String namesrvAddr = System.getProperty(MixAll.NAMESRV_ADDR_PROPERTY,
-        System.getenv(MixAll.NAMESRV_ADDR_ENV));
+            System.getenv(MixAll.NAMESRV_ADDR_ENV));
     @ImportantField
     private String brokerIP1 = RemotingUtil.getLocalAddress();
     private String brokerIP2 = RemotingUtil.getLocalAddress();
@@ -45,14 +44,10 @@ public class BrokerConfig {
     private long brokerId = MixAll.MASTER_ID;
     private int brokerPermission = PermName.PERM_READ | PermName.PERM_WRITE;
     private int defaultTopicQueueNums = 8;
-    // 自动创建Topic功能是否开启（线上建议关闭）
     @ImportantField
     private boolean autoCreateTopicEnable = true;
-    // 自动创建以集群名字命名的Topic功能是否开启
     private boolean clusterTopicEnable = true;
-    // 自动创建以服务器名字命名的Topic功能是否开启
     private boolean brokerTopicEnable = true;
-    // 自动创建订阅组功能是否开启（线上建议关闭）
     @ImportantField
     private boolean autoCreateSubscriptionGroup = true;
 
@@ -65,47 +60,52 @@ public class BrokerConfig {
 
     private int flushConsumerOffsetHistoryInterval = 1000 * 60;
 
-    // 是否拒绝接收事务消息
     @ImportantField
     private boolean rejectTransactionMessage = false;
 
-    // 是否从地址服务器寻找Name Server地址，正式发布后，默认值为false
     @ImportantField
     private boolean fetchNamesrvAddrByAddressServer = false;
 
-    // 发送消息对应的线程池阻塞队列size
     private int sendThreadPoolQueueCapacity = 100000;
 
-    // 订阅消息对应的线程池阻塞队列size
     private int pullThreadPoolQueueCapacity = 100000;
 
-    // 过滤服务器数量
     private int filterServerNums = 0;
 
-    // Consumer订阅消息时，Broker是否开启长轮询
     private boolean longPollingEnable = true;
 
-    // 如果是短轮询，服务器挂起时间
     private long shortPollingTimeMills = 1000;
 
-    // notify consumerId changed 开关
     private boolean notifyConsumerIdsChangedEnable = true;
+    private boolean highSpeedMode = false;
 
-    // slave 是否需要纠正位点
-    private boolean offsetCheckInSlave = false;
+    private boolean transferMsgByHeap = false;
 
 
+    public boolean isTransferMsgByHeap() {
+        return transferMsgByHeap;
+    }
+
+    public void setTransferMsgByHeap(final boolean transferMsgByHeap) {
+        this.transferMsgByHeap = transferMsgByHeap;
+    }
     public static String localHostName() {
         try {
             return InetAddress.getLocalHost().getHostName();
-        }
-        catch (UnknownHostException e) {
+        } catch (UnknownHostException e) {
             e.printStackTrace();
         }
 
         return "DEFAULT_BROKER";
     }
 
+    public boolean isHighSpeedMode() {
+        return highSpeedMode;
+    }
+
+    public void setHighSpeedMode(final boolean highSpeedMode) {
+        this.highSpeedMode = highSpeedMode;
+    }
 
     public String getRocketmqHome() {
         return rocketmqHome;
@@ -374,15 +374,5 @@ public class BrokerConfig {
 
     public void setClientManageThreadPoolNums(int clientManageThreadPoolNums) {
         this.clientManageThreadPoolNums = clientManageThreadPoolNums;
-    }
-
-
-    public boolean isOffsetCheckInSlave() {
-        return offsetCheckInSlave;
-    }
-
-
-    public void setOffsetCheckInSlave(boolean offsetCheckInSlave) {
-        this.offsetCheckInSlave = offsetCheckInSlave;
     }
 }

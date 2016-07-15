@@ -1,4 +1,30 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.rocketmq.filtersrv.filter;
+
+import com.alibaba.rocketmq.common.MixAll;
+import com.alibaba.rocketmq.common.ThreadFactoryImpl;
+import com.alibaba.rocketmq.common.UtilAll;
+import com.alibaba.rocketmq.common.constant.LoggerName;
+import com.alibaba.rocketmq.common.filter.MessageFilter;
+import com.alibaba.rocketmq.filtersrv.FiltersrvController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -7,16 +33,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.rocketmq.common.MixAll;
-import com.alibaba.rocketmq.common.ThreadFactoryImpl;
-import com.alibaba.rocketmq.common.UtilAll;
-import com.alibaba.rocketmq.common.constant.LoggerName;
-import com.alibaba.rocketmq.common.filter.MessageFilter;
-import com.alibaba.rocketmq.filtersrv.FiltersrvController;
-
 
 public class FilterClassManager {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.FiltersrvLoggerName);
@@ -24,12 +40,10 @@ public class FilterClassManager {
     private ConcurrentHashMap<String/* topic@consumerGroup */, FilterClassInfo> filterClassTable =
             new ConcurrentHashMap<String, FilterClassInfo>(128);
 
-    // 只为编译加锁使用
     private final Object compileLock = new Object();
 
     private final FiltersrvController filtersrvController;
 
-    // 定时线程
     private final ScheduledExecutorService scheduledExecutorService = Executors
         .newSingleThreadScheduledExecutor(new ThreadFactoryImpl("FSGetClassScheduledThread"));
 
@@ -102,7 +116,6 @@ public class FilterClassManager {
             final String className, final int classCRC, final byte[] filterSourceBinary) {
         final String key = buildKey(consumerGroup, topic);
 
-        // 先检查是否存在，是否CRC相同
         boolean registerNew = false;
         FilterClassInfo filterClassInfoPrev = this.filterClassTable.get(key);
         if (null == filterClassInfoPrev) {
@@ -116,7 +129,6 @@ public class FilterClassManager {
             }
         }
 
-        // 注册新的Class
         if (registerNew) {
             synchronized (this.compileLock) {
                 filterClassInfoPrev = this.filterClassTable.get(key);

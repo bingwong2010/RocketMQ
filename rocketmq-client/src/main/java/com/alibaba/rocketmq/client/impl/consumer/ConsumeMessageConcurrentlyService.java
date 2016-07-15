@@ -1,31 +1,20 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.client.impl.consumer;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import org.slf4j.Logger;
 
 import com.alibaba.rocketmq.client.consumer.DefaultMQPushConsumer;
 import com.alibaba.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
@@ -42,11 +31,16 @@ import com.alibaba.rocketmq.common.message.MessageQueue;
 import com.alibaba.rocketmq.common.protocol.body.CMResult;
 import com.alibaba.rocketmq.common.protocol.body.ConsumeMessageDirectlyResult;
 import com.alibaba.rocketmq.remoting.common.RemotingHelper;
+import org.slf4j.Logger;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.*;
 
 
 /**
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-7-24
+ * @author shijia.wxr
  */
 public class ConsumeMessageConcurrentlyService implements ConsumeMessageService {
     private static final Logger log = ClientLogger.getLog();
@@ -173,9 +167,8 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 ConsumeMessageConcurrentlyService.this.processConsumeResult(status, context, this);
             }
             else {
-                log.warn(
-                    "processQueue is dropped without process consume result. messageQueue={}, msgTreeMap={}, msgs={}",
-                    new Object[] { messageQueue, processQueue.getMsgTreeMap(), msgs });
+                log.warn("processQueue is dropped without process consume result. messageQueue={}, msgs={}",
+                    messageQueue, msgs);
             }
         }
 
@@ -340,29 +333,29 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
 
     @Override
     public void incCorePoolSize() {
-        long corePoolSize = this.consumeExecutor.getCorePoolSize();
-        if (corePoolSize < this.defaultMQPushConsumer.getConsumeThreadMax()) {
-            this.consumeExecutor.setCorePoolSize(this.consumeExecutor.getCorePoolSize() + 1);
-        }
-
-        log.info("incCorePoolSize Concurrently from {} to {}, ConsumerGroup: {}", //
-            corePoolSize,//
-            this.consumeExecutor.getCorePoolSize(),//
-            this.consumerGroup);
+//        long corePoolSize = this.consumeExecutor.getCorePoolSize();
+//        if (corePoolSize < this.defaultMQPushConsumer.getConsumeThreadMax()) {
+//            this.consumeExecutor.setCorePoolSize(this.consumeExecutor.getCorePoolSize() + 1);
+//        }
+//
+//        log.info("incCorePoolSize Concurrently from {} to {}, ConsumerGroup: {}", //
+//            corePoolSize,//
+//            this.consumeExecutor.getCorePoolSize(),//
+//            this.consumerGroup);
     }
 
 
     @Override
     public void decCorePoolSize() {
-        long corePoolSize = this.consumeExecutor.getCorePoolSize();
-        if (corePoolSize > this.defaultMQPushConsumer.getConsumeThreadMin()) {
-            this.consumeExecutor.setCorePoolSize(this.consumeExecutor.getCorePoolSize() - 1);
-        }
-
-        log.info("decCorePoolSize Concurrently from {} to {}, ConsumerGroup: {}", //
-            corePoolSize,//
-            this.consumeExecutor.getCorePoolSize(),//
-            this.consumerGroup);
+//        long corePoolSize = this.consumeExecutor.getCorePoolSize();
+//        if (corePoolSize > this.defaultMQPushConsumer.getConsumeThreadMin()) {
+//            this.consumeExecutor.setCorePoolSize(this.consumeExecutor.getCorePoolSize() - 1);
+//        }
+//
+//        log.info("decCorePoolSize Concurrently from {} to {}, ConsumerGroup: {}", //
+//            corePoolSize,//
+//            this.consumeExecutor.getCorePoolSize(),//
+//            this.consumerGroup);
     }
 
 

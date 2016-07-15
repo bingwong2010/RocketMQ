@@ -1,25 +1,38 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 /*
  * @author yubao.fyb@taoboa.com
  * @version $id$
  */
 package com.alibaba.rocketmq.client.consumer.loadbalance;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.alibaba.rocketmq.client.consumer.AllocateMessageQueueStrategy;
 import com.alibaba.rocketmq.client.consumer.rebalance.AllocateMessageQueueAveragely;
 import com.alibaba.rocketmq.client.consumer.rebalance.AllocateMessageQueueAveragelyByCircle;
 import com.alibaba.rocketmq.common.message.MessageQueue;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
-/**
- * @author yubao.fyb@alibaba-inc.com created on 2013-07-03 16:24
- */
 public class AllocateMessageQueueAveragelyTest {
     private AllocateMessageQueueStrategy allocateMessageQueueAveragely;
     private String currentCID;
@@ -53,7 +66,7 @@ public class AllocateMessageQueueAveragelyTest {
 
 
     @Test
-    public void testConsumer1() { // consumerList大小为1
+    public void testConsumer1() {
         currentCID = "0";
         createConsumerIdList(1);
         createMessageQueueList(5);
@@ -66,7 +79,7 @@ public class AllocateMessageQueueAveragelyTest {
 
 
     @Test
-    public void testConsumer2() { // consumerList大小为2
+    public void testConsumer2() {
         currentCID = "1";
         createConsumerIdList(2);
         createMessageQueueList(5);
@@ -80,7 +93,7 @@ public class AllocateMessageQueueAveragelyTest {
 
 
     @Test
-    public void testConsumer3CurrentCID0() { // consumerList大小为3
+    public void testConsumer3CurrentCID0() {
         currentCID = "0";
         createConsumerIdList(3);
         createMessageQueueList(5);
@@ -93,7 +106,7 @@ public class AllocateMessageQueueAveragelyTest {
 
 
     @Test
-    public void testConsumer3CurrentCID1() { // consumerList大小为3
+    public void testConsumer3CurrentCID1() {
         currentCID = "1";
         createConsumerIdList(3);
         createMessageQueueList(5);
@@ -106,7 +119,7 @@ public class AllocateMessageQueueAveragelyTest {
 
 
     @Test
-    public void testConsumer3CurrentCID2() { // consumerList大小为3
+    public void testConsumer3CurrentCID2() {
         currentCID = "2";
         createConsumerIdList(3);
         createMessageQueueList(5);
@@ -119,7 +132,7 @@ public class AllocateMessageQueueAveragelyTest {
 
 
     @Test
-    public void testConsumer4() { // consumerList大小为4
+    public void testConsumer4() {
         currentCID = "1";
         createConsumerIdList(4);
         createMessageQueueList(5);
@@ -132,7 +145,7 @@ public class AllocateMessageQueueAveragelyTest {
 
 
     @Test
-    public void testConsumer5() { // consumerList大小为5
+    public void testConsumer5() {
         currentCID = "1";
         createConsumerIdList(5);
         createMessageQueueList(5);
@@ -145,7 +158,7 @@ public class AllocateMessageQueueAveragelyTest {
 
 
     @Test
-    public void testConsumer6() { // consumerList大小为6
+    public void testConsumer6() {
         currentCID = "1";
         createConsumerIdList(2);
         createMessageQueueList(6);
@@ -158,7 +171,7 @@ public class AllocateMessageQueueAveragelyTest {
 
 
     @Test
-    public void testCurrentCIDNotExists() { // CurrentCID不存在
+    public void testCurrentCIDNotExists() {
         currentCID = String.valueOf(Integer.MAX_VALUE);
         createConsumerIdList(2);
         createMessageQueueList(6);
@@ -170,7 +183,7 @@ public class AllocateMessageQueueAveragelyTest {
 
 
     @Test(expected = IllegalArgumentException.class)
-    public void testCurrentCIDIllegalArgument() { // currentCID是空
+    public void testCurrentCIDIllegalArgument() {
         createConsumerIdList(2);
         createMessageQueueList(6);
         allocateMessageQueueAveragely.allocate("", "", getMessageQueueList(), getConsumerIdList());
@@ -178,7 +191,7 @@ public class AllocateMessageQueueAveragelyTest {
 
 
     @Test(expected = IllegalArgumentException.class)
-    public void testMessageQueueIllegalArgument() { // MessageQueue为空
+    public void testMessageQueueIllegalArgument() {
         currentCID = "0";
         createConsumerIdList(2);
         allocateMessageQueueAveragely.allocate("", currentCID, null, getConsumerIdList());
@@ -186,7 +199,7 @@ public class AllocateMessageQueueAveragelyTest {
 
 
     @Test(expected = IllegalArgumentException.class)
-    public void testConsumerIdIllegalArgument() { // ConsumerIdList为空
+    public void testConsumerIdIllegalArgument() {
         currentCID = "0";
         createMessageQueueList(6);
         allocateMessageQueueAveragely.allocate("", currentCID, getMessageQueueList(), null);

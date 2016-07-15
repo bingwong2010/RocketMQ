@@ -1,17 +1,18 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.common;
 
@@ -22,19 +23,13 @@ import com.alibaba.rocketmq.common.constant.LoggerName;
 
 
 /**
- * 后台服务线程基类
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
+ * @author shijia.wxr
  */
 public abstract class ServiceThread implements Runnable {
     private static final Logger stlog = LoggerFactory.getLogger(LoggerName.CommonLoggerName);
-    // 执行线程
     protected final Thread thread;
-    // 线程回收时间，默认90S
     private static final long JoinTime = 90 * 1000;
-    // 是否已经被Notify过
     protected volatile boolean hasNotified = false;
-    // 线程是否已经停止
     protected volatile boolean stoped = false;
 
 

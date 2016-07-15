@@ -1,20 +1,30 @@
-package com.alibaba.rocketmq.common.protocol.body;
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.TreeMap;
-import java.util.TreeSet;
+package com.alibaba.rocketmq.common.protocol.body;
 
 import com.alibaba.rocketmq.common.message.MessageQueue;
 import com.alibaba.rocketmq.common.protocol.heartbeat.ConsumeType;
 import com.alibaba.rocketmq.common.protocol.heartbeat.SubscriptionData;
 import com.alibaba.rocketmq.remoting.protocol.RemotingSerializable;
 
+import java.util.*;
+import java.util.Map.Entry;
 
-/**
- * Consumer内部数据结构
- */
 public class ConsumerRunningInfo extends RemotingSerializable {
     public static final String PROP_NAMESERVER_ADDR = "PROP_NAMESERVER_ADDR";
     public static final String PROP_THREADPOOL_CORE_SIZE = "PROP_THREADPOOL_CORE_SIZE";
@@ -23,16 +33,12 @@ public class ConsumerRunningInfo extends RemotingSerializable {
     public static final String PROP_CLIENT_VERSION = "PROP_CLIENT_VERSION";
     public static final String PROP_CONSUMER_START_TIMESTAMP = "PROP_CONSUMER_START_TIMESTAMP";
 
-    // 各种配置及运行数据
     private Properties properties = new Properties();
-    // 订阅关系
     private TreeSet<SubscriptionData> subscriptionSet = new TreeSet<SubscriptionData>();
-    // 消费进度、Rebalance、内部消费队列的信息
     private TreeMap<MessageQueue, ProcessQueueInfo> mqTable = new TreeMap<MessageQueue, ProcessQueueInfo>();
-    // RT、TPS统计
     private TreeMap<String/* Topic */, ConsumeStatus> statusTable = new TreeMap<String, ConsumeStatus>();
-    // jstack的结果
     private String jstack;
+    private Map<Thread, StackTraceElement[]> stackTraceElementMap;
 
 
     public Properties getProperties() {
@@ -84,8 +90,7 @@ public class ConsumerRunningInfo extends RemotingSerializable {
             Iterator<Entry<Object, Object>> it = this.properties.entrySet().iterator();
             while (it.hasNext()) {
                 Entry<Object, Object> next = it.next();
-                String item =
-                        String.format("%-40s: %s\n", next.getKey().toString(), next.getValue().toString());
+                String item = String.format("%-40s: %s\n", next.getKey().toString(), next.getValue().toString());
                 sb.append(item);
             }
         }
@@ -193,12 +198,7 @@ public class ConsumerRunningInfo extends RemotingSerializable {
         return sb.toString();
     }
 
-
-    /**
-     * 分析订阅关系是否相同
-     */
-    public static boolean analyzeSubscription(
-            final TreeMap<String/* clientId */, ConsumerRunningInfo> criTable) {
+    public static boolean analyzeSubscription(final TreeMap<String/* clientId */, ConsumerRunningInfo> criTable) {
         ConsumerRunningInfo prev = criTable.firstEntry().getValue();
 
         boolean push = false;
@@ -209,21 +209,17 @@ public class ConsumerRunningInfo extends RemotingSerializable {
 
         boolean startForAWhile = false;
         {
-            String property =
-                    prev.getProperties().getProperty(ConsumerRunningInfo.PROP_CONSUMER_START_TIMESTAMP);
+            String property = prev.getProperties().getProperty(ConsumerRunningInfo.PROP_CONSUMER_START_TIMESTAMP);
             startForAWhile = (System.currentTimeMillis() - Long.parseLong(property)) > (1000 * 60 * 2);
         }
 
-        // 只检测PUSH
         if (push && startForAWhile) {
-            // 分析订阅关系是否相同
             {
                 Iterator<Entry<String, ConsumerRunningInfo>> it = criTable.entrySet().iterator();
                 while (it.hasNext()) {
                     Entry<String, ConsumerRunningInfo> next = it.next();
                     ConsumerRunningInfo current = next.getValue();
                     boolean equals = current.getSubscriptionSet().equals(prev.getSubscriptionSet());
-                    // 发现订阅关系有误
                     if (!equals) {
                         // Different subscription in the same group of consumer
                         return false;
@@ -233,7 +229,6 @@ public class ConsumerRunningInfo extends RemotingSerializable {
                 }
 
                 if (prev != null) {
-                    // 无订阅关系
                     if (prev.getSubscriptionSet().isEmpty()) {
                         // Subscription empty!
                         return false;
@@ -272,18 +267,14 @@ public class ConsumerRunningInfo extends RemotingSerializable {
                 MessageQueue mq = next.getKey();
                 ProcessQueueInfo pq = next.getValue();
 
-                // 顺序消息
                 if (orderMsg) {
-                    // 没锁住
                     if (!pq.isLocked()) {
                         sb.append(String.format("%s %s can't lock for a while, %dms\n", //
                             clientId,//
                             mq,//
                             System.currentTimeMillis() - pq.getLastLockTimestamp()));
                     }
-                    // 锁住
                     else {
-                        // Rebalance已经丢弃此队列，但是没有正常释放Lock
                         if (pq.isDroped() && (pq.getTryUnlockTimes() > 0)) {
                             sb.append(String.format("%s %s unlock %d times, still failed\n",//
                                 clientId,//
@@ -292,12 +283,9 @@ public class ConsumerRunningInfo extends RemotingSerializable {
                         }
                     }
 
-                    // 事务消息未提交
                 }
-                // 乱序消息
                 else {
                     long diff = System.currentTimeMillis() - pq.getLastConsumeTimestamp();
-                    // 在有消息的情况下，超过1分钟没再消费消息了
                     if (diff > (1000 * 60) && pq.getCachedMsgCount() > 0) {
                         sb.append(String.format("%s %s can't consume for a while, maybe blocked, %dms\n",//
                             clientId,//
@@ -319,5 +307,15 @@ public class ConsumerRunningInfo extends RemotingSerializable {
 
     public void setJstack(String jstack) {
         this.jstack = jstack;
+    }
+
+
+    public Map<Thread, StackTraceElement[]> getStackTraceElementMap() {
+        return stackTraceElementMap;
+    }
+
+
+    public void setStackTraceElementMap(Map<Thread, StackTraceElement[]> stackTraceElementMap) {
+        this.stackTraceElementMap = stackTraceElementMap;
     }
 }

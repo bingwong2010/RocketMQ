@@ -1,19 +1,22 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.common;
+
+import com.alibaba.rocketmq.remoting.common.RemotingHelper;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -32,14 +35,10 @@ import java.util.zip.CRC32;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
-import com.alibaba.rocketmq.common.utils.PureJavaCrc32;
-import com.alibaba.rocketmq.remoting.common.RemotingHelper;
-
 
 /**
- * 各种方法大杂烩
  *
- * @author shijia.wxr<vintage.wang@gmail.com>
+ * @author shijia.wxr
  */
 public class UtilAll {
     public static final String yyyy_MM_dd_HH_mm_ss = "yyyy-MM-dd HH:mm:ss";
@@ -70,11 +69,6 @@ public class UtilAll {
         return sb.toString();
     }
 
-
-    /**
-     * 将offset转化成字符串形式<br>
-     * 左补零对齐至20位
-     */
     public static String offset2FileName(final long offset) {
         final NumberFormat nf = NumberFormat.getInstance();
         nf.setMinimumIntegerDigits(20);
@@ -83,10 +77,6 @@ public class UtilAll {
         return nf.format(offset);
     }
 
-
-    /**
-     * 计算耗时操作，单位ms
-     */
     public static long computeEclipseTimeMilliseconds(final long beginTime) {
         return (System.currentTimeMillis() - beginTime);
     }
@@ -116,9 +106,9 @@ public class UtilAll {
     public static String timeMillisToHumanString(final long t) {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(t);
-        return String.format("%04d%02d%02d%02d%02d%02d%03d", cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR_OF_DAY),
-            cal.get(Calendar.MINUTE), cal.get(Calendar.SECOND), cal.get(Calendar.MILLISECOND));
+        return String.format("%04d%02d%02d%02d%02d%02d%03d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1,
+            cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), cal.get(Calendar.SECOND),
+            cal.get(Calendar.MILLISECOND));
     }
 
 
@@ -187,14 +177,6 @@ public class UtilAll {
             cal.get(Calendar.MILLISECOND));
     }
 
-
-    /**
-     * 返回日期时间格式，精度到秒<br>
-     * 格式如下：2013122305190000
-     *
-     * @param t
-     * @return
-     */
     public static String timeMillisToHumanString3(final long t) {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(t);
@@ -207,10 +189,6 @@ public class UtilAll {
             cal.get(Calendar.SECOND));
     }
 
-
-    /**
-     * 获取磁盘分区空间使用率
-     */
     public static double getDiskPartitionSpaceUsedPercent(final String path) {
         if (null == path || path.isEmpty())
             return -1;
@@ -249,15 +227,11 @@ public class UtilAll {
 
 
     public static final int crc32(byte[] array, int offset, int length) {
-        PureJavaCrc32 crc32 = new PureJavaCrc32();
+        CRC32 crc32 = new CRC32();
         crc32.update(array, offset, length);
         return (int) (crc32.getValue() & 0x7FFFFFFF);
     }
 
-
-    /**
-     * 字节数组转化成16进制形式
-     */
     public static String bytes2string(byte[] src) {
         StringBuilder sb = new StringBuilder();
         if (src == null || src.length <= 0) {
@@ -274,10 +248,6 @@ public class UtilAll {
         return sb.toString();
     }
 
-
-    /**
-     * 16进制字符串转化成字节数组
-     */
     public static byte[] string2bytes(String hexString) {
         if (hexString == null || hexString.equals("")) {
             return null;
@@ -439,9 +409,13 @@ public class UtilAll {
 
 
     public static String jstack() {
+        return jstack(Thread.getAllStackTraces());
+    }
+
+
+    public static String jstack(Map<Thread, StackTraceElement[]> map) {
         StringBuilder result = new StringBuilder();
         try {
-            Map<Thread, StackTraceElement[]> map = Thread.getAllStackTraces();
             Iterator<Map.Entry<Thread, StackTraceElement[]>> ite = map.entrySet().iterator();
             while (ite.hasNext()) {
                 Map.Entry<Thread, StackTraceElement[]> entry = ite.next();
@@ -449,8 +423,7 @@ public class UtilAll {
                 Thread thread = entry.getKey();
                 if (elements != null && elements.length > 0) {
                     String threadName = entry.getKey().getName();
-                    result.append(String.format("%-40sTID: %d STATE: %s\n", threadName, thread.getId(),
-                        thread.getState()));
+                    result.append(String.format("%-40sTID: %d STATE: %s\n", threadName, thread.getId(), thread.getState()));
                     for (StackTraceElement el : elements) {
                         result.append(String.format("%-40s%s\n", threadName, el.toString()));
                     }

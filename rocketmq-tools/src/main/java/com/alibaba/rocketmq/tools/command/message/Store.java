@@ -1,10 +1,21 @@
-package com.alibaba.rocketmq.tools.command.message;
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 
-import java.io.File;
-import java.nio.ByteBuffer;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+package com.alibaba.rocketmq.tools.command.message;
 
 import com.alibaba.rocketmq.store.ConsumeQueue;
 import com.alibaba.rocketmq.store.MapedFile;
@@ -12,19 +23,23 @@ import com.alibaba.rocketmq.store.MapedFileQueue;
 import com.alibaba.rocketmq.store.SelectMapedBufferResult;
 import com.alibaba.rocketmq.store.config.StorePathConfigHelper;
 
+import java.io.File;
+import java.nio.ByteBuffer;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+
 
 /**
  * @auther lansheng.zj
  */
 public class Store {
 
-    // 每个消息对应的MAGIC CODE daa320a7
+    // HEADER MAGIC CODE daa320a7
     public final static int MessageMagicCode = 0xAABBCCDD ^ 1880681586 + 8;
-    // 文件末尾空洞对应的MAGIC CODE cbd43194
+    // TAIL MAGIC CODE cbd43194
     private final static int BlankMagicCode = 0xBBCCDDEE ^ 1880681586 + 8;
-    // 存储消息的队列
     private MapedFileQueue mapedFileQueue;
-    // ConsumeQueue集合
     private ConcurrentHashMap<String/* topic */, ConcurrentHashMap<Integer/* queueId */, ConsumeQueue>> consumeQueueTable;
 
     private String cStorePath;
@@ -59,10 +74,8 @@ public class Store {
         File dirLogic = new File(StorePathConfigHelper.getStorePathConsumeQueue(lStorePath));
         File[] fileTopicList = dirLogic.listFiles();
         if (fileTopicList != null) {
-            // TOPIC 遍历
             for (File fileTopic : fileTopicList) {
                 String topic = fileTopic.getName();
-                // TOPIC 下队列遍历
                 File[] fileQueueIdList = fileTopic.listFiles();
                 if (fileQueueIdList != null) {
                     for (File fileQueueId : fileQueueIdList) {
@@ -205,7 +218,6 @@ public class Store {
 
                 Date storeTime = new Date(storeTimestamp);
 
-                // 计算出来当前消息的偏移量
                 long currentPhyOffset = startOffset + position;
                 if (physicOffset != currentPhyOffset) {
                     System.out.println(storeTime

@@ -1,8 +1,25 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.rocketmq.tools.github;
 
-import java.io.File;
-import java.util.Arrays;
-
+import com.alibaba.rocketmq.common.MixAll;
+import com.alibaba.rocketmq.remoting.RPCHook;
+import com.alibaba.rocketmq.tools.command.SubCommand;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
@@ -11,14 +28,9 @@ import org.kohsuke.github.GHOrganization;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 
-import com.alibaba.rocketmq.common.MixAll;
-import com.alibaba.rocketmq.remoting.RPCHook;
-import com.alibaba.rocketmq.tools.command.SubCommand;
+import java.io.File;
+import java.util.Arrays;
 
-
-/**
- * 同步版本库中的wiki和issue到github
- */
 public class SyncDocsToGithubSubCommand implements SubCommand {
 
     @Override
@@ -77,9 +89,6 @@ public class SyncDocsToGithubSubCommand implements SubCommand {
             GHOrganization alibaba = github.getOrganization("Alibaba");
             GHRepository rep = alibaba.getRepository("RocketMQ");
 
-            //
-            // 同步Issue
-            //
             {
                 File dir = new File(System.getenv(MixAll.ROCKETMQ_HOME_ENV) + "/" + "issues");
                 File[] files = dir.listFiles();
@@ -96,12 +105,10 @@ public class SyncDocsToGithubSubCommand implements SubCommand {
                 }
             }
 
-            // 同步Wiki
             {
                 File dir = new File(System.getenv(MixAll.ROCKETMQ_HOME_ENV) + "/" + "wiki");
                 File[] files = dir.listFiles();
                 if (files != null) {
-                    // ascending order
                     Arrays.sort(files);
                     for (File file : files) {
                         String fileName = file.getName();

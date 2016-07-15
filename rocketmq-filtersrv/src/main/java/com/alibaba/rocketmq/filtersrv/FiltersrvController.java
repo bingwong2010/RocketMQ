@@ -1,27 +1,20 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.filtersrv;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.alibaba.rocketmq.client.consumer.DefaultMQPullConsumer;
 import com.alibaba.rocketmq.common.MixAll;
@@ -35,28 +28,27 @@ import com.alibaba.rocketmq.filtersrv.stats.FilterServerStatsManager;
 import com.alibaba.rocketmq.remoting.RemotingServer;
 import com.alibaba.rocketmq.remoting.netty.NettyRemotingServer;
 import com.alibaba.rocketmq.remoting.netty.NettyServerConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 
 /**
- * Filter Server服务控制
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2014-4-10
+ * @author shijia.wxr
  */
 public class FiltersrvController {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.FiltersrvLoggerName);
-    // Filter Server配置
     private final FiltersrvConfig filtersrvConfig;
-    // 通信层配置
     private final NettyServerConfig nettyServerConfig;
-    // 服务端通信层对象
     private RemotingServer remotingServer;
-    // 服务端网络请求处理线程池
     private ExecutorService remotingExecutor;
 
     private final FilterClassManager filterClassManager;
 
-    // 访问Broker的api封装
     private final FilterServerOuterAPI filterServerOuterAPI = new FilterServerOuterAPI();
 
     private final DefaultMQPullConsumer defaultMQPullConsumer = new DefaultMQPullConsumer(
@@ -64,7 +56,6 @@ public class FiltersrvController {
 
     private volatile String brokerName = null;
 
-    // 定时线程
     private final ScheduledExecutorService scheduledExecutorService = Executors
         .newSingleThreadScheduledExecutor(new ThreadFactoryImpl("FSScheduledThread"));
 
@@ -79,20 +70,16 @@ public class FiltersrvController {
 
 
     public boolean initialize() {
-        // 打印服务器配置参数
         MixAll.printObjectProperties(log, this.filtersrvConfig);
 
-        // 初始化通信层
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig);
 
-        // 初始化线程池
         this.remotingExecutor =
                 Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(),
                     new ThreadFactoryImpl("RemotingExecutorThread_"));
 
         this.registerProcessor();
 
-        // 定时向Broker注册自己
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -101,7 +88,6 @@ public class FiltersrvController {
             }
         }, 3, 10, TimeUnit.SECONDS);
 
-        // 初始化PullConsumer参数，要比默认参数小。
         this.defaultMQPullConsumer.setBrokerSuspendMaxTimeMillis(this.defaultMQPullConsumer
             .getBrokerSuspendMaxTimeMillis() - 1000);
         this.defaultMQPullConsumer.setConsumerTimeoutMillisWhenSuspend(this.defaultMQPullConsumer
@@ -141,7 +127,6 @@ public class FiltersrvController {
         }
         catch (Exception e) {
             log.warn("register filter server Exception", e);
-            // 如果失败，尝试自杀
             log.warn("access broker failed, kill oneself");
             System.exit(-1);
         }

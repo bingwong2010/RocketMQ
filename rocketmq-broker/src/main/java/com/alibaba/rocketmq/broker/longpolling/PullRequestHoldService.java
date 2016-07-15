@@ -1,38 +1,35 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.broker.longpolling;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.alibaba.rocketmq.broker.BrokerController;
 import com.alibaba.rocketmq.common.ServiceThread;
 import com.alibaba.rocketmq.common.constant.LoggerName;
 import com.alibaba.rocketmq.remoting.exception.RemotingCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
- * 拉消息请求管理，如果拉不到消息，则在这里Hold住，等待消息到来
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-7-26
+ * @author shijia.wxr
  */
 public class PullRequestHoldService extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BrokerLoggerName);
@@ -96,7 +93,6 @@ public class PullRequestHoldService extends ServiceThread {
                 List<PullRequest> replayList = new ArrayList<PullRequest>();
 
                 for (PullRequest request : requestList) {
-                    // 查看是否offset OK
                     if (maxOffset > request.getPullFromThisOffset()) {
                         try {
                             this.brokerController.getPullMessageProcessor().excuteRequestWhenWakeup(
@@ -106,9 +102,7 @@ public class PullRequestHoldService extends ServiceThread {
                             log.error("", e);
                         }
                         continue;
-                    }
-                    // 尝试取最新Offset
-                    else {
+                    } else {
                         final long newestOffset =
                                 this.brokerController.getMessageStore().getMaxOffsetInQuque(topic, queueId);
                         if (newestOffset > request.getPullFromThisOffset()) {
@@ -123,7 +117,6 @@ public class PullRequestHoldService extends ServiceThread {
                         }
                     }
 
-                    // 查看是否超时
                     if (System.currentTimeMillis() >= (request.getSuspendTimestamp() + request
                         .getTimeoutMillis())) {
                         try {
@@ -136,7 +129,6 @@ public class PullRequestHoldService extends ServiceThread {
                         continue;
                     }
 
-                    // 当前不满足要求，重新放回Hold列表中
                     replayList.add(request);
                 }
 

@@ -1,33 +1,44 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.rocketmq.store;
 
-import static org.junit.Assert.assertTrue;
+import com.alibaba.rocketmq.store.config.FlushDiskType;
+import com.alibaba.rocketmq.store.config.MessageStoreConfig;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.alibaba.rocketmq.store.config.FlushDiskType;
-import com.alibaba.rocketmq.store.config.MessageStoreConfig;
+import static org.junit.Assert.assertTrue;
 
 
 /**
- * @author shijia.wxr<vintage.wang@gmail.com>
+ * @author shijia.wxr
  */
 public class DefaultMessageStoreTest {
-    // 队列个数
     private static int QUEUE_TOTAL = 100;
-    // 发往哪个队列
     private static AtomicInteger QueueId = new AtomicInteger(0);
-    // 发送主机地址
     private static SocketAddress BornHost;
-    // 存储主机地址
     private static SocketAddress StoreHost;
-    // 消息体
     private static byte[] MessageBody;
 
     private static final String StoreMessage = "Once, there was a chance for me!";
@@ -69,22 +80,18 @@ public class DefaultMessageStoreTest {
         long totalMsgs = 10000;
         QUEUE_TOTAL = 1;
 
-        // 构造消息体
         MessageBody = StoreMessage.getBytes();
 
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
-        // 每个物理映射文件 4K
         messageStoreConfig.setMapedFileSizeCommitLog(1024 * 8);
         messageStoreConfig.setMapedFileSizeConsumeQueue(1024 * 4);
         messageStoreConfig.setMaxHashSlotNum(100);
         messageStoreConfig.setMaxIndexNum(100 * 10);
 
-        MessageStore master = new DefaultMessageStore(messageStoreConfig, null);
-        // 第一步，load已有数据
+        MessageStore master = new DefaultMessageStore(messageStoreConfig, null, null, null);
         boolean load = master.load();
         assertTrue(load);
 
-        // 第二步，启动服务
         master.start();
         for (long i = 0; i < totalMsgs; i++) {
             PutMessageResult result = master.putMessage(buildMessage());
@@ -92,7 +99,6 @@ public class DefaultMessageStoreTest {
             System.out.println(i + "\t" + result.getAppendMessageResult().getMsgId());
         }
 
-        // 开始读文件
         for (long i = 0; i < totalMsgs; i++) {
             try {
                 GetMessageResult result = master.getMessage("GROUP_A", "TOPIC_A", 0, i, 1024 * 1024, null);
@@ -109,10 +115,8 @@ public class DefaultMessageStoreTest {
 
         }
 
-        // 关闭存储服务
         master.shutdown();
 
-        // 删除文件
         master.destroy();
         System.out.println("================================================================");
     }
@@ -124,22 +128,17 @@ public class DefaultMessageStoreTest {
         long totalMsgs = 10000;
         QUEUE_TOTAL = 1;
 
-        // 构造消息体
         MessageBody = StoreMessage.getBytes();
 
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
-        // 每个物理映射文件 4K
         messageStoreConfig.setMapedFileSizeCommitLog(1024 * 8);
 
-        // 开启GroupCommit功能
         messageStoreConfig.setFlushDiskType(FlushDiskType.SYNC_FLUSH);
 
-        MessageStore master = new DefaultMessageStore(messageStoreConfig, null);
-        // 第一步，load已有数据
+        MessageStore master = new DefaultMessageStore(messageStoreConfig, null, null, null);
         boolean load = master.load();
         assertTrue(load);
 
-        // 第二步，启动服务
         master.start();
         for (long i = 0; i < totalMsgs; i++) {
             PutMessageResult result = master.putMessage(buildMessage());
@@ -147,7 +146,6 @@ public class DefaultMessageStoreTest {
             System.out.println(i + "\t" + result.getAppendMessageResult().getMsgId());
         }
 
-        // 开始读文件
         for (long i = 0; i < totalMsgs; i++) {
             try {
                 GetMessageResult result = master.getMessage("GROUP_A", "TOPIC_A", 0, i, 1024 * 1024, null);
@@ -164,10 +162,8 @@ public class DefaultMessageStoreTest {
 
         }
 
-        // 关闭存储服务
         master.shutdown();
 
-        // 删除文件
         master.destroy();
         System.out.println("================================================================");
     }

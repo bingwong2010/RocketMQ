@@ -1,34 +1,21 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.store.index;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.rocketmq.common.ServiceThread;
 import com.alibaba.rocketmq.common.UtilAll;
 import com.alibaba.rocketmq.common.constant.LoggerName;
 import com.alibaba.rocketmq.common.message.MessageConst;
@@ -36,26 +23,29 @@ import com.alibaba.rocketmq.common.sysflag.MessageSysFlag;
 import com.alibaba.rocketmq.store.DefaultMessageStore;
 import com.alibaba.rocketmq.store.DispatchRequest;
 import com.alibaba.rocketmq.store.config.StorePathConfigHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
 /**
- * 消息索引服务
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-7-21
+ * @author shijia.wxr
  */
-public class IndexService extends ServiceThread {
+public class IndexService {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.StoreLoggerName);
     private final DefaultMessageStore defaultMessageStore;
-    // 索引配置
     private final int hashSlotNum;
     private final int indexNum;
     private final String storePath;
-    // 索引文件集合
     private final ArrayList<IndexFile> indexFileList = new ArrayList<IndexFile>();
-    // 读写锁（针对indexFileList）
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
-    private LinkedBlockingQueue<Object[]> requestQueue = new LinkedBlockingQueue<Object[]>(300000);
 
 
     public IndexService(final DefaultMessageStore store) {
@@ -99,10 +89,6 @@ public class IndexService extends ServiceThread {
         return true;
     }
 
-
-    /**
-     * 删除索引文件
-     */
     public void deleteExpiredFile(long offset) {
         Object[] files = null;
         try {
@@ -139,10 +125,6 @@ public class IndexService extends ServiceThread {
         }
     }
 
-
-    /**
-     * 删除文件只能从头开始删
-     */
     private void deleteExpiredFile(List<IndexFile> files) {
         if (!files.isEmpty()) {
             try {
@@ -185,7 +167,6 @@ public class IndexService extends ServiceThread {
 
     public QueryOffsetResult queryOffset(String topic, String key, int maxNum, long begin, long end) {
         List<Long> phyOffsets = new ArrayList<Long>(maxNum);
-        // TODO 可能需要返回给最终用户
         long indexLastUpdateTimestamp = 0;
         long indexLastUpdatePhyoffset = 0;
         maxNum = Math.min(maxNum, this.defaultMessageStore.getMessageStoreConfig().getMaxMsgsNumBatch());
@@ -201,11 +182,9 @@ public class IndexService extends ServiceThread {
                     }
 
                     if (f.isTimeMatched(begin, end)) {
-                        // 最后一个文件需要加锁
                         f.selectPhyOffset(phyOffsets, this.buildKey(topic, key), maxNum, begin, end, lastFile);
                     }
 
-                    // 再往前遍历时间更不符合
                     if (f.getBeginTimestamp() < begin) {
                         break;
                     }
@@ -232,93 +211,51 @@ public class IndexService extends ServiceThread {
     }
 
 
-    /**
-     * 向队列中添加请求，队列满情况下，丢弃请求
-     */
-    public void putRequest(final Object[] reqs) {
-        boolean offer = this.requestQueue.offer(reqs);
-        if (!offer) {
-            if (log.isDebugEnabled()) {
-                log.debug("putRequest index failed, {}", reqs);
-            }
-        }
-    }
-
-
-    @Override
-    public void run() {
-        log.info(this.getServiceName() + " service started");
-
-        while (!this.isStoped()) {
-            try {
-                Object[] req = this.requestQueue.poll(3000, TimeUnit.MILLISECONDS);
-
-                if (req != null) {
-                    this.buildIndex(req);
-                }
-            }
-            catch (Exception e) {
-                log.warn(this.getServiceName() + " service has exception. ", e);
-            }
-        }
-
-        log.info(this.getServiceName() + " service end");
-    }
-
-
-    public void buildIndex(Object[] req) {
+    public void buildIndex(DispatchRequest req) {
         boolean breakdown = false;
         IndexFile indexFile = retryGetAndCreateIndexFile();
         if (indexFile != null) {
             long endPhyOffset = indexFile.getEndPhyOffset();
-            MSG_WHILE: for (Object o : req) {
-                DispatchRequest msg = (DispatchRequest) o;
-                String topic = msg.getTopic();
-                String keys = msg.getKeys();
-                if (msg.getCommitLogOffset() < endPhyOffset) {
-                    continue;
-                }
+            DispatchRequest msg = req;
+            String topic = msg.getTopic();
+            String keys = msg.getKeys();
+            if (msg.getCommitLogOffset() < endPhyOffset) {
+                return;
+            }
 
-                final int tranType = MessageSysFlag.getTransactionValue(msg.getSysFlag());
-                switch (tranType) {
-                case MessageSysFlag.TransactionNotType:
-                case MessageSysFlag.TransactionPreparedType:
-                    break;
-                case MessageSysFlag.TransactionCommitType:
-                case MessageSysFlag.TransactionRollbackType:
-                    continue;
-                }
+            final int tranType = MessageSysFlag.getTransactionValue(msg.getSysFlag());
+            switch (tranType) {
+            case MessageSysFlag.TransactionNotType:
+            case MessageSysFlag.TransactionPreparedType:
+                break;
+            case MessageSysFlag.TransactionCommitType:
+            case MessageSysFlag.TransactionRollbackType:
+                return;
+            }
 
-                if (keys != null && keys.length() > 0) {
-                    String[] keyset = keys.split(MessageConst.KEY_SEPARATOR);
-                    for (String key : keyset) {
-                        // TODO 是否需要TRIM
-                        if (key.length() > 0) {
-                            for (boolean ok =
-                                    indexFile.putKey(buildKey(topic, key), msg.getCommitLogOffset(),
-                                        msg.getStoreTimestamp()); !ok;) {
-                                log.warn("index file full, so create another one, " + indexFile.getFileName());
-                                indexFile = retryGetAndCreateIndexFile();
-                                if (null == indexFile) {
-                                    breakdown = true;
-                                    break MSG_WHILE;
-                                }
-
-                                ok =
-                                        indexFile.putKey(buildKey(topic, key), msg.getCommitLogOffset(),
-                                            msg.getStoreTimestamp());
+            if (keys != null && keys.length() > 0) {
+                String[] keyset = keys.split(MessageConst.KEY_SEPARATOR);
+                for (String key : keyset) {
+                    if (key.length() > 0) {
+                        for (boolean ok =
+                                indexFile.putKey(buildKey(topic, key), msg.getCommitLogOffset(),
+                                    msg.getStoreTimestamp()); !ok;) {
+                            log.warn("index file full, so create another one, " + indexFile.getFileName());
+                            indexFile = retryGetAndCreateIndexFile();
+                            if (null == indexFile) {
+                                breakdown = true;
+                                return;
                             }
+
+                            ok =
+                                    indexFile.putKey(buildKey(topic, key), msg.getCommitLogOffset(),
+                                        msg.getStoreTimestamp());
                         }
                     }
                 }
             }
         }
-        // IO发生故障，build索引过程中断，需要人工参与处理
         else {
-            breakdown = true;
-        }
-
-        if (breakdown) {
             log.error("build index error, stop building index");
         }
     }
@@ -327,7 +264,6 @@ public class IndexService extends ServiceThread {
     public IndexFile retryGetAndCreateIndexFile() {
         IndexFile indexFile = null;
 
-        // 如果创建失败，尝试重建3次
         for (int times = 0; null == indexFile && times < 3; times++) {
             indexFile = this.getAndCreateLastIndexFile();
             if (null != indexFile)
@@ -342,7 +278,6 @@ public class IndexService extends ServiceThread {
             }
         }
 
-        // 重试多次，仍然无法创建索引文件
         if (null == indexFile) {
             this.defaultMessageStore.getAccessRights().makeIndexFileError();
             log.error("mark index file can not build flag");
@@ -351,17 +286,11 @@ public class IndexService extends ServiceThread {
         return indexFile;
     }
 
-
-    /**
-     * 获取最后一个索引文件，如果集合为空或者最后一个文件写满了，则新建一个文件<br>
-     * 只有一个线程调用，所以不存在写竟争问题
-     */
     public IndexFile getAndCreateLastIndexFile() {
         IndexFile indexFile = null;
         IndexFile prevIndexFile = null;
         long lastUpdateEndPhyOffset = 0;
         long lastUpdateIndexTimestamp = 0;
-        // 先尝试使用读锁
         {
             this.readWriteLock.readLock().lock();
             if (!this.indexFileList.isEmpty()) {
@@ -379,7 +308,6 @@ public class IndexService extends ServiceThread {
             this.readWriteLock.readLock().unlock();
         }
 
-        // 如果没找到，使用写锁创建文件
         if (indexFile == null) {
             try {
                 String fileName =
@@ -398,7 +326,6 @@ public class IndexService extends ServiceThread {
                 this.readWriteLock.writeLock().unlock();
             }
 
-            // 每创建一个新文件，之前文件要刷盘
             if (indexFile != null) {
                 final IndexFile flushThisFile = prevIndexFile;
                 Thread flushThread = new Thread(new Runnable() {
@@ -436,8 +363,12 @@ public class IndexService extends ServiceThread {
     }
 
 
-    @Override
-    public String getServiceName() {
-        return IndexService.class.getSimpleName();
+    public void start() {
+
+    }
+
+
+    public void shutdown() {
+
     }
 }

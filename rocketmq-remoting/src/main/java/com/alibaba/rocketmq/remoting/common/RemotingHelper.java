@@ -1,20 +1,25 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.remoting.common;
 
+import com.alibaba.rocketmq.remoting.exception.RemotingConnectException;
+import com.alibaba.rocketmq.remoting.exception.RemotingSendRequestException;
+import com.alibaba.rocketmq.remoting.exception.RemotingTimeoutException;
+import com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
 import io.netty.channel.Channel;
 
 import java.io.IOException;
@@ -23,17 +28,9 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
-import com.alibaba.rocketmq.remoting.exception.RemotingConnectException;
-import com.alibaba.rocketmq.remoting.exception.RemotingSendRequestException;
-import com.alibaba.rocketmq.remoting.exception.RemotingTimeoutException;
-import com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
-
 
 /**
- * 通信层一些辅助方法
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-7-13
+ * @author shijia.wxr
  */
 public class RemotingHelper {
     public static final String RemotingLogName = "RocketmqRemoting";
@@ -55,20 +52,12 @@ public class RemotingHelper {
         return sb.toString();
     }
 
-
-    /**
-     * IP:PORT
-     */
     public static SocketAddress string2SocketAddress(final String addr) {
         String[] s = addr.split(":");
         InetSocketAddress isa = new InetSocketAddress(s[0], Integer.valueOf(s[1]));
         return isa;
     }
 
-
-    /**
-     * 短连接调用 TODO
-     */
     public static RemotingCommand invokeSync(final String addr, final RemotingCommand request,
             final long timeoutMillis) throws InterruptedException, RemotingConnectException,
             RemotingSendRequestException, RemotingTimeoutException {
@@ -79,7 +68,6 @@ public class RemotingHelper {
             boolean sendRequestOK = false;
 
             try {
-                // 使用阻塞模式
                 socketChannel.configureBlocking(true);
                 /*
                  * FIXME The read methods in SocketChannel (and DatagramChannel)
@@ -88,14 +76,12 @@ public class RemotingHelper {
                  */
                 socketChannel.socket().setSoTimeout((int) timeoutMillis);
 
-                // 发送数据
                 ByteBuffer byteBufferRequest = request.encode();
                 while (byteBufferRequest.hasRemaining()) {
                     int length = socketChannel.write(byteBufferRequest);
                     if (length > 0) {
                         if (byteBufferRequest.hasRemaining()) {
                             if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
-                                // 发送请求超时
                                 throw new RemotingSendRequestException(addr);
                             }
                         }
@@ -104,20 +90,17 @@ public class RemotingHelper {
                         throw new RemotingSendRequestException(addr);
                     }
 
-                    // 比较土
                     Thread.sleep(1);
                 }
 
                 sendRequestOK = true;
 
-                // 接收应答 SIZE
                 ByteBuffer byteBufferSize = ByteBuffer.allocate(4);
                 while (byteBufferSize.hasRemaining()) {
                     int length = socketChannel.read(byteBufferSize);
                     if (length > 0) {
                         if (byteBufferSize.hasRemaining()) {
                             if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
-                                // 接收应答超时
                                 throw new RemotingTimeoutException(addr, timeoutMillis);
                             }
                         }
@@ -126,11 +109,9 @@ public class RemotingHelper {
                         throw new RemotingTimeoutException(addr, timeoutMillis);
                     }
 
-                    // 比较土
                     Thread.sleep(1);
                 }
 
-                // 接收应答 BODY
                 int size = byteBufferSize.getInt(0);
                 ByteBuffer byteBufferBody = ByteBuffer.allocate(size);
                 while (byteBufferBody.hasRemaining()) {
@@ -138,7 +119,6 @@ public class RemotingHelper {
                     if (length > 0) {
                         if (byteBufferBody.hasRemaining()) {
                             if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
-                                // 接收应答超时
                                 throw new RemotingTimeoutException(addr, timeoutMillis);
                             }
                         }
@@ -147,11 +127,9 @@ public class RemotingHelper {
                         throw new RemotingTimeoutException(addr, timeoutMillis);
                     }
 
-                    // 比较土
                     Thread.sleep(1);
                 }
 
-                // 对应答数据解码
                 byteBufferBody.flip();
                 return RemotingCommand.decode(byteBufferBody);
             }
