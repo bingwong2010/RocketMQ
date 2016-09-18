@@ -5,7 +5,7 @@ Release 3.5.8
 * Remoting module has kept the same timeout,refer to [issue270](https://github.com/alibaba/RocketMQ/issues/270)
 * Consume queue offset will not repeated when state transition over
 * Client will not throw exception when broker is down
-* Fix ordering message Deadlock problems   
+* Fix ordering message deadlock problems   
 
 ### Optimize:
 * Support max retry times in message deliver.context priority beyond consumer's. 
