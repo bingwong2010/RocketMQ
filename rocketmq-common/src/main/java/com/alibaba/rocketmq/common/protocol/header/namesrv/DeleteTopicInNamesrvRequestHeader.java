@@ -23,6 +23,7 @@ import com.alibaba.rocketmq.remoting.exception.RemotingCommandException;
 
 /**
  * @author shijia.wxr
+ *
  */
 public class DeleteTopicInNamesrvRequestHeader implements CommandCustomHeader {
     @CFNotNull

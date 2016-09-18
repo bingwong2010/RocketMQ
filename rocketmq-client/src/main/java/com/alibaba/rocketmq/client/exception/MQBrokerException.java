@@ -19,6 +19,7 @@ package com.alibaba.rocketmq.client.exception;
 import com.alibaba.rocketmq.common.UtilAll;
 import com.alibaba.rocketmq.common.help.FAQUrl;
 
+
 /**
  * @author shijia.wxr
  */

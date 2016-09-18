@@ -23,6 +23,7 @@ import java.util.HashSet;
 
 /**
  * @author shijia.wxr
+ *
  */
 public class ConsumeByWho extends RemotingSerializable {
     private HashSet<String> consumedGroup = new HashSet<String>();

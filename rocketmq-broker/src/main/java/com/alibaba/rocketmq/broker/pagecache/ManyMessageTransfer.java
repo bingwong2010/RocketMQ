@@ -51,20 +51,22 @@ public class ManyMessageTransfer extends AbstractReferenceCounted implements Fil
         return pos;
     }
 
+    @Override
+    public long transfered() {
+        return transfered;
+    }
 
     @Override
     public long count() {
         return byteBufferHeader.limit() + this.getMessageResult.getBufferTotalSize();
     }
 
-
     @Override
     public long transferTo(WritableByteChannel target, long position) throws IOException {
         if (this.byteBufferHeader.hasRemaining()) {
             transfered += target.write(this.byteBufferHeader);
             return transfered;
-        }
-        else {
+        } else {
             List<ByteBuffer> messageBufferList = this.getMessageResult.getMessageBufferList();
             for (ByteBuffer bb : messageBufferList) {
                 if (bb.hasRemaining()) {
@@ -77,20 +79,12 @@ public class ManyMessageTransfer extends AbstractReferenceCounted implements Fil
         return 0;
     }
 
-
     public void close() {
         this.deallocate();
     }
 
-
     @Override
     protected void deallocate() {
         this.getMessageResult.release();
-    }
-
-
-    @Override
-    public long transfered() {
-        return transfered;
     }
 }

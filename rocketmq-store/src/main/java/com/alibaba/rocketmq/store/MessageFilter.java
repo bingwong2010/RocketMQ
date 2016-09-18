@@ -23,5 +23,5 @@ import com.alibaba.rocketmq.common.protocol.heartbeat.SubscriptionData;
  * @author shijia.wxr
  */
 public interface MessageFilter {
-    boolean isMessageMatched(final SubscriptionData subscriptionData, final long tagsCode);
+    boolean isMessageMatched(final SubscriptionData subscriptionData, final Long tagsCode);
 }

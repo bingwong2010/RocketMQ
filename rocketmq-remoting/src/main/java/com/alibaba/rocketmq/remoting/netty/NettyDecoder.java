@@ -30,11 +30,12 @@ import java.nio.ByteBuffer;
 
 /**
  * @author shijia.wxr
+ *
  */
 public class NettyDecoder extends LengthFieldBasedFrameDecoder {
     private static final Logger log = LoggerFactory.getLogger(RemotingHelper.RemotingLogName);
     private static final int FRAME_MAX_LENGTH = //
-            Integer.parseInt(System.getProperty("com.rocketmq.remoting.frameMaxLength", "8388608"));
+            Integer.parseInt(System.getProperty("com.rocketmq.remoting.frameMaxLength", "16777216"));
 
 
     public NettyDecoder() {

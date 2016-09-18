@@ -23,10 +23,12 @@ package com.alibaba.rocketmq.common.protocol.route;
 import com.alibaba.rocketmq.common.MixAll;
 
 import java.util.HashMap;
+import java.util.Map;
 
 
 /**
  * @author shijia.wxr
+ *
  */
 public class BrokerData implements Comparable<BrokerData> {
     private String cluster;
@@ -36,44 +38,29 @@ public class BrokerData implements Comparable<BrokerData> {
     public String selectBrokerAddr() {
         String value = this.brokerAddrs.get(MixAll.MASTER_ID);
         if (null == value) {
-            for (Long key : this.brokerAddrs.keySet()) {
-                return this.brokerAddrs.get(key);
+            for (Map.Entry<Long, String> entry : this.brokerAddrs.entrySet()) {
+                return entry.getValue();
             }
         }
 
         return value;
     }
 
-
-    public String getBrokerName() {
-        return brokerName;
-    }
-
-
-    public void setBrokerName(String brokerName) {
-        this.brokerName = brokerName;
-    }
-
-
     public HashMap<Long, String> getBrokerAddrs() {
         return brokerAddrs;
     }
-
 
     public void setBrokerAddrs(HashMap<Long, String> brokerAddrs) {
         this.brokerAddrs = brokerAddrs;
     }
 
-
     public String getCluster() {
         return cluster;
     }
 
-
     public void setCluster(String cluster) {
         this.cluster = cluster;
     }
-
 
     @Override
     public int hashCode() {
@@ -83,7 +70,6 @@ public class BrokerData implements Comparable<BrokerData> {
         result = prime * result + ((brokerName == null) ? 0 : brokerName.hashCode());
         return result;
     }
-
 
     @Override
     public boolean equals(Object obj) {
@@ -97,27 +83,31 @@ public class BrokerData implements Comparable<BrokerData> {
         if (brokerAddrs == null) {
             if (other.brokerAddrs != null)
                 return false;
-        }
-        else if (!brokerAddrs.equals(other.brokerAddrs))
+        } else if (!brokerAddrs.equals(other.brokerAddrs))
             return false;
         if (brokerName == null) {
             if (other.brokerName != null)
                 return false;
-        }
-        else if (!brokerName.equals(other.brokerName))
+        } else if (!brokerName.equals(other.brokerName))
             return false;
         return true;
     }
-
 
     @Override
     public String toString() {
         return "BrokerData [brokerName=" + brokerName + ", brokerAddrs=" + brokerAddrs + "]";
     }
 
-
     @Override
     public int compareTo(BrokerData o) {
         return this.brokerName.compareTo(o.getBrokerName());
+    }
+
+    public String getBrokerName() {
+        return brokerName;
+    }
+
+    public void setBrokerName(String brokerName) {
+        this.brokerName = brokerName;
     }
 }

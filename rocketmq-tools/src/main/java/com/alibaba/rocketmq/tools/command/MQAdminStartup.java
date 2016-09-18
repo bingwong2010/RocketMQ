@@ -21,11 +21,11 @@ import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
 import com.alibaba.rocketmq.common.MQVersion;
 import com.alibaba.rocketmq.common.MixAll;
-import com.alibaba.rocketmq.common.conflict.PackageConflictDetect;
 import com.alibaba.rocketmq.remoting.RPCHook;
 import com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
 import com.alibaba.rocketmq.srvutil.ServerUtil;
 import com.alibaba.rocketmq.tools.command.broker.*;
+import com.alibaba.rocketmq.tools.command.cluster.CLusterSendMsgRTCommand;
 import com.alibaba.rocketmq.tools.command.cluster.ClusterListSubCommand;
 import com.alibaba.rocketmq.tools.command.connection.ConsumerConnectionSubCommand;
 import com.alibaba.rocketmq.tools.command.connection.ProducerConnectionSubCommand;
@@ -54,6 +54,69 @@ import java.util.List;
 public class MQAdminStartup {
     protected static List<SubCommand> subCommandList = new ArrayList<SubCommand>();
 
+    public static void main(String[] args) {
+        main0(args, null);
+    }
+
+    public static void main0(String[] args, RPCHook rpcHook) {
+        System.setProperty(RemotingCommand.RemotingVersionKey, Integer.toString(MQVersion.CurrentVersion));
+
+
+        //PackageConflictDetect.detectFastjson();
+
+        initCommand();
+
+        try {
+            initLogback();
+            switch (args.length) {
+                case 0:
+                    printHelp();
+                    break;
+                case 2:
+                    if (args[0].equals("help")) {
+                        SubCommand cmd = findSubCommand(args[1]);
+                        if (cmd != null) {
+                            Options options = ServerUtil.buildCommandlineOptions(new Options());
+                            options = cmd.buildCommandlineOptions(options);
+                            if (options != null) {
+                                ServerUtil.printCommandLineHelp("mqadmin " + cmd.commandName(), options);
+                            }
+                        } else {
+                            System.out.println("The sub command \'" + args[1] + "\' not exist.");
+                        }
+                        break;
+                    }
+                case 1:
+                default:
+                    SubCommand cmd = findSubCommand(args[0]);
+                    if (cmd != null) {
+                        String[] subargs = parseSubArgs(args);
+
+
+                        Options options = ServerUtil.buildCommandlineOptions(new Options());
+                        final CommandLine commandLine =
+                                ServerUtil.parseCmdLine("mqadmin " + cmd.commandName(), subargs, cmd.buildCommandlineOptions(options),
+                                        new PosixParser());
+                        if (null == commandLine) {
+                            System.exit(-1);
+                            return;
+                        }
+
+                        if (commandLine.hasOption('n')) {
+                            String namesrvAddr = commandLine.getOptionValue('n');
+                            System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, namesrvAddr);
+                        }
+
+                        cmd.execute(commandLine, options, rpcHook);
+                    } else {
+                        System.out.println("The sub command \'" + args[0] + "\' not exist.");
+                    }
+                    break;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public static void initCommand() {
         initCommand(new UpdateTopicSubCommand());
@@ -71,7 +134,9 @@ public class MQAdminStartup {
         initCommand(new BrokerStatusSubCommand());
         initCommand(new QueryMsgByIdSubCommand());
         initCommand(new QueryMsgByKeySubCommand());
+        initCommand(new QueryMsgByUniqueKeySubCommand());
         initCommand(new QueryMsgByOffsetSubCommand());
+        initCommand(new QueryMsgByUniqueKeySubCommand());
         initCommand(new PrintMessageSubCommand());
         initCommand(new SendMsgStatusCommand());
         initCommand(new BrokerConsumeStatsSubCommad());
@@ -97,85 +162,15 @@ public class MQAdminStartup {
         initCommand(new CleanUnusedTopicCommand());
 
         initCommand(new StartMonitoringSubCommand());
-        initCommand(new CheckMsgSubCommand());
         initCommand(new StatsAllSubCommand());
 
         initCommand(new SyncDocsToGithubSubCommand());
         initCommand(new AllocateMQSubCommand());
+
+        initCommand(new CheckMsgSendRTCommand());
+        initCommand(new CLusterSendMsgRTCommand());
+
     }
-
-
-    public static void initCommand(SubCommand command) {
-        subCommandList.add(command);
-    }
-
-
-    public static void main(String[] args) {
-        main0(args, null);
-    }
-
-
-    public static void main0(String[] args, RPCHook rpcHook) {
-        System.setProperty(RemotingCommand.RemotingVersionKey, Integer.toString(MQVersion.CurrentVersion));
-
-        PackageConflictDetect.detectFastjson();
-
-        initCommand();
-
-        try {
-            initLogback();
-            switch (args.length) {
-            case 0:
-                printHelp();
-                break;
-            case 2:
-                if (args[0].equals("help")) {
-                    SubCommand cmd = findSubCommand(args[1]);
-                    if (cmd != null) {
-                        Options options = ServerUtil.buildCommandlineOptions(new Options());
-                        options = cmd.buildCommandlineOptions(options);
-                        if (options != null) {
-                            ServerUtil.printCommandLineHelp("mqadmin " + cmd.commandName(), options);
-                        }
-                    }
-                    else {
-                        System.out.println("The sub command \'" + args[1] + "\' not exist.");
-                    }
-                    break;
-                }
-            case 1:
-            default:
-                SubCommand cmd = findSubCommand(args[0]);
-                if (cmd != null) {
-                    String[] subargs = parseSubArgs(args);
-
-                    Options options = ServerUtil.buildCommandlineOptions(new Options());
-                    final CommandLine commandLine =
-                            ServerUtil.parseCmdLine("mqadmin " + cmd.commandName(), subargs, cmd.buildCommandlineOptions(options),
-                                new PosixParser());
-                    if (null == commandLine) {
-                        System.exit(-1);
-                        return;
-                    }
-
-                    if (commandLine.hasOption('n')) {
-                        String namesrvAddr = commandLine.getOptionValue('n');
-                        System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, namesrvAddr);
-                    }
-
-                    cmd.execute(commandLine, options, rpcHook);
-                }
-                else {
-                    System.out.println("The sub command \'" + args[0] + "\' not exist.");
-                }
-                break;
-            }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
 
     private static void initLogback() throws JoranException {
         String rocketmqHome = System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY, System.getenv(MixAll.ROCKETMQ_HOME_ENV));
@@ -187,6 +182,25 @@ public class MQAdminStartup {
         configurator.doConfigure(rocketmqHome + "/conf/logback_tools.xml");
     }
 
+    private static void printHelp() {
+        System.out.println("The most commonly used mqadmin commands are:");
+
+        for (SubCommand cmd : subCommandList) {
+            System.out.printf("   %-20s %s%n", cmd.commandName(), cmd.commandDesc());
+        }
+
+        System.out.println("\nSee 'mqadmin help <command>' for more information on a specific command.");
+    }
+
+    private static SubCommand findSubCommand(final String name) {
+        for (SubCommand cmd : subCommandList) {
+            if (cmd.commandName().toUpperCase().equals(name.toUpperCase())) {
+                return cmd;
+            }
+        }
+
+        return null;
+    }
 
     private static String[] parseSubArgs(String[] args) {
         if (args.length > 1) {
@@ -199,25 +213,7 @@ public class MQAdminStartup {
         return null;
     }
 
-
-    private static SubCommand findSubCommand(final String name) {
-        for (SubCommand cmd : subCommandList) {
-            if (cmd.commandName().toUpperCase().equals(name.toUpperCase())) {
-                return cmd;
-            }
-        }
-
-        return null;
-    }
-
-
-    private static void printHelp() {
-        System.out.println("The most commonly used mqadmin commands are:");
-
-        for (SubCommand cmd : subCommandList) {
-            System.out.printf("   %-20s %s\n", cmd.commandName(), cmd.commandDesc());
-        }
-
-        System.out.println("\nSee 'mqadmin help <command>' for more information on a specific command.");
+    public static void initCommand(SubCommand command) {
+        subCommandList.add(command);
     }
 }

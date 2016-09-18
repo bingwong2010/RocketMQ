@@ -22,7 +22,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 
 /**
+
+ *
  * @author shijia.wxr
+ *
  */
 public class IndexHeader {
     public static final int INDEX_HEADER_SIZE = 40;
@@ -38,6 +41,7 @@ public class IndexHeader {
     private AtomicLong beginPhyOffset = new AtomicLong(0);
     private AtomicLong endPhyOffset = new AtomicLong(0);
     private AtomicInteger hashSlotCount = new AtomicInteger(0);
+
     private AtomicInteger indexCount = new AtomicInteger(1);
 
 

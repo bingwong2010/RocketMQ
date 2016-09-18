@@ -20,7 +20,8 @@ package com.alibaba.rocketmq.client.producer;
  * @author shijia.wxr
  */
 public interface SendCallback {
-    void onSuccess(final SendResult sendResult);
+    public void onSuccess(final SendResult sendResult);
 
-    void onException(final Throwable e);
+
+    public void onException(final Throwable e);
 }

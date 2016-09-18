@@ -21,32 +21,38 @@ import com.alibaba.rocketmq.client.producer.SendResult;
 import com.alibaba.rocketmq.client.producer.TransactionCheckListener;
 import com.alibaba.rocketmq.client.producer.TransactionMQProducer;
 import com.alibaba.rocketmq.common.message.Message;
+import com.alibaba.rocketmq.remoting.common.RemotingHelper;
 
+import java.io.UnsupportedEncodingException;
 
 public class TransactionProducer {
     public static void main(String[] args) throws MQClientException, InterruptedException {
 
         TransactionCheckListener transactionCheckListener = new TransactionCheckListenerImpl();
         TransactionMQProducer producer = new TransactionMQProducer("please_rename_unique_group_name");
+
         producer.setCheckThreadPoolMinSize(2);
+
         producer.setCheckThreadPoolMaxSize(2);
+
         producer.setCheckRequestHoldMax(2000);
         producer.setTransactionCheckListener(transactionCheckListener);
         producer.start();
 
-        String[] tags = new String[] { "TagA", "TagB", "TagC", "TagD", "TagE" };
+        String[] tags = new String[]{"TagA", "TagB", "TagC", "TagD", "TagE"};
         TransactionExecuterImpl tranExecuter = new TransactionExecuterImpl();
         for (int i = 0; i < 100; i++) {
             try {
                 Message msg =
                         new Message("TopicTest", tags[i % tags.length], "KEY" + i,
-                            ("Hello RocketMQ " + i).getBytes());
+                                ("Hello RocketMQ " + i).getBytes(RemotingHelper.DEFAULT_CHARSET));
                 SendResult sendResult = producer.sendMessageInTransaction(msg, tranExecuter, null);
                 System.out.println(sendResult);
 
                 Thread.sleep(10);
-            }
-            catch (MQClientException e) {
+            } catch (MQClientException e) {
+                e.printStackTrace();
+            } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
             }
         }

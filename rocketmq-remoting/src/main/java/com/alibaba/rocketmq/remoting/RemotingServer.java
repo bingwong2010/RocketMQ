@@ -29,9 +29,9 @@ import java.util.concurrent.ExecutorService;
 
 /**
  * @author shijia.wxr
+ *
  */
 public interface RemotingServer extends RemotingService {
-
 
     void registerProcessor(final int requestCode, final NettyRequestProcessor processor,
                            final ExecutorService executor);

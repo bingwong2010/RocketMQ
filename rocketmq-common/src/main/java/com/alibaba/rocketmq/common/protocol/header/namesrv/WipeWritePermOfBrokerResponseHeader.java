@@ -23,6 +23,7 @@ import com.alibaba.rocketmq.remoting.exception.RemotingCommandException;
 
 /**
  * @author shijia.wxr
+ *
  */
 public class WipeWritePermOfBrokerResponseHeader implements CommandCustomHeader {
     @CFNotNull

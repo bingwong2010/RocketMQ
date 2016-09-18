@@ -34,7 +34,9 @@ import java.util.Set;
 
 
 /**
- * @author manhong.yqd
+ *
+ * @author lansheng.zj
+ *
  */
 public class DeleteTopicSubCommand implements SubCommand {
     @Override
@@ -64,12 +66,14 @@ public class DeleteTopicSubCommand implements SubCommand {
 
 
     public static void deleteTopic(final DefaultMQAdminExt adminExt,//
-            final String clusterName,//
-            final String topic//
+                                   final String clusterName,//
+                                   final String topic//
     ) throws InterruptedException, MQBrokerException, RemotingException, MQClientException {
+
         Set<String> masterSet = CommandUtil.fetchMasterAddrByClusterName(adminExt, clusterName);
         adminExt.deleteTopicInBroker(masterSet, topic);
-        System.out.printf("delete topic [%s] from cluster [%s] success.\n", topic, clusterName);
+        System.out.printf("delete topic [%s] from cluster [%s] success.%n", topic, clusterName);
+
 
         Set<String> nameServerSet = null;
         if (adminExt.getNamesrvAddr() != null) {
@@ -77,8 +81,9 @@ public class DeleteTopicSubCommand implements SubCommand {
             nameServerSet = new HashSet(Arrays.asList(ns));
         }
 
+
         adminExt.deleteTopicInNameServer(nameServerSet, topic);
-        System.out.printf("delete topic [%s] from NameServer success.\n", topic);
+        System.out.printf("delete topic [%s] from NameServer success.%n", topic);
     }
 
 
@@ -98,11 +103,9 @@ public class DeleteTopicSubCommand implements SubCommand {
             }
 
             ServerUtil.printCommandLineHelp("mqadmin " + this.commandName(), options);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             adminExt.shutdown();
         }
     }

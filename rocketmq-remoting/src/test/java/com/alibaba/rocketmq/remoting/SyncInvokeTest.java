@@ -41,8 +41,7 @@ public class SyncInvokeTest {
                 RemotingCommand response = client.invokeSync("localhost:8888", request, 1000 * 3);
                 System.out.println(i + "\t" + "invoke result = " + response);
                 assertTrue(response != null);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
                 throw e;
             }

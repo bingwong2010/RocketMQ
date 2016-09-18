@@ -33,13 +33,6 @@ import java.util.List;
 public class AllocateMessageQueueAveragely implements AllocateMessageQueueStrategy {
     private final Logger log = ClientLogger.getLog();
 
-
-    @Override
-    public String getName() {
-        return "AVG";
-    }
-
-
     @Override
     public List<MessageQueue> allocate(String consumerGroup, String currentCID, List<MessageQueue> mqAll,
                                        List<String> cidAll) {
@@ -73,5 +66,10 @@ public class AllocateMessageQueueAveragely implements AllocateMessageQueueStrate
             result.add(mqAll.get((startIndex + i) % mqAll.size()));
         }
         return result;
+    }
+
+    @Override
+    public String getName() {
+        return "AVG";
     }
 }

@@ -21,8 +21,11 @@ import com.alibaba.rocketmq.remoting.protocol.RemotingSerializable;
 
 
 public class BrokerStatsData extends RemotingSerializable {
+
     private BrokerStatsItem statsMinute;
+
     private BrokerStatsItem statsHour;
+
     private BrokerStatsItem statsDay;
 
 

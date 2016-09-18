@@ -94,16 +94,14 @@ public class MessageQueue implements Comparable<MessageQueue>, Serializable {
         if (brokerName == null) {
             if (other.brokerName != null)
                 return false;
-        }
-        else if (!brokerName.equals(other.brokerName))
+        } else if (!brokerName.equals(other.brokerName))
             return false;
         if (queueId != other.queueId)
             return false;
         if (topic == null) {
             if (other.topic != null)
                 return false;
-        }
-        else if (!topic.equals(other.topic))
+        } else if (!topic.equals(other.topic))
             return false;
         return true;
     }

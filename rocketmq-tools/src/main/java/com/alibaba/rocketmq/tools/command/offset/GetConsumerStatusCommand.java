@@ -29,25 +29,34 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
 
-import java.util.Iterator;
 import java.util.Map;
 
 
 /**
- * @author: manhong.yqd
+ * @author manhong.yqd
+ *
  */
 public class GetConsumerStatusCommand implements SubCommand {
+    public static void main(String[] args) {
+        System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, "127.0.0.1:9876");
+        GetConsumerStatusCommand cmd = new GetConsumerStatusCommand();
+        Options options = ServerUtil.buildCommandlineOptions(new Options());
+        String[] subargs = new String[]{"-t qatest_TopicTest", "-g qatest_consumer_broadcast"};
+        final CommandLine commandLine =
+                ServerUtil.parseCmdLine("mqadmin " + cmd.commandName(), subargs,
+                        cmd.buildCommandlineOptions(options), new PosixParser());
+        cmd.execute(commandLine, options, null);
+    }
+
     @Override
     public String commandName() {
         return "getConsumerStatus";
     }
 
-
     @Override
     public String commandDesc() {
         return "get consumer status from client.";
     }
-
 
     @Override
     public Options buildCommandlineOptions(Options options) {
@@ -66,7 +75,6 @@ public class GetConsumerStatusCommand implements SubCommand {
         return options;
     }
 
-
     @Override
     public void execute(CommandLine commandLine, Options options, RPCHook rpcHook) {
         DefaultMQAdminExt defaultMQAdminExt = new DefaultMQAdminExt(rpcHook);
@@ -82,47 +90,31 @@ public class GetConsumerStatusCommand implements SubCommand {
 
             Map<String, Map<MessageQueue, Long>> consumerStatusTable =
                     defaultMQAdminExt.getConsumeStatus(topic, group, originClientId);
-            System.out.printf("get consumer status from client. group=%s, topic=%s, originClientId=%s\n",
-                group, topic, originClientId);
+            System.out.printf("get consumer status from client. group=%s, topic=%s, originClientId=%s%n",
+                    group, topic, originClientId);
 
-            System.out.printf("%-50s  %-15s  %-15s  %-20s\n",//
-                "#clientId",//
-                "#brokerName", //
-                "#queueId",//
-                "#offset");
+            System.out.printf("%-50s  %-15s  %-15s  %-20s%n",//
+                    "#clientId",//
+                    "#brokerName", //
+                    "#queueId",//
+                    "#offset");
 
-            Iterator<String> clientIterator = consumerStatusTable.keySet().iterator();
-            while (clientIterator.hasNext()) {
-                String clientId = clientIterator.next();
-                Map<MessageQueue, Long> mqTable = consumerStatusTable.get(clientId);
-                Iterator<MessageQueue> mqIterator = mqTable.keySet().iterator();
-                while (mqIterator.hasNext()) {
-                    MessageQueue mq = mqIterator.next();
-                    System.out.printf("%-50s  %-15s  %-15d  %-20d\n",//
-                        UtilAll.frontStringAtLeast(clientId, 50),//
-                        mq.getBrokerName(),//
-                        mq.getQueueId(),//
-                        mqTable.get(mq));
+            for(Map.Entry<String, Map<MessageQueue, Long>> entry: consumerStatusTable.entrySet()){
+                String clientId = entry.getKey();
+                Map<MessageQueue, Long> mqTable = entry.getValue();
+                for(Map.Entry<MessageQueue,Long> entry1: mqTable.entrySet()){
+                    MessageQueue mq = entry1.getKey();
+                    System.out.printf("%-50s  %-15s  %-15d  %-20d%n",//
+                            UtilAll.frontStringAtLeast(clientId, 50),//
+                            mq.getBrokerName(),//
+                            mq.getQueueId(),//
+                            mqTable.get(mq));
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
-    }
-
-
-    public static void main(String[] args) {
-        System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, "127.0.0.1:9876");
-        GetConsumerStatusCommand cmd = new GetConsumerStatusCommand();
-        Options options = ServerUtil.buildCommandlineOptions(new Options());
-        String[] subargs = new String[] { "-t qatest_TopicTest", "-g qatest_consumer_broadcast" };
-        final CommandLine commandLine =
-                ServerUtil.parseCmdLine("mqadmin " + cmd.commandName(), subargs,
-                    cmd.buildCommandlineOptions(options), new PosixParser());
-        cmd.execute(commandLine, options, null);
     }
 }

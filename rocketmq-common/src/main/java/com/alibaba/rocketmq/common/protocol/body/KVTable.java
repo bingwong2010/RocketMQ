@@ -23,6 +23,7 @@ import java.util.HashMap;
 
 /**
  * @author shijia.wxr
+ *
  */
 public class KVTable extends RemotingSerializable {
     private HashMap<String, String> table = new HashMap<String, String>();

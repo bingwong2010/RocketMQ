@@ -16,6 +16,9 @@
  */
 package com.alibaba.rocketmq.broker.mqtrace;
 
+import com.alibaba.rocketmq.common.message.MessageType;
+import com.alibaba.rocketmq.store.stats.BrokerStatsManager;
+
 import java.util.Properties;
 
 
@@ -34,7 +37,56 @@ public class SendMessageContext {
     private String msgProps;
     private Object mqTraceContext;
     private Properties extProps;
+    private String brokerRegionId;
+    private String msgUniqueKey;
+    private long bornTimeStamp;
+    private MessageType msgType = MessageType.Trans_msg_Commit;
+    private boolean isSuccess = false;
+    //For Commercial
+    private String commercialOwner;
+    private BrokerStatsManager.StatsType commercialSendStats;
+    private int commercialSendSize;
+    private int commercialSendTimes;
 
+    public boolean isSuccess() {
+        return isSuccess;
+    }
+
+    public void setSuccess(final boolean success) {
+        isSuccess = success;
+    }
+
+    public MessageType getMsgType() {
+        return msgType;
+    }
+
+    public void setMsgType(final MessageType msgType) {
+        this.msgType = msgType;
+    }
+
+    public String getMsgUniqueKey() {
+        return msgUniqueKey;
+    }
+
+    public void setMsgUniqueKey(final String msgUniqueKey) {
+        this.msgUniqueKey = msgUniqueKey;
+    }
+
+    public long getBornTimeStamp() {
+        return bornTimeStamp;
+    }
+
+    public void setBornTimeStamp(final long bornTimeStamp) {
+        this.bornTimeStamp = bornTimeStamp;
+    }
+
+    public String getBrokerRegionId() {
+        return brokerRegionId;
+    }
+
+    public void setBrokerRegionId(final String brokerRegionId) {
+        this.brokerRegionId = brokerRegionId;
+    }
 
     public String getProducerGroup() {
         return producerGroup;
@@ -173,5 +225,37 @@ public class SendMessageContext {
 
     public void setExtProps(Properties extProps) {
         this.extProps = extProps;
+    }
+
+    public String getCommercialOwner() {
+        return commercialOwner;
+    }
+
+    public void setCommercialOwner(final String commercialOwner) {
+        this.commercialOwner = commercialOwner;
+    }
+
+    public BrokerStatsManager.StatsType getCommercialSendStats() {
+        return commercialSendStats;
+    }
+
+    public void setCommercialSendStats(final BrokerStatsManager.StatsType commercialSendStats) {
+        this.commercialSendStats = commercialSendStats;
+    }
+
+    public int getCommercialSendSize() {
+        return commercialSendSize;
+    }
+
+    public void setCommercialSendSize(final int commercialSendSize) {
+        this.commercialSendSize = commercialSendSize;
+    }
+
+    public int getCommercialSendTimes() {
+        return commercialSendTimes;
+    }
+
+    public void setCommercialSendTimes(final int commercialSendTimes) {
+        this.commercialSendTimes = commercialSendTimes;
     }
 }

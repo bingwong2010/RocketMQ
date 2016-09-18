@@ -29,16 +29,26 @@ import java.io.File;
 
 
 /**
+ *
  * @author shijia.wxr
  * @author lansheng.zj
  */
 public class NamesrvConfig {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.NamesrvLoggerName);
     private String rocketmqHome = System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY, System.getenv(MixAll.ROCKETMQ_HOME_ENV));
+
     private String kvConfigPath = System.getProperty("user.home") + File.separator + "namesrv" + File.separator + "kvConfig.json";
     private String productEnvName = "center";
     private boolean clusterTest = false;
+    private boolean orderMessageEnable = false;
 
+    public boolean isOrderMessageEnable() {
+        return orderMessageEnable;
+    }
+
+    public void setOrderMessageEnable(boolean orderMessageEnable) {
+        this.orderMessageEnable = orderMessageEnable;
+    }
 
     public String getRocketmqHome() {
         return rocketmqHome;

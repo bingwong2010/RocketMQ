@@ -20,6 +20,7 @@ package com.alibaba.rocketmq.filtersrv.filter;
 import com.alibaba.rocketmq.common.UtilAll;
 import com.alibaba.rocketmq.common.constant.LoggerName;
 import com.alibaba.rocketmq.common.filter.FilterAPI;
+import com.alibaba.rocketmq.remoting.common.RemotingHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,19 +47,27 @@ public class DynaCode {
 
     private String outPutClassPath = sourcePath;
 
+
     private ClassLoader parentClassLoader;
+
 
     private List<String> codeStrs;
 
+
     private Map<String/* fullClassName */, Class<?>/* class */> loadClass;
+
 
     private String classpath;
 
+
     private String bootclasspath;
+
 
     private String extdirs;
 
+
     private String encoding = "UTF-8";
+
 
     private String target;
 
@@ -66,11 +75,6 @@ public class DynaCode {
     @SuppressWarnings("unchecked")
     public DynaCode(String code) {
         this(Thread.currentThread().getContextClassLoader(), Arrays.asList(code));
-    }
-
-
-    public DynaCode(List<String> codeStrs) {
-        this(Thread.currentThread().getContextClassLoader(), codeStrs);
     }
 
 
@@ -86,55 +90,63 @@ public class DynaCode {
         this.loadClass = new HashMap<String, Class<?>>(codeStrs.size());
     }
 
+
+    private static String extractClasspath(ClassLoader cl) {
+        StringBuffer buf = new StringBuffer();
+        while (cl != null) {
+            if (cl instanceof URLClassLoader) {
+                URL urls[] = ((URLClassLoader) cl).getURLs();
+                for (int i = 0; i < urls.length; i++) {
+                    if (buf.length() > 0) {
+                        buf.append(File.pathSeparatorChar);
+                    }
+                    String s = urls[i].getFile();
+                    try {
+                        s = URLDecoder.decode(s, "UTF-8");
+                    } catch (UnsupportedEncodingException e) {
+                        continue;
+                    }
+                    File f = new File(s);
+                    buf.append(f.getAbsolutePath());
+                }
+            }
+            cl = cl.getParent();
+        }
+        return buf.toString();
+    }
+
+
+    public DynaCode(List<String> codeStrs) {
+        this(Thread.currentThread().getContextClassLoader(), codeStrs);
+    }
+
+    public static Class<?> compileAndLoadClass(final String className, final String javaSource)
+            throws Exception {
+        String classSimpleName = FilterAPI.simpleClassName(className);
+        String javaCode = javaSource;
+
+        final String newClassSimpleName = classSimpleName + System.currentTimeMillis();
+        String newJavaCode = javaCode.replaceAll(classSimpleName, newClassSimpleName);
+
+        List<String> codes = new ArrayList<String>();
+        codes.add(newJavaCode);
+        DynaCode dc = new DynaCode(codes);
+        dc.compileAndLoadClass();
+        Map<String, Class<?>> map = dc.getLoadClass();
+
+        Class<?> clazz = map.get(getQualifiedName(newJavaCode));
+        return clazz;
+    }
+
     public void compileAndLoadClass() throws Exception {
         String[] sourceFiles = this.uploadSrcFile();
         this.compile(sourceFiles);
         this.loadClass(this.loadClass.keySet());
     }
 
-
-    public static String getClassName(String code) {
-        String className = StringUtils.substringBefore(code, "{");
-        if (StringUtils.isBlank(className)) {
-            return className;
-        }
-        if (StringUtils.contains(code, " class ")) {
-            className = StringUtils.substringAfter(className, " class ");
-            if (StringUtils.contains(className, " extends ")) {
-                className = StringUtils.substringBefore(className, " extends ").trim();
-            }
-            else if (StringUtils.contains(className, " implements ")) {
-                className = StringUtils.trim(StringUtils.substringBefore(className, " implements "));
-            }
-            else {
-                className = StringUtils.trim(className);
-            }
-        }
-        else if (StringUtils.contains(code, " interface ")) {
-            className = StringUtils.substringAfter(className, " interface ");
-            if (StringUtils.contains(className, " extends ")) {
-                className = StringUtils.substringBefore(className, " extends ").trim();
-            }
-            else {
-                className = StringUtils.trim(className);
-            }
-        }
-        else if (StringUtils.contains(code, " enum ")) {
-            className = StringUtils.trim(StringUtils.substringAfter(className, " enum "));
-        }
-        else {
-            return StringUtils.EMPTY;
-        }
-        return className;
+    public Map<String, Class<?>> getLoadClass() {
+        return loadClass;
     }
-
-
-    public static String getPackageName(String code) {
-        String packageName =
-                StringUtils.substringBefore(StringUtils.substringAfter(code, "package "), ";").trim();
-        return packageName;
-    }
-
 
     public static String getQualifiedName(String code) {
         StringBuilder sb = new StringBuilder();
@@ -150,46 +162,6 @@ public class DynaCode {
         return sb.toString();
     }
 
-
-    public static String getFullClassName(String code) {
-        String packageName = getPackageName(code);
-        String className = getClassName(code);
-        return StringUtils.isBlank(packageName) ? className : packageName + "." + className;
-    }
-
-
-    private void loadClass(Set<String> classFullNames) throws ClassNotFoundException, MalformedURLException {
-        synchronized (loadClass) {
-            ClassLoader classLoader =
-                    new URLClassLoader(new URL[] { new File(outPutClassPath).toURI().toURL() },
-                        parentClassLoader);
-            for (String key : classFullNames) {
-                Class<?> classz = classLoader.loadClass(key);
-                if (null != classz) {
-                    loadClass.put(key, classz);
-                    logger.info("Dyna Load Java Class File OK:----> className: " + key);
-                }
-                else {
-                    logger.error("Dyna Load Java Class File Fail:----> className: " + key);
-                }
-            }
-        }
-    }
-
-    private void compile(String[] srcFiles) throws Exception {
-        String args[] = this.buildCompileJavacArgs(srcFiles);
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        if (compiler == null) {
-            throw new NullPointerException(
-                "ToolProvider.getSystemJavaCompiler() return null,please use JDK replace JRE!");
-        }
-        int resultCode = compiler.run(null, null, err, args);
-        if (resultCode != 0) {
-            throw new Exception(err.toString());
-        }
-    }
-
     private String[] uploadSrcFile() throws Exception {
         List<String> srcFileAbsolutePaths = new ArrayList<String>(codeStrs.size());
         for (String code : codeStrs) {
@@ -202,16 +174,17 @@ public class DynaCode {
                     try {
                         if (StringUtils.isBlank(packageName)) {
                             File pathFile = new File(sourcePath);
+
                             if (!pathFile.exists()) {
                                 if (!pathFile.mkdirs()) {
                                     throw new RuntimeException("create PathFile Error!");
                                 }
                             }
                             srcFile = new File(sourcePath + FILE_SP + className + ".java");
-                        }
-                        else {
+                        } else {
                             String srcPath = StringUtils.replace(packageName, ".", FILE_SP);
                             File pathFile = new File(sourcePath + FILE_SP + srcPath);
+
                             if (!pathFile.exists()) {
                                 if (!pathFile.mkdirs()) {
                                     throw new RuntimeException("create PathFile Error!");
@@ -235,8 +208,7 @@ public class DynaCode {
                             bufferWriter.newLine();
                         }
                         bufferWriter.flush();
-                    }
-                    finally {
+                    } finally {
                         if (null != bufferWriter) {
                             bufferWriter.close();
                         }
@@ -245,6 +217,78 @@ public class DynaCode {
             }
         }
         return srcFileAbsolutePaths.toArray(new String[srcFileAbsolutePaths.size()]);
+    }
+
+    private void compile(String[] srcFiles) throws Exception {
+        String args[] = this.buildCompileJavacArgs(srcFiles);
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        if (compiler == null) {
+            throw new NullPointerException(
+                    "ToolProvider.getSystemJavaCompiler() return null,please use JDK replace JRE!");
+        }
+        int resultCode = compiler.run(null, null, err, args);
+        if (resultCode != 0) {
+            throw new Exception(err.toString(RemotingHelper.DEFAULT_CHARSET));
+        }
+    }
+
+    private void loadClass(Set<String> classFullNames) throws ClassNotFoundException, MalformedURLException {
+        synchronized (loadClass) {
+            ClassLoader classLoader =
+                    new URLClassLoader(new URL[]{new File(outPutClassPath).toURI().toURL()},
+                            parentClassLoader);
+            for (String key : classFullNames) {
+                Class<?> classz = classLoader.loadClass(key);
+                if (null != classz) {
+                    loadClass.put(key, classz);
+                    logger.info("Dyna Load Java Class File OK:----> className: " + key);
+                } else {
+                    logger.error("Dyna Load Java Class File Fail:----> className: " + key);
+                }
+            }
+        }
+    }
+
+    public static String getClassName(String code) {
+        String className = StringUtils.substringBefore(code, "{");
+        if (StringUtils.isBlank(className)) {
+            return className;
+        }
+        if (StringUtils.contains(code, " class ")) {
+            className = StringUtils.substringAfter(className, " class ");
+            if (StringUtils.contains(className, " extends ")) {
+                className = StringUtils.substringBefore(className, " extends ").trim();
+            } else if (StringUtils.contains(className, " implements ")) {
+                className = StringUtils.trim(StringUtils.substringBefore(className, " implements "));
+            } else {
+                className = StringUtils.trim(className);
+            }
+        } else if (StringUtils.contains(code, " interface ")) {
+            className = StringUtils.substringAfter(className, " interface ");
+            if (StringUtils.contains(className, " extends ")) {
+                className = StringUtils.substringBefore(className, " extends ").trim();
+            } else {
+                className = StringUtils.trim(className);
+            }
+        } else if (StringUtils.contains(code, " enum ")) {
+            className = StringUtils.trim(StringUtils.substringAfter(className, " enum "));
+        } else {
+            return StringUtils.EMPTY;
+        }
+        return className;
+    }
+
+    public static String getPackageName(String code) {
+        String packageName =
+                StringUtils.substringBefore(StringUtils.substringAfter(code, "package "), ";").trim();
+        return packageName;
+    }
+
+    public static String getFullClassName(String code) {
+        String packageName = getPackageName(code);
+        String className = getClassName(code);
+        return StringUtils.isBlank(packageName) ? className : packageName + "." + className;
     }
 
     private String[] buildCompileJavacArgs(String srcFiles[]) {
@@ -283,130 +327,67 @@ public class DynaCode {
         return args.toArray(new String[args.size()]);
     }
 
-    private static String extractClasspath(ClassLoader cl) {
-        StringBuffer buf = new StringBuffer();
-        while (cl != null) {
-            if (cl instanceof URLClassLoader) {
-                URL urls[] = ((URLClassLoader) cl).getURLs();
-                for (int i = 0; i < urls.length; i++) {
-                    if (buf.length() > 0) {
-                        buf.append(File.pathSeparatorChar);
-                    }
-                    String s = urls[i].getFile();
-                    try {
-                        s = URLDecoder.decode(s, "UTF-8");
-                    }
-                    catch (UnsupportedEncodingException e) {
-                        continue;
-                    }
-                    File f = new File(s);
-                    buf.append(f.getAbsolutePath());
-                }
-            }
-            cl = cl.getParent();
-        }
-        return buf.toString();
-    }
-
-
     public String getOutPutClassPath() {
         return outPutClassPath;
     }
-
 
     public void setOutPutClassPath(String outPutClassPath) {
         this.outPutClassPath = outPutClassPath;
     }
 
-
     public String getSourcePath() {
         return sourcePath;
     }
-
 
     public void setSourcePath(String sourcePath) {
         this.sourcePath = sourcePath;
     }
 
-
     public ClassLoader getParentClassLoader() {
         return parentClassLoader;
     }
-
 
     public void setParentClassLoader(ClassLoader parentClassLoader) {
         this.parentClassLoader = parentClassLoader;
     }
 
-
     public String getClasspath() {
         return classpath;
     }
-
 
     public void setClasspath(String classpath) {
         this.classpath = classpath;
     }
 
-
     public String getBootclasspath() {
         return bootclasspath;
     }
-
 
     public void setBootclasspath(String bootclasspath) {
         this.bootclasspath = bootclasspath;
     }
 
-
     public String getExtdirs() {
         return extdirs;
     }
-
 
     public void setExtdirs(String extdirs) {
         this.extdirs = extdirs;
     }
 
-
     public String getEncoding() {
         return encoding;
     }
-
 
     public void setEncoding(String encoding) {
         this.encoding = encoding;
     }
 
-
     public String getTarget() {
         return target;
     }
 
-
     public void setTarget(String target) {
         this.target = target;
-    }
-
-
-    public Map<String, Class<?>> getLoadClass() {
-        return loadClass;
-    }
-
-
-    public static Class<?> compileAndLoadClass(final String className, final String javaSource)
-            throws Exception {
-        String classSimpleName = FilterAPI.simpleClassName(className);
-        String javaCode = new String(javaSource);
-        final String newClassSimpleName = classSimpleName + System.currentTimeMillis();
-        String newJavaCode = javaCode.replaceAll(classSimpleName, newClassSimpleName);
-
-        List<String> codes = new ArrayList<String>();
-        codes.add(newJavaCode);
-        DynaCode dc = new DynaCode(codes);
-        dc.compileAndLoadClass();
-        Map<String, Class<?>> map = dc.getLoadClass();
-        Class<?> clazz = map.get(getQualifiedName(newJavaCode));
-        return clazz;
     }
 }

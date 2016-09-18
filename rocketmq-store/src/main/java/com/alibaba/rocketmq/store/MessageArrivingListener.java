@@ -18,5 +18,5 @@
 package com.alibaba.rocketmq.store;
 
 public interface MessageArrivingListener {
-     void arriving(String topic, int queueId, long logicOffset);
+    void arriving(String topic, int queueId, long logicOffset, long tagsCode);
 }

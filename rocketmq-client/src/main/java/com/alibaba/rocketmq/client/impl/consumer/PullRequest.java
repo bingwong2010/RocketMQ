@@ -27,7 +27,15 @@ public class PullRequest {
     private MessageQueue messageQueue;
     private ProcessQueue processQueue;
     private long nextOffset;
+    private boolean lockedFirst = false;
 
+    public boolean isLockedFirst() {
+        return lockedFirst;
+    }
+
+    public void setLockedFirst(boolean lockedFirst) {
+        this.lockedFirst = lockedFirst;
+    }
 
     public String getConsumerGroup() {
         return consumerGroup;
@@ -58,14 +66,6 @@ public class PullRequest {
         this.nextOffset = nextOffset;
     }
 
-
-    @Override
-    public String toString() {
-        return "PullRequest [consumerGroup=" + consumerGroup + ", messageQueue=" + messageQueue
-                + ", nextOffset=" + nextOffset + "]";
-    }
-
-
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -74,7 +74,6 @@ public class PullRequest {
         result = prime * result + ((messageQueue == null) ? 0 : messageQueue.hashCode());
         return result;
     }
-
 
     @Override
     public boolean equals(Object obj) {
@@ -88,18 +87,21 @@ public class PullRequest {
         if (consumerGroup == null) {
             if (other.consumerGroup != null)
                 return false;
-        }
-        else if (!consumerGroup.equals(other.consumerGroup))
+        } else if (!consumerGroup.equals(other.consumerGroup))
             return false;
         if (messageQueue == null) {
             if (other.messageQueue != null)
                 return false;
-        }
-        else if (!messageQueue.equals(other.messageQueue))
+        } else if (!messageQueue.equals(other.messageQueue))
             return false;
         return true;
     }
 
+    @Override
+    public String toString() {
+        return "PullRequest [consumerGroup=" + consumerGroup + ", messageQueue=" + messageQueue
+                + ", nextOffset=" + nextOffset + "]";
+    }
 
     public ProcessQueue getProcessQueue() {
         return processQueue;

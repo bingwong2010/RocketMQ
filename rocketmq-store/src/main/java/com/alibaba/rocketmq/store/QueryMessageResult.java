@@ -25,11 +25,14 @@ import java.util.List;
  * @author shijia.wxr
  */
 public class QueryMessageResult {
+
     private final List<SelectMapedBufferResult> messageMapedList =
             new ArrayList<SelectMapedBufferResult>(100);
+
     private final List<ByteBuffer> messageBufferList = new ArrayList<ByteBuffer>(100);
     private long indexLastUpdateTimestamp;
     private long indexLastUpdatePhyoffset;
+
     private int bufferTotalSize = 0;
 
 

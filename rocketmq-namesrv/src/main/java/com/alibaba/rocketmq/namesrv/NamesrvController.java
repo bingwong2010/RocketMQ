@@ -41,16 +41,21 @@ import java.util.concurrent.TimeUnit;
  */
 public class NamesrvController {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.NamesrvLoggerName);
+
     private final NamesrvConfig namesrvConfig;
+
     private final NettyServerConfig nettyServerConfig;
-    private RemotingServer remotingServer;
-    private BrokerHousekeepingService brokerHousekeepingService;
-    private ExecutorService remotingExecutor;
 
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
-        "NSScheduledThread"));
+            "NSScheduledThread"));
     private final KVConfigManager kvConfigManager;
     private final RouteInfoManager routeInfoManager;
+
+    private RemotingServer remotingServer;
+
+    private BrokerHousekeepingService brokerHousekeepingService;
+
+    private ExecutorService remotingExecutor;
 
 
     public NamesrvController(NamesrvConfig namesrvConfig, NettyServerConfig nettyServerConfig) {
@@ -63,14 +68,18 @@ public class NamesrvController {
 
 
     public boolean initialize() {
+
         this.kvConfigManager.load();
 
+
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
+
 
         this.remotingExecutor =
                 Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_"));
 
         this.registerProcessor();
+
 
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
@@ -88,24 +97,17 @@ public class NamesrvController {
             }
         }, 1, 10, TimeUnit.MINUTES);
 
-        // this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-        //
-        // @Override
-        // public void run() {
-        // NamesrvController.this.routeInfoManager.printAllPeriodically();
-        // }
-        // }, 1, 5, TimeUnit.MINUTES);
-
         return true;
     }
 
 
     private void registerProcessor() {
         if (namesrvConfig.isClusterTest()) {
+
             this.remotingServer.registerDefaultProcessor(new ClusterTestRequestProcessor(this, namesrvConfig.getProductEnvName()),
-                this.remotingExecutor);
-        }
-        else {
+                    this.remotingExecutor);
+        } else {
+
             this.remotingServer.registerDefaultProcessor(new DefaultRequestProcessor(this), this.remotingExecutor);
         }
     }

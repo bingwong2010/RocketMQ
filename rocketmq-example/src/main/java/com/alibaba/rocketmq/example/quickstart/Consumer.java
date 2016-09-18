@@ -26,7 +26,6 @@ import com.alibaba.rocketmq.common.message.MessageExt;
 
 import java.util.List;
 
-
 public class Consumer {
 
     public static void main(String[] args) throws InterruptedException, MQClientException {
@@ -40,7 +39,7 @@ public class Consumer {
 
             @Override
             public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
-                    ConsumeConcurrentlyContext context) {
+                                                            ConsumeConcurrentlyContext context) {
                 System.out.println(Thread.currentThread().getName() + " Receive New Messages: " + msgs);
                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
             }

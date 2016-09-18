@@ -22,9 +22,7 @@ import com.alibaba.rocketmq.client.exception.MQBrokerException;
 import com.alibaba.rocketmq.client.exception.MQClientException;
 import com.alibaba.rocketmq.client.impl.producer.DefaultMQProducerImpl;
 import com.alibaba.rocketmq.common.MixAll;
-import com.alibaba.rocketmq.common.message.Message;
-import com.alibaba.rocketmq.common.message.MessageExt;
-import com.alibaba.rocketmq.common.message.MessageQueue;
+import com.alibaba.rocketmq.common.message.*;
 import com.alibaba.rocketmq.remoting.RPCHook;
 import com.alibaba.rocketmq.remoting.exception.RemotingException;
 
@@ -45,20 +43,18 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     private int sendMsgTimeout = 3000;
     private int compressMsgBodyOverHowmuch = 1024 * 4;
     private int retryTimesWhenSendFailed = 2;
+    private int retryTimesWhenSendAsyncFailed = 2;
+
     private boolean retryAnotherBrokerWhenNotStoreOK = false;
-    private int maxMessageSize = 1024 * 128;
-
-    /**
-     * ""
-     */
-    public static final String SendMessageWithVIPChannelProperty = "com.rocketmq.sendMessageWithVIPChannel";
-
-
-    private boolean sendMessageWithVIPChannel = Boolean.parseBoolean(System.getProperty(SendMessageWithVIPChannelProperty, "false"));
-
-
+    private int maxMessageSize = 1024 * 1024 * 4; // 4M
     public DefaultMQProducer() {
         this(MixAll.DEFAULT_PRODUCER_GROUP, null);
+    }
+
+
+    public DefaultMQProducer(final String producerGroup, RPCHook rpcHook) {
+        this.producerGroup = producerGroup;
+        defaultMQProducerImpl = new DefaultMQProducerImpl(this, rpcHook);
     }
 
 
@@ -72,17 +68,10 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     }
 
 
-    public DefaultMQProducer(final String producerGroup, RPCHook rpcHook) {
-        this.producerGroup = producerGroup;
-        defaultMQProducerImpl = new DefaultMQProducerImpl(this, rpcHook);
-    }
-
-
     @Override
     public void start() throws MQClientException {
         this.defaultMQProducerImpl.start();
     }
-
 
     @Override
     public void shutdown() {
@@ -115,8 +104,8 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
 
 
     @Override
-    public void send(Message msg, SendCallback sendCallback, long timeout) throws MQClientException, RemotingException,
-            InterruptedException {
+    public void send(Message msg, SendCallback sendCallback, long timeout)
+            throws MQClientException, RemotingException, InterruptedException {
         this.defaultMQProducerImpl.send(msg, sendCallback, timeout);
     }
 
@@ -128,29 +117,29 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
 
 
     @Override
-    public SendResult send(Message msg, MessageQueue mq) throws MQClientException, RemotingException, MQBrokerException,
-            InterruptedException {
+    public SendResult send(Message msg, MessageQueue mq)
+            throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         return this.defaultMQProducerImpl.send(msg, mq);
     }
 
 
     @Override
-    public SendResult send(Message msg, MessageQueue mq, long timeout) throws MQClientException, RemotingException, MQBrokerException,
-            InterruptedException {
+    public SendResult send(Message msg, MessageQueue mq, long timeout)
+            throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         return this.defaultMQProducerImpl.send(msg, mq, timeout);
     }
 
 
     @Override
-    public void send(Message msg, MessageQueue mq, SendCallback sendCallback) throws MQClientException, RemotingException,
-            InterruptedException {
+    public void send(Message msg, MessageQueue mq, SendCallback sendCallback)
+            throws MQClientException, RemotingException, InterruptedException {
         this.defaultMQProducerImpl.send(msg, mq, sendCallback);
     }
 
 
     @Override
-    public void send(Message msg, MessageQueue mq, SendCallback sendCallback, long timeout) throws MQClientException, RemotingException,
-            InterruptedException {
+    public void send(Message msg, MessageQueue mq, SendCallback sendCallback, long timeout)
+            throws MQClientException, RemotingException, InterruptedException {
         this.defaultMQProducerImpl.send(msg, mq, sendCallback, timeout);
     }
 
@@ -162,22 +151,22 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
 
 
     @Override
-    public SendResult send(Message msg, MessageQueueSelector selector, Object arg) throws MQClientException, RemotingException,
-            MQBrokerException, InterruptedException {
+    public SendResult send(Message msg, MessageQueueSelector selector, Object arg)
+            throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         return this.defaultMQProducerImpl.send(msg, selector, arg);
     }
 
 
     @Override
-    public SendResult send(Message msg, MessageQueueSelector selector, Object arg, long timeout) throws MQClientException,
-            RemotingException, MQBrokerException, InterruptedException {
+    public SendResult send(Message msg, MessageQueueSelector selector, Object arg, long timeout)
+            throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         return this.defaultMQProducerImpl.send(msg, selector, arg, timeout);
     }
 
 
     @Override
-    public void send(Message msg, MessageQueueSelector selector, Object arg, SendCallback sendCallback) throws MQClientException,
-            RemotingException, InterruptedException {
+    public void send(Message msg, MessageQueueSelector selector, Object arg, SendCallback sendCallback)
+            throws MQClientException, RemotingException, InterruptedException {
         this.defaultMQProducerImpl.send(msg, selector, arg, sendCallback);
     }
 
@@ -190,8 +179,8 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
 
 
     @Override
-    public void sendOneway(Message msg, MessageQueueSelector selector, Object arg) throws MQClientException, RemotingException,
-            InterruptedException {
+    public void sendOneway(Message msg, MessageQueueSelector selector, Object arg)
+            throws MQClientException, RemotingException, InterruptedException {
         this.defaultMQProducerImpl.sendOneway(msg, selector, arg);
     }
 
@@ -240,17 +229,27 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
 
 
     @Override
-    public MessageExt viewMessage(String msgId) throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
-        return this.defaultMQProducerImpl.viewMessage(msgId);
+    public MessageExt viewMessage(String offsetMsgId) throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
+        return this.defaultMQProducerImpl.viewMessage(offsetMsgId);
     }
 
 
     @Override
-    public QueryResult queryMessage(String topic, String key, int maxNum, long begin, long end) throws MQClientException,
-            InterruptedException {
+    public QueryResult queryMessage(String topic, String key, int maxNum, long begin, long end)
+            throws MQClientException, InterruptedException {
         return this.defaultMQProducerImpl.queryMessage(topic, key, maxNum, begin, end);
     }
 
+
+    @Override
+    public MessageExt viewMessage(String topic, String msgId) throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
+        try {
+            MessageId oldMsgId = MessageDecoder.decodeMessageId(msgId);
+            return this.viewMessage(msgId);
+        } catch (Exception e) {
+        }
+        return this.defaultMQProducerImpl.queryMessageByUniqKey(topic, msgId);
+    }
 
     public String getProducerGroup() {
         return producerGroup;
@@ -336,11 +335,46 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
         this.retryTimesWhenSendFailed = retryTimesWhenSendFailed;
     }
 
+
     public boolean isSendMessageWithVIPChannel() {
-        return sendMessageWithVIPChannel;
+        return isVipChannelEnabled();
     }
 
+
     public void setSendMessageWithVIPChannel(final boolean sendMessageWithVIPChannel) {
-        this.sendMessageWithVIPChannel = sendMessageWithVIPChannel;
+        this.setVipChannelEnabled(sendMessageWithVIPChannel);
+    }
+
+
+    public long[] getNotAvailableDuration() {
+        return this.defaultMQProducerImpl.getNotAvailableDuration();
+    }
+
+    public void setNotAvailableDuration(final long[] notAvailableDuration) {
+        this.defaultMQProducerImpl.setNotAvailableDuration(notAvailableDuration);
+    }
+
+    public long[] getLatencyMax() {
+        return this.defaultMQProducerImpl.getLatencyMax();
+    }
+
+    public void setLatencyMax(final long[] latencyMax) {
+        this.defaultMQProducerImpl.setLatencyMax(latencyMax);
+    }
+
+    public boolean isSendLatencyFaultEnable() {
+        return this.defaultMQProducerImpl.isSendLatencyFaultEnable();
+    }
+
+    public void setSendLatencyFaultEnable(final boolean sendLatencyFaultEnable) {
+        this.defaultMQProducerImpl.setSendLatencyFaultEnable(sendLatencyFaultEnable);
+    }
+
+    public int getRetryTimesWhenSendAsyncFailed() {
+        return retryTimesWhenSendAsyncFailed;
+    }
+
+    public void setRetryTimesWhenSendAsyncFailed(final int retryTimesWhenSendAsyncFailed) {
+        this.retryTimesWhenSendAsyncFailed = retryTimesWhenSendAsyncFailed;
     }
 }

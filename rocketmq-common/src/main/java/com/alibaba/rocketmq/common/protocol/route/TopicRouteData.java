@@ -79,16 +79,21 @@ public class TopicRouteData extends RemotingSerializable {
         this.brokerDatas = brokerDatas;
     }
 
+    public HashMap<String, List<String>> getFilterServerTable() {
+        return filterServerTable;
+    }
+
+    public void setFilterServerTable(HashMap<String, List<String>> filterServerTable) {
+        this.filterServerTable = filterServerTable;
+    }
 
     public String getOrderTopicConf() {
         return orderTopicConf;
     }
 
-
     public void setOrderTopicConf(String orderTopicConf) {
         this.orderTopicConf = orderTopicConf;
     }
-
 
     @Override
     public int hashCode() {
@@ -100,7 +105,6 @@ public class TopicRouteData extends RemotingSerializable {
         result = prime * result + ((filterServerTable == null) ? 0 : filterServerTable.hashCode());
         return result;
     }
-
 
     @Override
     public boolean equals(Object obj) {
@@ -114,40 +118,25 @@ public class TopicRouteData extends RemotingSerializable {
         if (brokerDatas == null) {
             if (other.brokerDatas != null)
                 return false;
-        }
-        else if (!brokerDatas.equals(other.brokerDatas))
+        } else if (!brokerDatas.equals(other.brokerDatas))
             return false;
         if (orderTopicConf == null) {
             if (other.orderTopicConf != null)
                 return false;
-        }
-        else if (!orderTopicConf.equals(other.orderTopicConf))
+        } else if (!orderTopicConf.equals(other.orderTopicConf))
             return false;
         if (queueDatas == null) {
             if (other.queueDatas != null)
                 return false;
-        }
-        else if (!queueDatas.equals(other.queueDatas))
+        } else if (!queueDatas.equals(other.queueDatas))
             return false;
         if (filterServerTable == null) {
             if (other.filterServerTable != null)
                 return false;
-        }
-        else if (!filterServerTable.equals(other.filterServerTable))
+        } else if (!filterServerTable.equals(other.filterServerTable))
             return false;
         return true;
     }
-
-
-    public HashMap<String, List<String>> getFilterServerTable() {
-        return filterServerTable;
-    }
-
-
-    public void setFilterServerTable(HashMap<String, List<String>> filterServerTable) {
-        this.filterServerTable = filterServerTable;
-    }
-
 
     @Override
     public String toString() {

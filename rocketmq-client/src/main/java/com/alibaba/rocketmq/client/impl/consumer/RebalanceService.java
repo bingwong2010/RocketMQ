@@ -16,29 +16,27 @@
  */
 package com.alibaba.rocketmq.client.impl.consumer;
 
-import org.slf4j.Logger;
-
 import com.alibaba.rocketmq.client.impl.factory.MQClientInstance;
 import com.alibaba.rocketmq.client.log.ClientLogger;
 import com.alibaba.rocketmq.common.ServiceThread;
+import org.slf4j.Logger;
 
 
 /**
  * Rebalance Service
- * 
+ *
  * @author shijia.wxr
  */
 public class RebalanceService extends ServiceThread {
+    private static long WaitInterval =
+            Long.parseLong(System.getProperty(
+                    "rocketmq.client.rebalance.waitInterval", "20000"));
     private final Logger log = ClientLogger.getLog();
     private final MQClientInstance mqClientFactory;
-
 
     public RebalanceService(MQClientInstance mqClientFactory) {
         this.mqClientFactory = mqClientFactory;
     }
-
-    private static long WaitInterval = 1000 * 10;
-
 
     @Override
     public void run() {

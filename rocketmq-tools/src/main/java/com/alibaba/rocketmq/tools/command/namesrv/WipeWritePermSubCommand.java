@@ -28,6 +28,7 @@ import java.util.List;
 
 /**
  * @author shijia.wxr
+ *
  */
 public class WipeWritePermSubCommand implements SubCommand {
 
@@ -66,27 +67,24 @@ public class WipeWritePermSubCommand implements SubCommand {
                 for (String namesrvAddr : namesrvList) {
                     try {
                         int wipeTopicCount = defaultMQAdminExt.wipeWritePermOfBroker(namesrvAddr, brokerName);
-                        System.out.printf("wipe write perm of broker[%s] in name server[%s] OK, %d\n",//
-                            brokerName,//
-                            namesrvAddr,//
-                            wipeTopicCount//
-                            );
-                    }
-                    catch (Exception e) {
-                        System.out.printf("wipe write perm of broker[%s] in name server[%s] Failed\n",//
-                            brokerName,//
-                            namesrvAddr//
-                            );
+                        System.out.printf("wipe write perm of broker[%s] in name server[%s] OK, %d%n",//
+                                brokerName,//
+                                namesrvAddr,//
+                                wipeTopicCount//
+                        );
+                    } catch (Exception e) {
+                        System.out.printf("wipe write perm of broker[%s] in name server[%s] Failed%n",//
+                                brokerName,//
+                                namesrvAddr//
+                        );
 
                         e.printStackTrace();
                     }
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
     }

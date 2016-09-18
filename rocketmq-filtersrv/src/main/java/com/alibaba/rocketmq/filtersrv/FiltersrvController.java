@@ -42,24 +42,24 @@ import java.util.concurrent.TimeUnit;
  */
 public class FiltersrvController {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.FiltersrvLoggerName);
-    private final FiltersrvConfig filtersrvConfig;
-    private final NettyServerConfig nettyServerConfig;
-    private RemotingServer remotingServer;
-    private ExecutorService remotingExecutor;
 
+    private final FiltersrvConfig filtersrvConfig;
+
+    private final NettyServerConfig nettyServerConfig;
     private final FilterClassManager filterClassManager;
 
     private final FilterServerOuterAPI filterServerOuterAPI = new FilterServerOuterAPI();
-
     private final DefaultMQPullConsumer defaultMQPullConsumer = new DefaultMQPullConsumer(
-        MixAll.FILTERSRV_CONSUMER_GROUP);
-
-    private volatile String brokerName = null;
+            MixAll.FILTERSRV_CONSUMER_GROUP);
 
     private final ScheduledExecutorService scheduledExecutorService = Executors
-        .newSingleThreadScheduledExecutor(new ThreadFactoryImpl("FSScheduledThread"));
-
+            .newSingleThreadScheduledExecutor(new ThreadFactoryImpl("FSScheduledThread"));
     private final FilterServerStatsManager filterServerStatsManager = new FilterServerStatsManager();
+
+    private RemotingServer remotingServer;
+
+    private ExecutorService remotingExecutor;
+    private volatile String brokerName = null;
 
 
     public FiltersrvController(FiltersrvConfig filtersrvConfig, NettyServerConfig nettyServerConfig) {
@@ -70,15 +70,19 @@ public class FiltersrvController {
 
 
     public boolean initialize() {
+
         MixAll.printObjectProperties(log, this.filtersrvConfig);
+
 
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig);
 
+
         this.remotingExecutor =
                 Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(),
-                    new ThreadFactoryImpl("RemotingExecutorThread_"));
+                        new ThreadFactoryImpl("RemotingExecutorThread_"));
 
         this.registerProcessor();
+
 
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
@@ -89,9 +93,9 @@ public class FiltersrvController {
         }, 3, 10, TimeUnit.SECONDS);
 
         this.defaultMQPullConsumer.setBrokerSuspendMaxTimeMillis(this.defaultMQPullConsumer
-            .getBrokerSuspendMaxTimeMillis() - 1000);
+                .getBrokerSuspendMaxTimeMillis() - 1000);
         this.defaultMQPullConsumer.setConsumerTimeoutMillisWhenSuspend(this.defaultMQPullConsumer
-            .getConsumerTimeoutMillisWhenSuspend() - 1000);
+                .getConsumerTimeoutMillisWhenSuspend() - 1000);
 
         this.defaultMQPullConsumer.setNamesrvAddr(this.filtersrvConfig.getNamesrvAddr());
         this.defaultMQPullConsumer.setInstanceName(String.valueOf(UtilAll.getPid()));
@@ -99,52 +103,48 @@ public class FiltersrvController {
         return true;
     }
 
-
-    public String localAddr() {
-        return String.format("%s:%d", this.filtersrvConfig.getFilterServerIP(),
-            this.remotingServer.localListenPort());
+    private void registerProcessor() {
+        this.remotingServer
+                .registerDefaultProcessor(new DefaultRequestProcessor(this), this.remotingExecutor);
     }
-
 
     public void registerFilterServerToBroker() {
         try {
             RegisterFilterServerResponseHeader responseHeader =
                     this.filterServerOuterAPI.registerFilterServerToBroker(
-                        this.filtersrvConfig.getConnectWhichBroker(), this.localAddr());
+                            this.filtersrvConfig.getConnectWhichBroker(), this.localAddr());
             this.defaultMQPullConsumer.getDefaultMQPullConsumerImpl().getPullAPIWrapper()
-                .setDefaultBrokerId(responseHeader.getBrokerId());
+                    .setDefaultBrokerId(responseHeader.getBrokerId());
 
             if (null == this.brokerName) {
                 this.brokerName = responseHeader.getBrokerName();
             }
 
             log.info("register filter server<{}> to broker<{}> OK, Return: {} {}", //
-                this.localAddr(),//
-                this.filtersrvConfig.getConnectWhichBroker(),//
-                responseHeader.getBrokerName(),//
-                responseHeader.getBrokerId()//
+                    this.localAddr(),//
+                    this.filtersrvConfig.getConnectWhichBroker(),//
+                    responseHeader.getBrokerName(),//
+                    responseHeader.getBrokerId()//
             );
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.warn("register filter server Exception", e);
+
             log.warn("access broker failed, kill oneself");
             System.exit(-1);
         }
     }
 
-
-    private void registerProcessor() {
-        this.remotingServer
-            .registerDefaultProcessor(new DefaultRequestProcessor(this), this.remotingExecutor);
+    public String localAddr() {
+        return String.format("%s:%d", this.filtersrvConfig.getFilterServerIP(),
+                this.remotingServer.localListenPort());
     }
-
 
     public void start() throws Exception {
         this.defaultMQPullConsumer.start();
         this.remotingServer.start();
         this.filterServerOuterAPI.start();
         this.defaultMQPullConsumer.getDefaultMQPullConsumerImpl().getPullAPIWrapper()
-            .setConnectBrokerByUser(true);
+                .setConnectBrokerByUser(true);
         this.filterClassManager.start();
         this.filterServerStatsManager.start();
     }

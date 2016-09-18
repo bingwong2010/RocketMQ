@@ -23,7 +23,9 @@ import java.util.Map;
 
 
 /**
+ *
  * @author shijia.wxr
+ *
  */
 public class Message implements Serializable {
     private static final long serialVersionUID = 8445773977080406428L;
@@ -43,16 +45,6 @@ public class Message implements Serializable {
     }
 
 
-    public Message(String topic, String tags, byte[] body) {
-        this(topic, tags, "", 0, body, true);
-    }
-
-
-    public Message(String topic, String tags, String keys, byte[] body) {
-        this(topic, tags, keys, 0, body, true);
-    }
-
-
     public Message(String topic, String tags, String keys, int flag, byte[] body, boolean waitStoreMsgOK) {
         this.topic = topic;
         this.flag = flag;
@@ -67,13 +59,9 @@ public class Message implements Serializable {
         this.setWaitStoreMsgOK(waitStoreMsgOK);
     }
 
-
-    void clearProperty(final String name) {
-        if (null != this.properties) {
-            this.properties.remove(name);
-        }
+    public void setKeys(String keys) {
+        this.putProperty(MessageConst.PROPERTY_KEYS, keys);
     }
-
 
     void putProperty(final String name, final String value) {
         if (null == this.properties) {
@@ -84,19 +72,32 @@ public class Message implements Serializable {
     }
 
 
+    public Message(String topic, String tags, byte[] body) {
+        this(topic, tags, "", 0, body, true);
+    }
+
+
+    public Message(String topic, String tags, String keys, byte[] body) {
+        this(topic, tags, keys, 0, body, true);
+    }
+
+    void clearProperty(final String name) {
+        if (null != this.properties) {
+            this.properties.remove(name);
+        }
+    }
+
     public void putUserProperty(final String name, final String value) {
         if (MessageConst.systemKeySet.contains(name)) {
             throw new RuntimeException(String.format(
-                "The Property<%s> is used by system, input another please", name));
+                    "The Property<%s> is used by system, input another please", name));
         }
         this.putProperty(name, value);
     }
 
-
     public String getUserProperty(final String name) {
         return this.getProperty(name);
     }
-
 
     public String getProperty(final String name) {
         if (null == this.properties) {
@@ -106,36 +107,25 @@ public class Message implements Serializable {
         return this.properties.get(name);
     }
 
-
     public String getTopic() {
         return topic;
     }
-
 
     public void setTopic(String topic) {
         this.topic = topic;
     }
 
-
     public String getTags() {
         return this.getProperty(MessageConst.PROPERTY_TAGS);
     }
-
 
     public void setTags(String tags) {
         this.putProperty(MessageConst.PROPERTY_TAGS, tags);
     }
 
-
     public String getKeys() {
         return this.getProperty(MessageConst.PROPERTY_KEYS);
     }
-
-
-    public void setKeys(String keys) {
-        this.putProperty(MessageConst.PROPERTY_KEYS, keys);
-    }
-
 
     public void setKeys(Collection<String> keys) {
         StringBuffer sb = new StringBuffer();
@@ -206,16 +196,13 @@ public class Message implements Serializable {
         this.properties = properties;
     }
 
-
-    public void setBuyerId(String buyerId) {
-        putProperty(MessageConst.PROPERTY_BUYER_ID, buyerId);
-    }
-
-
     public String getBuyerId() {
         return getProperty(MessageConst.PROPERTY_BUYER_ID);
     }
 
+    public void setBuyerId(String buyerId) {
+        putProperty(MessageConst.PROPERTY_BUYER_ID, buyerId);
+    }
 
     @Override
     public String toString() {

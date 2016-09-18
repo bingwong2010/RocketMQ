@@ -87,14 +87,14 @@ public class ConsumerProgressSubCommand implements SubCommand {
                 mqList.addAll(consumeStats.getOffsetTable().keySet());
                 Collections.sort(mqList);
 
-                System.out.printf("%-32s  %-32s  %-4s  %-20s  %-20s  %-20s  %s\n",//
-                    "#Topic",//
-                    "#Broker Name",//
-                    "#QID",//
-                    "#Broker Offset",//
-                    "#Consumer Offset",//
-                    "#Diff", //
-                    "#LastTime");
+                System.out.printf("%-32s  %-32s  %-4s  %-20s  %-20s  %-20s  %s%n",//
+                        "#Topic",//
+                        "#Broker Name",//
+                        "#QID",//
+                        "#Broker Offset",//
+                        "#Consumer Offset",//
+                        "#Diff", //
+                        "#LastTime");
 
                 long diffTotal = 0L;
 
@@ -104,15 +104,13 @@ public class ConsumerProgressSubCommand implements SubCommand {
                     long diff = offsetWrapper.getBrokerOffset() - offsetWrapper.getConsumerOffset();
                     diffTotal += diff;
 
-                    String lastTime = "-";
+                    String lastTime = "";
                     try {
                         lastTime = UtilAll.formatDate(new Date(offsetWrapper.getLastTimestamp()), UtilAll.yyyy_MM_dd_HH_mm_ss);
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         //
                     }
-                    if (offsetWrapper.getLastTimestamp() > 0)
-                        System.out.printf("%-32s  %-32s  %-4d  %-20d  %-20d  %-20d  %s\n",//
+                    System.out.printf("%-32s  %-32s  %-4d  %-20d  %-20d  %-20d  %s%n",//
                             UtilAll.frontStringAtLeast(mq.getTopic(), 32),//
                             UtilAll.frontStringAtLeast(mq.getBrokerName(), 32),//
                             mq.getQueueId(),//
@@ -120,42 +118,40 @@ public class ConsumerProgressSubCommand implements SubCommand {
                             offsetWrapper.getConsumerOffset(),//
                             diff, //
                             lastTime//
-                            );
+                    );
                 }
 
                 System.out.println("");
-                System.out.printf("Consume TPS: %s\n", consumeStats.getConsumeTps());
-                System.out.printf("Diff Total: %d\n", diffTotal);
+                System.out.printf("Consume TPS: %s%n", consumeStats.getConsumeTps());
+                System.out.printf("Diff Total: %d%n", diffTotal);
             }
+
             else {
-                System.out.printf("%-32s  %-6s  %-24s %-5s  %-14s  %-7s  %s\n",//
-                    "#Group",//
-                    "#Count",//
-                    "#Version",//
-                    "#Type",//
-                    "#Model",//
-                    "#TPS",//
-                    "#Diff Total"//
+                System.out.printf("%-32s  %-6s  %-24s %-5s  %-14s  %-7s  %s%n",//
+                        "#Group",//
+                        "#Count",//
+                        "#Version",//
+                        "#Type",//
+                        "#Model",//
+                        "#TPS",//
+                        "#Diff Total"//
                 );
                 TopicList topicList = defaultMQAdminExt.fetchAllTopicList();
                 for (String topic : topicList.getTopicList()) {
                     if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                         String consumerGroup = topic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
-
                         try {
                             ConsumeStats consumeStats = null;
                             try {
                                 consumeStats = defaultMQAdminExt.examineConsumeStats(consumerGroup);
-                            }
-                            catch (Exception e) {
+                            } catch (Exception e) {
                                 log.warn("examineConsumeStats exception, " + consumerGroup, e);
                             }
 
                             ConsumerConnection cc = null;
                             try {
                                 cc = defaultMQAdminExt.examineConsumerConnectionInfo(consumerGroup);
-                            }
-                            catch (Exception e) {
+                            } catch (Exception e) {
                                 log.warn("examineConsumerConnectionInfo exception, " + consumerGroup, e);
                             }
 
@@ -174,27 +170,24 @@ public class ConsumerProgressSubCommand implements SubCommand {
                                 groupConsumeInfo.setVersion(cc.computeMinVersion());
                             }
 
-                            System.out.printf("%-32s  %-6d  %-24s %-5s  %-14s  %-7d  %d\n",//
-                                UtilAll.frontStringAtLeast(groupConsumeInfo.getGroup(), 32),//
-                                groupConsumeInfo.getCount(),//
-                                groupConsumeInfo.getCount() > 0 ? groupConsumeInfo.versionDesc() : "OFFLINE",//
-                                groupConsumeInfo.consumeTypeDesc(),//
-                                groupConsumeInfo.messageModelDesc(),//
-                                groupConsumeInfo.getConsumeTps(),//
-                                groupConsumeInfo.getDiffTotal()//
-                                );
-                        }
-                        catch (Exception e) {
+                            System.out.printf("%-32s  %-6d  %-24s %-5s  %-14s  %-7d  %d%n",//
+                                    UtilAll.frontStringAtLeast(groupConsumeInfo.getGroup(), 32),//
+                                    groupConsumeInfo.getCount(),//
+                                    groupConsumeInfo.getCount() > 0 ? groupConsumeInfo.versionDesc() : "OFFLINE",//
+                                    groupConsumeInfo.consumeTypeDesc(),//
+                                    groupConsumeInfo.messageModelDesc(),//
+                                    groupConsumeInfo.getConsumeTps(),//
+                                    groupConsumeInfo.getDiffTotal()//
+                            );
+                        } catch (Exception e) {
                             log.warn("examineConsumeStats or examineConsumerConnectionInfo exception, " + consumerGroup, e);
                         }
                     }
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
     }
@@ -215,6 +208,9 @@ class GroupConsumeInfo implements Comparable<GroupConsumeInfo> {
         return group;
     }
 
+    public void setGroup(String group) {
+        this.group = group;
+    }
 
     public String consumeTypeDesc() {
         if (this.count != 0) {
@@ -223,6 +219,13 @@ class GroupConsumeInfo implements Comparable<GroupConsumeInfo> {
         return "";
     }
 
+    public ConsumeType getConsumeType() {
+        return consumeType;
+    }
+
+    public void setConsumeType(ConsumeType consumeType) {
+        this.consumeType = consumeType;
+    }
 
     public String messageModelDesc() {
         if (this.count != 0 && this.getConsumeType() == ConsumeType.CONSUME_PASSIVELY) {
@@ -231,6 +234,13 @@ class GroupConsumeInfo implements Comparable<GroupConsumeInfo> {
         return "";
     }
 
+    public MessageModel getMessageModel() {
+        return messageModel;
+    }
+
+    public void setMessageModel(MessageModel messageModel) {
+        this.messageModel = messageModel;
+    }
 
     public String versionDesc() {
         if (this.count != 0) {
@@ -239,41 +249,13 @@ class GroupConsumeInfo implements Comparable<GroupConsumeInfo> {
         return "";
     }
 
-
-    public void setGroup(String group) {
-        this.group = group;
-    }
-
-
     public int getCount() {
         return count;
     }
 
-
     public void setCount(int count) {
         this.count = count;
     }
-
-
-    public ConsumeType getConsumeType() {
-        return consumeType;
-    }
-
-
-    public void setConsumeType(ConsumeType consumeType) {
-        this.consumeType = consumeType;
-    }
-
-
-    public MessageModel getMessageModel() {
-        return messageModel;
-    }
-
-
-    public void setMessageModel(MessageModel messageModel) {
-        this.messageModel = messageModel;
-    }
-
 
     public long getDiffTotal() {
         return diffTotal;

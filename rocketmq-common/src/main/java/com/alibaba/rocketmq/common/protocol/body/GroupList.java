@@ -23,6 +23,7 @@ import java.util.HashSet;
 
 /**
  * @author shijia.wxr
+ *
  */
 public class GroupList extends RemotingSerializable {
     private HashSet<String> groupList = new HashSet<String>();

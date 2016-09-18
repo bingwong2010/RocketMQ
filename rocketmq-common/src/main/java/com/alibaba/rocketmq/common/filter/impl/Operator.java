@@ -34,11 +34,22 @@ public class Operator extends Op {
         this.compareable = compareable;
     }
 
+    public static Operator createOperator(String operator) {
+        if (LEFTPARENTHESIS.getSymbol().equals(operator))
+            return LEFTPARENTHESIS;
+        else if (RIGHTPARENTHESIS.getSymbol().equals(operator))
+            return RIGHTPARENTHESIS;
+        else if (AND.getSymbol().equals(operator))
+            return AND;
+        else if (OR.getSymbol().equals(operator))
+            return OR;
+        else
+            throw new IllegalArgumentException("unsupport operator " + operator);
+    }
 
     public int getPriority() {
         return priority;
     }
-
 
     public boolean isCompareable() {
         return compareable;
@@ -54,22 +65,7 @@ public class Operator extends Op {
             return -1;
     }
 
-
     public boolean isSpecifiedOp(String operator) {
         return this.getSymbol().equals(operator);
-    }
-
-
-    public static Operator createOperator(String operator) {
-        if (LEFTPARENTHESIS.getSymbol().equals(operator))
-            return LEFTPARENTHESIS;
-        else if (RIGHTPARENTHESIS.getSymbol().equals(operator))
-            return RIGHTPARENTHESIS;
-        else if (AND.getSymbol().equals(operator))
-            return AND;
-        else if (OR.getSymbol().equals(operator))
-            return OR;
-        else
-            throw new IllegalArgumentException("unsupport operator " + operator);
     }
 }

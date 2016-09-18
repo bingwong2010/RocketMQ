@@ -22,6 +22,7 @@ public class StatsSnapshot {
     private double tps;
     private double avgpt;
 
+
     public long getSum() {
         return sum;
     }

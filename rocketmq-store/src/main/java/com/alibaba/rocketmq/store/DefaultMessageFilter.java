@@ -25,7 +25,11 @@ import com.alibaba.rocketmq.common.protocol.heartbeat.SubscriptionData;
 public class DefaultMessageFilter implements MessageFilter {
 
     @Override
-    public boolean isMessageMatched(SubscriptionData subscriptionData, long tagsCode) {
+    public boolean isMessageMatched(SubscriptionData subscriptionData, Long tagsCode) {
+        if (tagsCode == null) {
+            return true;
+        }
+
         if (null == subscriptionData) {
             return true;
         }
@@ -37,7 +41,7 @@ public class DefaultMessageFilter implements MessageFilter {
             return true;
         }
 
-        return subscriptionData.getCodeSet().contains((int) tagsCode);
+        return subscriptionData.getCodeSet().contains(tagsCode.intValue());
     }
 
 }

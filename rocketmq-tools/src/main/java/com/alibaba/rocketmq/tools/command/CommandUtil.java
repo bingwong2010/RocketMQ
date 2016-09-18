@@ -52,10 +52,9 @@ public class CommandUtil {
                     }
                 }
             }
-        }
-        else {
+        } else {
             System.out
-                .printf("[error] Make sure the specified clusterName exists or the nameserver which connected is correct.");
+                    .printf("[error] Make sure the specified clusterName exists or the nameserver which connected is correct.");
         }
 
         return masterSet;
@@ -68,7 +67,7 @@ public class CommandUtil {
         Set<String> brokerNameSet = clusterInfoSerializeWrapper.getClusterAddrTable().get(clusterName);
         if (brokerNameSet.isEmpty()) {
             throw new Exception(
-                "Make sure the specified clusterName exists or the nameserver which connected is correct.");
+                    "Make sure the specified clusterName exists or the nameserver which connected is correct.");
         }
         return brokerNameSet;
     }
@@ -86,7 +85,7 @@ public class CommandUtil {
                 return entry.getKey();
         }
         throw new Exception(
-            "Make sure the specified broker addr exists or the nameserver which connected is correct.");
+                "Make sure the specified broker addr exists or the nameserver which connected is correct.");
     }
 
 

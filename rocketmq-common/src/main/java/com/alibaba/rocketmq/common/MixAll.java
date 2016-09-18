@@ -68,9 +68,13 @@ public class MixAll {
     public static final String DEFAULT_CHARSET = "UTF-8";
     public static final long MASTER_ID = 0L;
     public static final long CURRENT_JVM_PID = getPID();
+
     public static final String RETRY_GROUP_TOPIC_PREFIX = "%RETRY%";
+
     public static final String DLQ_GROUP_TOPIC_PREFIX = "%DLQ%";
     public static final String SYSTEM_TOPIC_PREFIX = "rmq_sys_";
+    public static final String UNIQUE_MSG_QUERY_FLAG = "_UNIQUE_KEY_QUERY";
+
 
     public static String getRetryTopic(final String consumerGroup) {
         return RETRY_GROUP_TOPIC_PREFIX + consumerGroup;
@@ -81,25 +85,32 @@ public class MixAll {
         return consumerGroup.startsWith(CID_RMQ_SYS_PREFIX);
     }
 
+    public static boolean isSystemTopic(final String topic) {
+        return topic.startsWith(SYSTEM_TOPIC_PREFIX);
+    }
 
     public static String getDLQTopic(final String consumerGroup) {
         return DLQ_GROUP_TOPIC_PREFIX + consumerGroup;
     }
 
 
-    public static String brokerVIPChannel(final String brokerAddr) {
-        String[] ipAndPort = brokerAddr.split(":");
-        String brokerAddrNew = ipAndPort[0] + ":" + (Integer.valueOf(ipAndPort[1]) - 2);
-        return brokerAddrNew;
+    public static String brokerVIPChannel(final boolean isChange, final String brokerAddr) {
+        if (isChange) {
+            String[] ipAndPort = brokerAddr.split(":");
+            String brokerAddrNew = ipAndPort[0] + ":" + (Integer.parseInt(ipAndPort[1]) - 2);
+            return brokerAddrNew;
+        } else {
+            return brokerAddr;
+        }
     }
+
 
     public static long getPID() {
         String processName = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
         if (processName != null && processName.length() > 0) {
             try {
                 return Long.parseLong(processName.split("@")[0]);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 return 0;
             }
         }
@@ -118,9 +129,15 @@ public class MixAll {
         return Math.abs(value);
     }
 
+
+    /**
+
+     */
     public static final void string2File(final String str, final String fileName) throws IOException {
+
         String tmpFile = fileName + ".tmp";
         string2FileNotSafe(str, tmpFile);
+
 
         String bakFile = fileName + ".bak";
         String prevContent = file2String(fileName);
@@ -128,8 +145,10 @@ public class MixAll {
             string2FileNotSafe(prevContent, bakFile);
         }
 
+
         File file = new File(fileName);
         file.delete();
+
 
         file = new File(tmpFile);
         file.renameTo(new File(fileName));
@@ -147,16 +166,13 @@ public class MixAll {
         try {
             fileWriter = new FileWriter(file);
             fileWriter.write(str);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw e;
-        }
-        finally {
+        } finally {
             if (fileWriter != null) {
                 try {
                     fileWriter.close();
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     throw e;
                 }
             }
@@ -169,34 +185,6 @@ public class MixAll {
         return file2String(file);
     }
 
-
-    public static final String file2String(final URL url) {
-        InputStream in = null;
-        try {
-            URLConnection urlConnection = url.openConnection();
-            urlConnection.setUseCaches(false);
-            in = urlConnection.getInputStream();
-            int len = in.available();
-            byte[] data = new byte[len];
-            in.read(data, 0, len);
-            return new String(data, "UTF-8");
-        }
-        catch (Exception e) {
-        }
-        finally {
-            if (null != in) {
-                try {
-                    in.close();
-                }
-                catch (IOException e) {
-                }
-            }
-        }
-
-        return null;
-    }
-
-
     public static final String file2String(final File file) {
         if (file.exists()) {
             char[] data = new char[(int) file.length()];
@@ -207,16 +195,13 @@ public class MixAll {
                 fileReader = new FileReader(file);
                 int len = fileReader.read(data);
                 result = (len == data.length);
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 // e.printStackTrace();
-            }
-            finally {
+            } finally {
                 if (fileReader != null) {
                     try {
                         fileReader.close();
-                    }
-                    catch (IOException e) {
+                    } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
@@ -230,6 +215,28 @@ public class MixAll {
         return null;
     }
 
+    public static final String file2String(final URL url) {
+        InputStream in = null;
+        try {
+            URLConnection urlConnection = url.openConnection();
+            urlConnection.setUseCaches(false);
+            in = urlConnection.getInputStream();
+            int len = in.available();
+            byte[] data = new byte[len];
+            in.read(data, 0, len);
+            return new String(data, "UTF-8");
+        } catch (Exception e) {
+        } finally {
+            if (null != in) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+
+        return null;
+    }
 
     public static String findClassPath(Class<?> c) {
         URL url = c.getProtectionDomain().getCodeSource().getLocation();
@@ -255,11 +262,9 @@ public class MixAll {
                         if (null == value) {
                             value = "";
                         }
-                    }
-                    catch (IllegalArgumentException e) {
+                    } catch (IllegalArgumentException e) {
                         System.out.println(e);
-                    }
-                    catch (IllegalAccessException e) {
+                    } catch (IllegalAccessException e) {
                         System.out.println(e);
                     }
 
@@ -272,8 +277,7 @@ public class MixAll {
 
                     if (log != null) {
                         log.info(name + "=" + value);
-                    }
-                    else {
+                    } else {
                         System.out.println(name + "=" + value);
                     }
                 }
@@ -283,29 +287,28 @@ public class MixAll {
 
 
     public static String properties2String(final Properties properties) {
-        Set<Object> sets = properties.keySet();
         StringBuilder sb = new StringBuilder();
-        for (Object key : sets) {
-            Object value = properties.get(key);
-            if (value != null) {
-                sb.append(key.toString() + "=" + value.toString() + "\n");
+        for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+            if (entry.getValue() != null) {
+                sb.append(entry.getKey().toString() + "=" + entry.getValue().toString() + "\n");
             }
         }
-
         return sb.toString();
     }
 
+
+    /**
+
+     */
     public static Properties string2Properties(final String str) {
         Properties properties = new Properties();
         try {
             InputStream in = new ByteArrayInputStream(str.getBytes(DEFAULT_CHARSET));
             properties.load(in);
-        }
-        catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
             return null;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
             return null;
         }
@@ -313,6 +316,10 @@ public class MixAll {
         return properties;
     }
 
+
+    /**
+
+     */
     public static Properties object2Properties(final Object object) {
         Properties properties = new Properties();
 
@@ -325,11 +332,9 @@ public class MixAll {
                     try {
                         field.setAccessible(true);
                         value = field.get(object);
-                    }
-                    catch (IllegalArgumentException e) {
+                    } catch (IllegalArgumentException e) {
                         System.out.println(e);
-                    }
-                    catch (IllegalAccessException e) {
+                    } catch (IllegalAccessException e) {
                         System.out.println(e);
                     }
 
@@ -343,7 +348,11 @@ public class MixAll {
         return properties;
     }
 
-    public static void  properties2Object(final Properties p, final Object object) {
+
+    /**
+
+     */
+    public static void properties2Object(final Properties p, final Object object) {
         Method[] methods = object.getClass().getMethods();
         for (Method method : methods) {
             String mn = method.getName();
@@ -361,27 +370,21 @@ public class MixAll {
                             Object arg = null;
                             if (cn.equals("int")) {
                                 arg = Integer.parseInt(property);
-                            }
-                            else if (cn.equals("long")) {
+                            } else if (cn.equals("long")) {
                                 arg = Long.parseLong(property);
-                            }
-                            else if (cn.equals("double")) {
+                            } else if (cn.equals("double")) {
                                 arg = Double.parseDouble(property);
-                            }
-                            else if (cn.equals("boolean")) {
+                            } else if (cn.equals("boolean")) {
                                 arg = Boolean.parseBoolean(property);
-                            }
-                            else if (cn.equals("String")) {
+                            } else if (cn.equals("String")) {
                                 arg = property;
-                            }
-                            else {
+                            } else {
                                 continue;
                             }
-                            method.invoke(object, new Object[] { arg });
+                            method.invoke(object, new Object[]{arg});
                         }
                     }
-                }
-                catch (Throwable e) {
+                } catch (Throwable e) {
                 }
             }
         }
@@ -404,8 +407,7 @@ public class MixAll {
                     inetAddressList.add(addrs.nextElement().getHostAddress());
                 }
             }
-        }
-        catch (SocketException e) {
+        } catch (SocketException e) {
             throw new RuntimeException("get local inet address fail", e);
         }
 
@@ -426,10 +428,10 @@ public class MixAll {
         try {
             InetAddress addr = InetAddress.getLocalHost();
             return addr.getHostAddress();
-        }
-        catch (Throwable e) {
+        } catch (Throwable e) {
             throw new RuntimeException("InetAddress java.net.InetAddress.getLocalHost() throws UnknownHostException"
-                    + FAQUrl.suggestTodo(FAQUrl.UNKNOWN_HOST_EXCEPTION), e);
+                    + FAQUrl.suggestTodo(FAQUrl.UNKNOWN_HOST_EXCEPTION),
+                    e);
         }
     }
 
@@ -447,6 +449,15 @@ public class MixAll {
         return false;
     }
 
+    public static String localhostName() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (Throwable e) {
+            throw new RuntimeException("InetAddress java.net.InetAddress.getLocalHost() throws UnknownHostException"
+                    + FAQUrl.suggestTodo(FAQUrl.UNKNOWN_HOST_EXCEPTION),
+                    e);
+        }
+    }
 
     public Set<String> list2Set(List<String> values) {
         Set<String> result = new HashSet<String>();
@@ -456,23 +467,11 @@ public class MixAll {
         return result;
     }
 
-
     public List<String> set2List(Set<String> values) {
         List<String> result = new ArrayList<String>();
         for (String v : values) {
             result.add(v);
         }
         return result;
-    }
-
-
-    public static String localhostName() {
-        try {
-            return InetAddress.getLocalHost().getHostName();
-        }
-        catch (Throwable e) {
-            throw new RuntimeException("InetAddress java.net.InetAddress.getLocalHost() throws UnknownHostException"
-                    + FAQUrl.suggestTodo(FAQUrl.UNKNOWN_HOST_EXCEPTION), e);
-        }
     }
 }

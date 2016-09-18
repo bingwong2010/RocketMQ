@@ -31,7 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
- *
  * @author shijia.wxr
  */
 public class ConsumerOffsetManager extends ConfigManager {
@@ -52,6 +51,7 @@ public class ConsumerOffsetManager extends ConfigManager {
         this.brokerController = brokerController;
     }
 
+
     public void scanUnsubscribedTopic() {
         Iterator<Entry<String, ConcurrentHashMap<Integer, Long>>> it = this.offsetTable.entrySet().iterator();
         while (it.hasNext()) {
@@ -61,6 +61,7 @@ public class ConsumerOffsetManager extends ConfigManager {
             if (arrays != null && arrays.length == 2) {
                 String topic = arrays[0];
                 String group = arrays[1];
+
                 if (null == brokerController.getConsumerManager().findSubscriptionData(group, topic)
                         && this.offsetBehindMuchThanData(topic, next.getValue())) {
                     it.remove();
@@ -81,8 +82,7 @@ public class ConsumerOffsetManager extends ConfigManager {
             long offsetInPersist = next.getValue();
             if (offsetInPersist > minOffsetInStore) {
                 result = false;
-            }
-            else {
+            } else {
                 result = true;
             }
         }
@@ -129,12 +129,25 @@ public class ConsumerOffsetManager extends ConfigManager {
     }
 
 
-    public void commitOffset(final String group, final String topic, final int queueId, final long offset) {
+    public void commitOffset(final String clientHost, final String group, final String topic, final int queueId, final long offset) {
         // topic@group
         String key = topic + TOPIC_GROUP_SEPARATOR + group;
-        this.commitOffset(key, queueId, offset);
+        this.commitOffset(clientHost, key, queueId, offset);
     }
 
+    private void commitOffset(final String clientHost, final String key, final int queueId, final long offset) {
+        ConcurrentHashMap<Integer, Long> map = this.offsetTable.get(key);
+        if (null == map) {
+            map = new ConcurrentHashMap<Integer, Long>(32);
+            map.put(queueId, offset);
+            this.offsetTable.put(key, map);
+        } else {
+            Long storeOffset = map.put(queueId, offset);
+            if (storeOffset != null && offset < storeOffset) {
+                log.warn("[NOTIFYME]update consumer offset less than store. clientHost={}, key={}, queueId={}, requestOffset={}, storeOffset={}", clientHost, key, queueId, offset, storeOffset);
+            }
+        }
+    }
 
     public long queryOffset(final String group, final String topic, final int queueId) {
         // topic@group
@@ -149,29 +162,14 @@ public class ConsumerOffsetManager extends ConfigManager {
         return -1;
     }
 
-
-    private void commitOffset(final String key, final int queueId, final long offset) {
-        ConcurrentHashMap<Integer, Long> map = this.offsetTable.get(key);
-        if (null == map) {
-            map = new ConcurrentHashMap<Integer, Long>(32);
-            map.put(queueId, offset);
-            this.offsetTable.put(key, map);
-        }
-        else {
-            map.put(queueId, offset);
-        }
-    }
-
-
     public String encode() {
         return this.encode(false);
     }
 
-
-    public String encode(final boolean prettyFormat) {
-        return RemotingSerializable.toJson(this, prettyFormat);
+    @Override
+    public String configFilePath() {
+        return BrokerPathConfigHelper.getConsumerOffsetPath(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
     }
-
 
     @Override
     public void decode(String jsonString) {
@@ -183,12 +181,9 @@ public class ConsumerOffsetManager extends ConfigManager {
         }
     }
 
-
-    @Override
-    public String configFilePath() {
-        return BrokerPathConfigHelper.getConsumerOffsetPath(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
+    public String encode(final boolean prettyFormat) {
+        return RemotingSerializable.toJson(this, prettyFormat);
     }
-
 
     public ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>> getOffsetTable() {
         return offsetTable;
@@ -214,22 +209,24 @@ public class ConsumerOffsetManager extends ConfigManager {
                 }
             }
         }
-        for (String topicGroup : topicGroups) {
+
+        for (Map.Entry<String, ConcurrentHashMap<Integer, Long>> offSetEntry : this.offsetTable.entrySet()) {
+            String topicGroup = offSetEntry.getKey();
             String[] topicGroupArr = topicGroup.split(TOPIC_GROUP_SEPARATOR);
             if (topic.equals(topicGroupArr[0])) {
-                for (Entry<Integer, Long> entry : this.offsetTable.get(topicGroup).entrySet()) {
+                for (Entry<Integer, Long> entry : offSetEntry.getValue().entrySet()) {
                     long minOffset = this.brokerController.getMessageStore().getMinOffsetInQuque(topic, entry.getKey());
                     if (entry.getValue() >= minOffset) {
                         Long offset = queueMinOffset.get(entry.getKey());
                         if (offset == null) {
                             queueMinOffset.put(entry.getKey(), Math.min(Long.MAX_VALUE, entry.getValue()));
-                        }
-                        else {
+                        } else {
                             queueMinOffset.put(entry.getKey(), Math.min(entry.getValue(), offset));
                         }
                     }
                 }
             }
+
         }
         return queueMinOffset;
     }
@@ -245,7 +242,8 @@ public class ConsumerOffsetManager extends ConfigManager {
     public void cloneOffset(final String srcGroup, final String destGroup, final String topic) {
         ConcurrentHashMap<Integer, Long> offsets = this.offsetTable.get(topic + TOPIC_GROUP_SEPARATOR + srcGroup);
         if (offsets != null) {
-            this.offsetTable.put(topic + TOPIC_GROUP_SEPARATOR + destGroup, offsets);
+            this.offsetTable.put(topic + TOPIC_GROUP_SEPARATOR + destGroup, new ConcurrentHashMap<Integer, Long>(offsets));
         }
     }
+
 }

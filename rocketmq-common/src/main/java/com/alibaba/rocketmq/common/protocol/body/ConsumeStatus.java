@@ -23,6 +23,7 @@ public class ConsumeStatus {
     private double consumeRT;
     private double consumeOKTPS;
     private double consumeFailedTPS;
+
     private long consumeFailedMsgs;
 
 

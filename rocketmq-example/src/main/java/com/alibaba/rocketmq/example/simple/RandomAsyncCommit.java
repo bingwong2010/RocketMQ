@@ -48,6 +48,7 @@ public class RandomAsyncCommit {
         }
     }
 
+
     public long commitableOffset(final MessageQueue mq) {
         CachedQueue cachedQueue = this.mqCachedTable.get(mq);
         if (null != cachedQueue) {

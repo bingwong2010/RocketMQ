@@ -49,8 +49,7 @@ public class ClusterTestRequestProcessor extends DefaultRequestProcessor {
         adminExt.setUnitName(productEnvName);
         try {
             adminExt.start();
-        }
-        catch (MQClientException e) {
+        } catch (MQClientException e) {
             e.printStackTrace();
         }
     }
@@ -66,14 +65,12 @@ public class ClusterTestRequestProcessor extends DefaultRequestProcessor {
         if (topicRouteData != null) {
             String orderTopicConf =
                     this.namesrvController.getKvConfigManager().getKVConfig(NamesrvUtil.NAMESPACE_ORDER_TOPIC_CONFIG,
-                        requestHeader.getTopic());
+                            requestHeader.getTopic());
             topicRouteData.setOrderTopicConf(orderTopicConf);
-        }
-        else {
+        } else {
             try {
                 topicRouteData = adminExt.examineTopicRouteInfo(requestHeader.getTopic());
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 log.info("get route info by topic from product environment failed. envName={},", productEnvName);
             }
         }

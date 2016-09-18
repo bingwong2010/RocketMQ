@@ -27,6 +27,7 @@ import com.alibaba.rocketmq.remoting.protocol.RemotingSerializable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,12 +38,16 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SubscriptionGroupManager extends ConfigManager {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BrokerLoggerName);
-    private transient BrokerController brokerController;
 
     private final ConcurrentHashMap<String, SubscriptionGroupConfig> subscriptionGroupTable =
             new ConcurrentHashMap<String, SubscriptionGroupConfig>(1024);
     private final DataVersion dataVersion = new DataVersion();
+    private transient BrokerController brokerController;
 
+
+    public SubscriptionGroupManager() {
+        this.init();
+    }
 
     private void init() {
         {
@@ -93,11 +98,6 @@ public class SubscriptionGroupManager extends ConfigManager {
     }
 
 
-    public SubscriptionGroupManager() {
-        this.init();
-    }
-
-
     public SubscriptionGroupManager(BrokerController brokerController) {
         this.brokerController = brokerController;
         this.init();
@@ -108,14 +108,21 @@ public class SubscriptionGroupManager extends ConfigManager {
         SubscriptionGroupConfig old = this.subscriptionGroupTable.put(config.getGroupName(), config);
         if (old != null) {
             log.info("update subscription group config, old: " + old + " new: " + config);
-        }
-        else {
+        } else {
             log.info("create new subscription group, " + config);
         }
 
         this.dataVersion.nextVersion();
 
         this.persist();
+    }
+
+    public void disableConsume(final String groupName) {
+        SubscriptionGroupConfig old = this.subscriptionGroupTable.get(groupName);
+        if (old != null) {
+            old.setConsumeEnable(false);
+            this.dataVersion.nextVersion();
+        }
     }
 
 
@@ -125,8 +132,10 @@ public class SubscriptionGroupManager extends ConfigManager {
             if (brokerController.getBrokerConfig().isAutoCreateSubscriptionGroup() || MixAll.isSysConsumerGroup(group)) {
                 subscriptionGroupConfig = new SubscriptionGroupConfig();
                 subscriptionGroupConfig.setGroupName(group);
-                this.subscriptionGroupTable.putIfAbsent(group, subscriptionGroupConfig);
-                log.info("auto create a subscription group, {}", subscriptionGroupConfig.toString());
+                SubscriptionGroupConfig preConfig = this.subscriptionGroupTable.putIfAbsent(group, subscriptionGroupConfig);
+                if(null == preConfig){
+                    log.info("auto create a subscription group, {}", subscriptionGroupConfig.toString());
+                }
                 this.dataVersion.nextVersion();
                 this.persist();
             }
@@ -141,11 +150,11 @@ public class SubscriptionGroupManager extends ConfigManager {
         return this.encode(false);
     }
 
-
-    public String encode(final boolean prettyFormat) {
-        return RemotingSerializable.toJson(this, prettyFormat);
+    @Override
+    public String configFilePath() {
+        //return BrokerPathConfigHelper.getSubscriptionGroupPath(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
+        return BrokerPathConfigHelper.getSubscriptionGroupPath(System.getProperty("user.home") + File.separator + "store");
     }
-
 
     @Override
     public void decode(String jsonString) {
@@ -159,6 +168,9 @@ public class SubscriptionGroupManager extends ConfigManager {
         }
     }
 
+    public String encode(final boolean prettyFormat) {
+        return RemotingSerializable.toJson(this, prettyFormat);
+    }
 
     private void printLoadDataWhenFirstBoot(final SubscriptionGroupManager sgm) {
         Iterator<Entry<String, SubscriptionGroupConfig>> it = sgm.getSubscriptionGroupTable().entrySet().iterator();
@@ -167,13 +179,6 @@ public class SubscriptionGroupManager extends ConfigManager {
             log.info("load exist subscription group, {}", next.getValue().toString());
         }
     }
-
-
-    @Override
-    public String configFilePath() {
-        return BrokerPathConfigHelper.getSubscriptionGroupPath(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
-    }
-
 
     public ConcurrentHashMap<String, SubscriptionGroupConfig> getSubscriptionGroupTable() {
         return subscriptionGroupTable;
@@ -191,8 +196,7 @@ public class SubscriptionGroupManager extends ConfigManager {
             log.info("delete subscription group OK, subscription group: " + old);
             this.dataVersion.nextVersion();
             this.persist();
-        }
-        else {
+        } else {
             log.warn("delete subscription group failed, subscription group: " + old + " not exist");
         }
     }

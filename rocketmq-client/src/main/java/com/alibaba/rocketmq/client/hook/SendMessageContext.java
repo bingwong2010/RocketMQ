@@ -16,12 +16,14 @@
  */
 package com.alibaba.rocketmq.client.hook;
 
-import java.util.Map;
-
 import com.alibaba.rocketmq.client.impl.CommunicationMode;
+import com.alibaba.rocketmq.client.impl.producer.DefaultMQProducerImpl;
 import com.alibaba.rocketmq.client.producer.SendResult;
 import com.alibaba.rocketmq.common.message.Message;
 import com.alibaba.rocketmq.common.message.MessageQueue;
+import com.alibaba.rocketmq.common.message.MessageType;
+
+import java.util.Map;
 
 
 public class SendMessageContext {
@@ -35,7 +37,24 @@ public class SendMessageContext {
     private Exception exception;
     private Object mqTraceContext;
     private Map<String, String> props;
+    private DefaultMQProducerImpl producer;
+    private MessageType msgType = MessageType.Normal_Msg;
 
+    public MessageType getMsgType() {
+        return msgType;
+    }
+
+    public void setMsgType(final MessageType msgType) {
+        this.msgType = msgType;
+    }
+
+    public DefaultMQProducerImpl getProducer() {
+        return producer;
+    }
+
+    public void setProducer(final DefaultMQProducerImpl producer) {
+        this.producer = producer;
+    }
 
     public String getProducerGroup() {
         return producerGroup;

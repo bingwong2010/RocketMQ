@@ -37,14 +37,6 @@ import static org.junit.Assert.assertTrue;
  * @author shijia.wxr
  */
 public class ExceptionTest {
-    private static RemotingClient createRemotingClient() {
-        NettyClientConfig config = new NettyClientConfig();
-        RemotingClient client = new NettyRemotingClient(config);
-        client.start();
-        return client;
-    }
-
-
     private static RemotingServer createRemotingServer() throws InterruptedException {
         NettyServerConfig config = new NettyServerConfig();
         RemotingServer client = new NettyRemotingServer(config);
@@ -58,11 +50,15 @@ public class ExceptionTest {
                 request.setRemark("hello, I am respponse " + ctx.channel().remoteAddress());
                 return request;
             }
+
+            @Override
+            public boolean rejectRequest() {
+                return false;
+            }
         }, Executors.newCachedThreadPool());
         client.start();
         return client;
     }
-
 
     @Test
     public void test_CONNECT_EXCEPTION() {
@@ -72,17 +68,13 @@ public class ExceptionTest {
         RemotingCommand response = null;
         try {
             response = client.invokeSync("localhost:8888", request, 1000 * 3);
-        }
-        catch (RemotingConnectException e) {
+        } catch (RemotingConnectException e) {
             e.printStackTrace();
-        }
-        catch (RemotingSendRequestException e) {
+        } catch (RemotingSendRequestException e) {
             e.printStackTrace();
-        }
-        catch (RemotingTimeoutException e) {
+        } catch (RemotingTimeoutException e) {
             e.printStackTrace();
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
         System.out.println("invoke result = " + response);
@@ -90,6 +82,13 @@ public class ExceptionTest {
 
         client.shutdown();
         System.out.println("-----------------------------------------------------------------");
+    }
+
+    private static RemotingClient createRemotingClient() {
+        NettyClientConfig config = new NettyClientConfig();
+        RemotingClient client = new NettyRemotingClient(config);
+        client.start();
+        return client;
     }
 
 }

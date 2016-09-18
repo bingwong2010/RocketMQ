@@ -20,9 +20,13 @@ package com.alibaba.rocketmq.tools.monitor;
 public class UndoneMsgs {
     private String consumerGroup;
     private String topic;
+
     private long undoneMsgsTotal;
+
     private long undoneMsgsSingleMQ;
+
     private long undoneMsgsDelayTimeMills;
+
 
     public String getConsumerGroup() {
         return consumerGroup;

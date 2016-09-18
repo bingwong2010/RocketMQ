@@ -22,7 +22,7 @@ import com.alibaba.rocketmq.client.producer.LocalTransactionExecuter;
 import com.alibaba.rocketmq.client.producer.LocalTransactionState;
 import com.alibaba.rocketmq.client.producer.SendResult;
 import com.alibaba.rocketmq.common.message.Message;
-
+import com.alibaba.rocketmq.remoting.common.RemotingHelper;
 
 public class Producer {
     public static void main(String[] args) throws MQClientException, InterruptedException {
@@ -33,21 +33,22 @@ public class Producer {
         for (int i = 0; i < 1000; i++) {
             try {
                 Message msg = new Message("TopicTest",// topic
-                    "TagA",// tag
-                    ("Hello RocketMQ " + i).getBytes()// body
-                        );
+                        "TagA",// tag
+                        ("Hello RocketMQ " + i).getBytes(RemotingHelper.DEFAULT_CHARSET)// body
+                );
                 SendResult sendResult = producer.send(msg);
-                LocalTransactionExecuter tranExecuter=new LocalTransactionExecuter() {
-					
-					@Override
-					public LocalTransactionState executeLocalTransactionBranch(Message msg, Object arg) {
-						return null;
-					}
-				};
-				//producer.sendMessageInTransaction(msg, tranExecuter, arg)
+                LocalTransactionExecuter tranExecuter = new LocalTransactionExecuter() {
+
+                    @Override
+                    public LocalTransactionState executeLocalTransactionBranch(Message msg, Object arg) {
+                        // TODO Auto-generated method stub
+                        return null;
+                    }
+                };
+
+                //producer.sendMessageInTransaction(msg, tranExecuter, arg)
                 System.out.println(sendResult);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
                 Thread.sleep(1000);
             }

@@ -40,21 +40,30 @@ import java.util.List;
 
 
 /**
- * @author shijia.wxr<vintage.wang@gmail.com>
+ *
+ * @author shijia.wxr
+ *
  */
 public class QueryMsgByIdSubCommand implements SubCommand {
+
+    public static void main(String[] args) {
+        MQAdminStartup.main(new String[]{new QueryMsgByIdSubCommand().commandName(), //
+                "-n", "127.0.0.1:9876", //
+                "-g", "CID_110", //
+                "-d", "127.0.0.1@73376", //
+                "-i", "0A654A3400002ABD00000011C3555205" //
+        });
+    }
 
     @Override
     public String commandName() {
         return "queryMsgById";
     }
 
-
     @Override
     public String commandDesc() {
         return "Query Message by Id";
     }
-
 
     @Override
     public Options buildCommandlineOptions(Options options) {
@@ -73,101 +82,6 @@ public class QueryMsgByIdSubCommand implements SubCommand {
         return options;
     }
 
-
-    public static void queryById(final DefaultMQAdminExt admin, final String msgId) throws MQClientException,
-            RemotingException, MQBrokerException, InterruptedException, IOException {
-        MessageExt msg = admin.viewMessage(msgId);
-
-        String bodyTmpFilePath = createBodyFile(msg);
-
-        System.out.printf("%-20s %s\n",//
-            "Topic:",//
-            msg.getTopic()//
-            );
-
-        System.out.printf("%-20s %s\n",//
-            "Tags:",//
-            "[" + msg.getTags() + "]"//
-        );
-
-        System.out.printf("%-20s %s\n",//
-            "Keys:",//
-            "[" + msg.getKeys() + "]"//
-        );
-
-        System.out.printf("%-20s %d\n",//
-            "Queue ID:",//
-            msg.getQueueId()//
-            );
-
-        System.out.printf("%-20s %d\n",//
-            "Queue Offset:",//
-            msg.getQueueOffset()//
-            );
-
-        System.out.printf("%-20s %d\n",//
-            "CommitLog Offset:",//
-            msg.getCommitLogOffset()//
-            );
-
-        System.out.printf("%-20s %d\n",//
-            "Reconsume Times:",//
-            msg.getReconsumeTimes()//
-            );
-
-        System.out.printf("%-20s %s\n",//
-            "Born Timestamp:",//
-            UtilAll.timeMillisToHumanString2(msg.getBornTimestamp())//
-            );
-
-        System.out.printf("%-20s %s\n",//
-            "Store Timestamp:",//
-            UtilAll.timeMillisToHumanString2(msg.getStoreTimestamp())//
-            );
-
-        System.out.printf("%-20s %s\n",//
-            "Born Host:",//
-            RemotingHelper.parseSocketAddressAddr(msg.getBornHost())//
-            );
-
-        System.out.printf("%-20s %s\n",//
-            "Store Host:",//
-            RemotingHelper.parseSocketAddressAddr(msg.getStoreHost())//
-            );
-
-        System.out.printf("%-20s %d\n",//
-            "System Flag:",//
-            msg.getSysFlag()//
-            );
-
-        System.out.printf("%-20s %s\n",//
-            "Properties:",//
-            msg.getProperties() != null ? msg.getProperties().toString() : ""//
-        );
-
-        System.out.printf("%-20s %s\n",//
-            "Message Body Path:",//
-            bodyTmpFilePath//
-            );
-
-        try {
-            List<MessageTrack> mtdList = admin.messageTrackDetail(msg);
-            if (mtdList.isEmpty()) {
-                System.out.println("\n\nWARN: No Consumer");
-            }
-            else {
-                System.out.println("\n\n");
-                for (MessageTrack mt : mtdList) {
-                    System.out.println(mt);
-                }
-            }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-
     @Override
     public void execute(CommandLine commandLine, Options options, RPCHook rpcHook) {
         DefaultMQAdminExt defaultMQAdminExt = new DefaultMQAdminExt(rpcHook);
@@ -184,20 +98,108 @@ public class QueryMsgByIdSubCommand implements SubCommand {
                 ConsumeMessageDirectlyResult result =
                         defaultMQAdminExt.consumeMessageDirectly(consumerGroup, clientId, msgId);
                 System.out.println(result);
-            }
-            else {
+            } else {
 
                 queryById(defaultMQAdminExt, msgId);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
     }
 
+    public static void queryById(final DefaultMQAdminExt admin, final String msgId) throws MQClientException,
+            RemotingException, MQBrokerException, InterruptedException, IOException {
+        MessageExt msg = admin.viewMessage(msgId);
+
+
+        String bodyTmpFilePath = createBodyFile(msg);
+
+        System.out.printf("%-20s %s%n",//
+                "Topic:",//
+                msg.getTopic()//
+        );
+
+        System.out.printf("%-20s %s%n",//
+                "Tags:",//
+                "[" + msg.getTags() + "]"//
+        );
+
+        System.out.printf("%-20s %s%n",//
+                "Keys:",//
+                "[" + msg.getKeys() + "]"//
+        );
+
+        System.out.printf("%-20s %d%n",//
+                "Queue ID:",//
+                msg.getQueueId()//
+        );
+
+        System.out.printf("%-20s %d%n",//
+                "Queue Offset:",//
+                msg.getQueueOffset()//
+        );
+
+        System.out.printf("%-20s %d%n",//
+                "CommitLog Offset:",//
+                msg.getCommitLogOffset()//
+        );
+
+        System.out.printf("%-20s %d%n",//
+                "Reconsume Times:",//
+                msg.getReconsumeTimes()//
+        );
+
+        System.out.printf("%-20s %s%n",//
+                "Born Timestamp:",//
+                UtilAll.timeMillisToHumanString2(msg.getBornTimestamp())//
+        );
+
+        System.out.printf("%-20s %s%n",//
+                "Store Timestamp:",//
+                UtilAll.timeMillisToHumanString2(msg.getStoreTimestamp())//
+        );
+
+        System.out.printf("%-20s %s%n",//
+                "Born Host:",//
+                RemotingHelper.parseSocketAddressAddr(msg.getBornHost())//
+        );
+
+        System.out.printf("%-20s %s%n",//
+                "Store Host:",//
+                RemotingHelper.parseSocketAddressAddr(msg.getStoreHost())//
+        );
+
+        System.out.printf("%-20s %d%n",//
+                "System Flag:",//
+                msg.getSysFlag()//
+        );
+
+        System.out.printf("%-20s %s%n",//
+                "Properties:",//
+                msg.getProperties() != null ? msg.getProperties().toString() : ""//
+        );
+
+        System.out.printf("%-20s %s%n",//
+                "Message Body Path:",//
+                bodyTmpFilePath//
+        );
+
+        try {
+            List<MessageTrack> mtdList = admin.messageTrackDetail(msg);
+            if (mtdList.isEmpty()) {
+                System.out.println("\n\nWARN: No Consumer");
+            } else {
+                System.out.println("\n\n");
+                for (MessageTrack mt : mtdList) {
+                    System.out.println(mt);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     private static String createBodyFile(MessageExt msg) throws IOException {
         DataOutputStream dos = null;
@@ -212,20 +214,9 @@ public class QueryMsgByIdSubCommand implements SubCommand {
             dos = new DataOutputStream(new FileOutputStream(bodyTmpFilePath));
             dos.write(msg.getBody());
             return bodyTmpFilePath;
-        }
-        finally {
+        } finally {
             if (dos != null)
                 dos.close();
         }
-    }
-
-
-    public static void main(String[] args) {
-        MQAdminStartup.main(new String[] { new QueryMsgByIdSubCommand().commandName(), //
-                                          "-n", "127.0.0.1:9876", //
-                                          "-g", "CID_110", //
-                                          "-d", "127.0.0.1@73376", //
-                                          "-i", "0A654A3400002ABD00000011C3555205" //
-        });
     }
 }

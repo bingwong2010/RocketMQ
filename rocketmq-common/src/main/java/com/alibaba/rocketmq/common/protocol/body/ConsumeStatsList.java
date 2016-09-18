@@ -19,7 +19,9 @@ package com.alibaba.rocketmq.common.protocol.body;
 import com.alibaba.rocketmq.common.admin.ConsumeStats;
 import com.alibaba.rocketmq.remoting.protocol.RemotingSerializable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 
 /**

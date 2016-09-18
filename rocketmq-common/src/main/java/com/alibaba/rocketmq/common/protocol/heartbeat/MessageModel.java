@@ -22,16 +22,27 @@ package com.alibaba.rocketmq.common.protocol.heartbeat;
 
 /**
  * Message model
- * 
+ *
  * @author shijia.wxr
  */
 public enum MessageModel {
     /**
      * broadcast
      */
-    BROADCASTING,
+    BROADCASTING("BROADCASTING"),
     /**
      * clustering
      */
-    CLUSTERING;
+    CLUSTERING("CLUSTERING");
+
+    private String modeCN;
+
+    MessageModel(String modeCN) {
+        this.modeCN = modeCN;
+    }
+
+
+    public String getModeCN() {
+        return modeCN;
+    }
 }

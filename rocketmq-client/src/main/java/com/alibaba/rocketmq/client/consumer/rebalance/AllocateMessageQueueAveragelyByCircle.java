@@ -33,13 +33,6 @@ import java.util.List;
 public class AllocateMessageQueueAveragelyByCircle implements AllocateMessageQueueStrategy {
     private final Logger log = ClientLogger.getLog();
 
-
-    @Override
-    public String getName() {
-        return "AVG_BY_CIRCLE";
-    }
-
-
     @Override
     public List<MessageQueue> allocate(String consumerGroup, String currentCID, List<MessageQueue> mqAll,
                                        List<String> cidAll) {
@@ -69,5 +62,10 @@ public class AllocateMessageQueueAveragelyByCircle implements AllocateMessageQue
             }
         }
         return result;
+    }
+
+    @Override
+    public String getName() {
+        return "AVG_BY_CIRCLE";
     }
 }

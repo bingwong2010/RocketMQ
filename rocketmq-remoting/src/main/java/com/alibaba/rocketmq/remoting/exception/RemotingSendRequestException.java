@@ -17,8 +17,7 @@
 package com.alibaba.rocketmq.remoting.exception;
 
 /**
- *
- * @author shijia.wx
+ * @author shijia.wxr
  */
 public class RemotingSendRequestException extends RemotingException {
     private static final long serialVersionUID = 5391285827332471674L;

@@ -18,6 +18,7 @@ package com.alibaba.rocketmq.tools.command.broker;
 
 import com.alibaba.rocketmq.client.producer.DefaultMQProducer;
 import com.alibaba.rocketmq.client.producer.SendResult;
+import com.alibaba.rocketmq.common.MixAll;
 import com.alibaba.rocketmq.common.message.Message;
 import com.alibaba.rocketmq.remoting.RPCHook;
 import com.alibaba.rocketmq.tools.command.SubCommand;
@@ -25,9 +26,11 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
+import java.io.UnsupportedEncodingException;
+
 
 /**
- * @author manhong.yqd
+ * @author lansheng.zj
  */
 public class SendMsgStatusCommand implements SubCommand {
 
@@ -53,7 +56,7 @@ public class SendMsgStatusCommand implements SubCommand {
         opt.setRequired(false);
         options.addOption(opt);
 
-        opt = new Option("c", "count", true, "send message count, Default: 20");
+        opt = new Option("c", "count", true, "send message count, Default: 50");
         opt.setRequired(false);
         options.addOption(opt);
 
@@ -63,30 +66,31 @@ public class SendMsgStatusCommand implements SubCommand {
 
     @Override
     public void execute(CommandLine commandLine, Options options, RPCHook rpcHook) {
-        final DefaultMQProducer producer = new DefaultMQProducer("PID_SMSC");
+        final DefaultMQProducer producer = new DefaultMQProducer("PID_SMSC",rpcHook);
         producer.setInstanceName("PID_SMSC_" + System.currentTimeMillis());
 
         try {
             producer.start();
             String brokerName = commandLine.getOptionValue('b').trim();
             int messageSize = commandLine.hasOption('s') ? Integer.parseInt(commandLine.getOptionValue('s')) : 128;
-            int count = commandLine.hasOption('c') ? Integer.parseInt(commandLine.getOptionValue('s')) : 20;
+            int count = commandLine.hasOption('c') ? Integer.parseInt(commandLine.getOptionValue('c')) : 50;
+
+            producer.send(buildMessage(brokerName, 16));
+
             for (int i = 0; i < count; i++) {
                 long begin = System.currentTimeMillis();
                 SendResult result = producer.send(buildMessage(brokerName, messageSize));
                 System.out.println("rt:" + (System.currentTimeMillis() - begin) + "ms, SendResult=" + result);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             producer.shutdown();
         }
     }
 
 
-    private static Message buildMessage(final String topic, final int messageSize) {
+    private static Message buildMessage(final String topic, final int messageSize) throws UnsupportedEncodingException {
         Message msg = new Message();
         msg.setTopic(topic);
 
@@ -94,7 +98,7 @@ public class SendMsgStatusCommand implements SubCommand {
         for (int i = 0; i < messageSize; i += 11) {
             sb.append("hello jodie");
         }
-        msg.setBody(sb.toString().getBytes());
+        msg.setBody(sb.toString().getBytes(MixAll.DEFAULT_CHARSET));
         return msg;
     }
 }

@@ -24,7 +24,7 @@ import java.util.List;
 
 
 /**
- * @author: manhong.yqd
+ * @author manhong.yqd
  */
 public class QueryConsumeTimeSpanBody extends RemotingSerializable {
     List<QueueTimeSpan> consumeTimeSpanSet = new ArrayList<QueueTimeSpan>();

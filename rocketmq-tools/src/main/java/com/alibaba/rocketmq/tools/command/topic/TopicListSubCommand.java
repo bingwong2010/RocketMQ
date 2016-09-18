@@ -38,8 +38,9 @@ import java.util.Set;
 
 
 /**
- * 
+ *
  * @author shijia.wxr
+ *
  */
 public class TopicListSubCommand implements SubCommand {
 
@@ -64,28 +65,6 @@ public class TopicListSubCommand implements SubCommand {
         return options;
     }
 
-
-    private String findTopicBelongToWhichCluster(final String topic, final ClusterInfo clusterInfo,
-            final DefaultMQAdminExt defaultMQAdminExt) throws RemotingException, MQClientException,
-            InterruptedException {
-        TopicRouteData topicRouteData = defaultMQAdminExt.examineTopicRouteInfo(topic);
-
-        BrokerData brokerData = topicRouteData.getBrokerDatas().get(0);
-
-        String brokerName = brokerData.getBrokerName();
-
-        Iterator<Entry<String, Set<String>>> it = clusterInfo.getClusterAddrTable().entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<String, Set<String>> next = it.next();
-            if (next.getValue().contains(brokerName)) {
-                return next.getKey();
-            }
-        }
-
-        return null;
-    }
-
-
     @Override
     public void execute(final CommandLine commandLine, final Options options, RPCHook rpcHook) {
         DefaultMQAdminExt defaultMQAdminExt = new DefaultMQAdminExt(rpcHook);
@@ -98,10 +77,10 @@ public class TopicListSubCommand implements SubCommand {
             if (commandLine.hasOption('c')) {
                 ClusterInfo clusterInfo = defaultMQAdminExt.examineBrokerClusterInfo();
 
-                System.out.printf("%-20s  %-48s  %-48s\n",//
-                    "#Cluster Name",//
-                    "#Topic",//
-                    "#Consumer Group"//
+                System.out.printf("%-20s  %-48s  %-48s%n",//
+                        "#Cluster Name",//
+                        "#Topic",//
+                        "#Consumer Group"//
                 );
 
                 TopicList topicList = defaultMQAdminExt.fetchAllTopicList();
@@ -118,8 +97,7 @@ public class TopicListSubCommand implements SubCommand {
                         clusterName =
                                 this.findTopicBelongToWhichCluster(topic, clusterInfo, defaultMQAdminExt);
                         groupList = defaultMQAdminExt.queryTopicConsumeByWho(topic);
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                     }
 
                     if (null == groupList || groupList.getGroupList().isEmpty()) {
@@ -128,26 +106,43 @@ public class TopicListSubCommand implements SubCommand {
                     }
 
                     for (String group : groupList.getGroupList()) {
-                        System.out.printf("%-20s  %-48s  %-48s\n",//
-                            UtilAll.frontStringAtLeast(clusterName, 20),//
-                            UtilAll.frontStringAtLeast(topic, 48),//
-                            UtilAll.frontStringAtLeast(group, 48)//
-                            );
+                        System.out.printf("%-20s  %-48s  %-48s%n",//
+                                UtilAll.frontStringAtLeast(clusterName, 20),//
+                                UtilAll.frontStringAtLeast(topic, 48),//
+                                UtilAll.frontStringAtLeast(group, 48)//
+                        );
                     }
                 }
-            }
-            else {
+            } else {
                 TopicList topicList = defaultMQAdminExt.fetchAllTopicList();
                 for (String topic : topicList.getTopicList()) {
                     System.out.println(topic);
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
+    }
+
+    private String findTopicBelongToWhichCluster(final String topic, final ClusterInfo clusterInfo,
+                                                 final DefaultMQAdminExt defaultMQAdminExt) throws RemotingException, MQClientException,
+            InterruptedException {
+        TopicRouteData topicRouteData = defaultMQAdminExt.examineTopicRouteInfo(topic);
+
+        BrokerData brokerData = topicRouteData.getBrokerDatas().get(0);
+
+        String brokerName = brokerData.getBrokerName();
+
+        Iterator<Entry<String, Set<String>>> it = clusterInfo.getClusterAddrTable().entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<String, Set<String>> next = it.next();
+            if (next.getValue().contains(brokerName)) {
+                return next.getKey();
+            }
+        }
+
+        return null;
     }
 }

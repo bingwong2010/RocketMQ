@@ -43,158 +43,76 @@ public class StatsItemSet {
         this.init();
     }
 
-
-    public StatsItem getAndCreateStatsItem(final String statsKey) {
-        StatsItem statsItem = this.statsItemTable.get(statsKey);
-        if (null == statsItem) {
-            statsItem = new StatsItem(this.statsName, statsKey, this.scheduledExecutorService, this.log);
-            StatsItem prev = this.statsItemTable.put(statsKey, statsItem);
-            if (null == prev) {
-                // statsItem.init();
-            }
-        }
-
-        return statsItem;
-    }
-
-
-    public void addValue(final String statsKey, final int incValue, final int incTimes) {
-        StatsItem statsItem = this.getAndCreateStatsItem(statsKey);
-        statsItem.getValue().addAndGet(incValue);
-        statsItem.getTimes().addAndGet(incTimes);
-    }
-
-
-    public StatsSnapshot getStatsDataInMinute(final String statsKey) {
-        StatsItem statsItem = this.statsItemTable.get(statsKey);
-        if (null != statsItem) {
-            return statsItem.getStatsDataInMinute();
-        }
-        return new StatsSnapshot();
-    }
-
-
-    public StatsSnapshot getStatsDataInHour(final String statsKey) {
-        StatsItem statsItem = this.statsItemTable.get(statsKey);
-        if (null != statsItem) {
-            return statsItem.getStatsDataInHour();
-        }
-        return new StatsSnapshot();
-    }
-
-
-    public StatsSnapshot getStatsDataInDay(final String statsKey) {
-        StatsItem statsItem = this.statsItemTable.get(statsKey);
-        if (null != statsItem) {
-            return statsItem.getStatsDataInDay();
-        }
-        return new StatsSnapshot();
-    }
-
-
-    public StatsItem getStatsItem(final String statsKey) {
-        return this.statsItemTable.get(statsKey);
-    }
-
-
     public void init() {
+
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 try {
                     samplingInSeconds();
-                }
-                catch (Throwable e) {
+                } catch (Throwable e) {
                 }
             }
         }, 0, 10, TimeUnit.SECONDS);
+
 
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 try {
                     samplingInMinutes();
-                }
-                catch (Throwable e) {
+                } catch (Throwable e) {
                 }
             }
         }, 0, 10, TimeUnit.MINUTES);
+
 
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 try {
                     samplingInHour();
-                }
-                catch (Throwable e) {
+                } catch (Throwable e) {
                 }
             }
         }, 0, 1, TimeUnit.HOURS);
 
-        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    printAtMinutes();
-                }
-                catch (Throwable e) {
-                }
-            }
-        }, Math.abs(UtilAll.computNextMinutesTimeMillis() - System.currentTimeMillis()), //
-            1000 * 60, TimeUnit.MILLISECONDS);
 
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    printAtHour();
-                }
-                catch (Throwable e) {
-                }
-            }
-        }, Math.abs(UtilAll.computNextHourTimeMillis() - System.currentTimeMillis()), //
-            1000 * 60 * 60, TimeUnit.MILLISECONDS);
+                                                              @Override
+                                                              public void run() {
+                                                                  try {
+                                                                      printAtMinutes();
+                                                                  } catch (Throwable e) {
+                                                                  }
+                                                              }
+                                                          }, Math.abs(UtilAll.computNextMinutesTimeMillis() - System.currentTimeMillis()), //
+                1000 * 60, TimeUnit.MILLISECONDS);
+
 
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    printAtDay();
-                }
-                catch (Throwable e) {
-                }
-            }
-        }, Math.abs(UtilAll.computNextMorningTimeMillis() - System.currentTimeMillis()), //
-            1000 * 60 * 60 * 24, TimeUnit.MILLISECONDS);
+                                                              @Override
+                                                              public void run() {
+                                                                  try {
+                                                                      printAtHour();
+                                                                  } catch (Throwable e) {
+                                                                  }
+                                                              }
+                                                          }, Math.abs(UtilAll.computNextHourTimeMillis() - System.currentTimeMillis()), //
+                1000 * 60 * 60, TimeUnit.MILLISECONDS);
+
+
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+                                                              @Override
+                                                              public void run() {
+                                                                  try {
+                                                                      printAtDay();
+                                                                  } catch (Throwable e) {
+                                                                  }
+                                                              }
+                                                          }, Math.abs(UtilAll.computNextMorningTimeMillis() - System.currentTimeMillis()), //
+                1000 * 60 * 60 * 24, TimeUnit.MILLISECONDS);
     }
-
-
-    private void printAtMinutes() {
-        Iterator<Entry<String, StatsItem>> it = this.statsItemTable.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<String, StatsItem> next = it.next();
-            next.getValue().printAtMinutes();
-        }
-    }
-
-
-    private void printAtHour() {
-        Iterator<Entry<String, StatsItem>> it = this.statsItemTable.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<String, StatsItem> next = it.next();
-            next.getValue().printAtHour();
-        }
-    }
-
-
-    private void printAtDay() {
-        Iterator<Entry<String, StatsItem>> it = this.statsItemTable.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<String, StatsItem> next = it.next();
-            next.getValue().printAtDay();
-        }
-    }
-
 
     private void samplingInSeconds() {
         Iterator<Entry<String, StatsItem>> it = this.statsItemTable.entrySet().iterator();
@@ -204,7 +122,6 @@ public class StatsItemSet {
         }
     }
 
-
     private void samplingInMinutes() {
         Iterator<Entry<String, StatsItem>> it = this.statsItemTable.entrySet().iterator();
         while (it.hasNext()) {
@@ -213,12 +130,84 @@ public class StatsItemSet {
         }
     }
 
-
     private void samplingInHour() {
         Iterator<Entry<String, StatsItem>> it = this.statsItemTable.entrySet().iterator();
         while (it.hasNext()) {
             Entry<String, StatsItem> next = it.next();
             next.getValue().samplingInHour();
         }
+    }
+
+    private void printAtMinutes() {
+        Iterator<Entry<String, StatsItem>> it = this.statsItemTable.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<String, StatsItem> next = it.next();
+            next.getValue().printAtMinutes();
+        }
+    }
+
+    private void printAtHour() {
+        Iterator<Entry<String, StatsItem>> it = this.statsItemTable.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<String, StatsItem> next = it.next();
+            next.getValue().printAtHour();
+        }
+    }
+
+    private void printAtDay() {
+        Iterator<Entry<String, StatsItem>> it = this.statsItemTable.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<String, StatsItem> next = it.next();
+            next.getValue().printAtDay();
+        }
+    }
+
+    public void addValue(final String statsKey, final int incValue, final int incTimes) {
+        StatsItem statsItem = this.getAndCreateStatsItem(statsKey);
+        statsItem.getValue().addAndGet(incValue);
+        statsItem.getTimes().addAndGet(incTimes);
+    }
+
+    public StatsItem getAndCreateStatsItem(final String statsKey) {
+        StatsItem statsItem = this.statsItemTable.get(statsKey);
+        if (null == statsItem) {
+            statsItem = new StatsItem(this.statsName, statsKey, this.scheduledExecutorService, this.log);
+            StatsItem prev = this.statsItemTable.put(statsKey, statsItem);
+
+            if (null == prev) {
+
+                // statsItem.init();
+            }
+        }
+
+        return statsItem;
+    }
+
+    public StatsSnapshot getStatsDataInMinute(final String statsKey) {
+        StatsItem statsItem = this.statsItemTable.get(statsKey);
+        if (null != statsItem) {
+            return statsItem.getStatsDataInMinute();
+        }
+        return new StatsSnapshot();
+    }
+
+    public StatsSnapshot getStatsDataInHour(final String statsKey) {
+        StatsItem statsItem = this.statsItemTable.get(statsKey);
+        if (null != statsItem) {
+            return statsItem.getStatsDataInHour();
+        }
+        return new StatsSnapshot();
+    }
+
+    public StatsSnapshot getStatsDataInDay(final String statsKey) {
+        StatsItem statsItem = this.statsItemTable.get(statsKey);
+        if (null != statsItem) {
+            return statsItem.getStatsDataInDay();
+        }
+        return new StatsSnapshot();
+    }
+
+    public StatsItem getStatsItem(final String statsKey) {
+        return this.statsItemTable.get(statsKey);
     }
 }

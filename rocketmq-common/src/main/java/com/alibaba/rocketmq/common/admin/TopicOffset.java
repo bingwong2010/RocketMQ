@@ -17,7 +17,9 @@
 package com.alibaba.rocketmq.common.admin;
 
 /**
+ *
  * @author shijia.wxr
+ *
  */
 public class TopicOffset {
     private long minOffset;

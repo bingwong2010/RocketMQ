@@ -23,8 +23,8 @@ import com.alibaba.rocketmq.remoting.exception.RemotingCommandException;
 
 
 /**
+ * @author manhong.yqd
  *
- * @author: manhong.yqd
  */
 public class QueryConsumeTimeSpanRequestHeader implements CommandCustomHeader {
     @CFNotNull

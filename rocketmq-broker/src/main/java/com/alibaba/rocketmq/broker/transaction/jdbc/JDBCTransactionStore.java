@@ -43,21 +43,45 @@ public class JDBCTransactionStore implements TransactionStore {
         this.jdbcTransactionStoreConfig = jdbcTransactionStoreConfig;
     }
 
+    @Override
+    public boolean open() {
+        if (this.loadDriver()) {
+            Properties props = new Properties();
+            props.put("user", jdbcTransactionStoreConfig.getJdbcUser());
+            props.put("password", jdbcTransactionStoreConfig.getJdbcPassword());
 
-    private boolean loadDriver() {
-        try {
-            Class.forName(this.jdbcTransactionStoreConfig.getJdbcDriverClass()).newInstance();
-            log.info("Loaded the appropriate driver, {}",
-                this.jdbcTransactionStoreConfig.getJdbcDriverClass());
-            return true;
-        }
-        catch (Exception e) {
-            log.info("Loaded the appropriate driver Exception", e);
+            try {
+                this.connection =
+                        DriverManager.getConnection(this.jdbcTransactionStoreConfig.getJdbcURL(), props);
+
+                this.connection.setAutoCommit(false);
+
+
+                if (!this.computeTotalRecords()) {
+                    return this.createDB();
+                }
+
+                return true;
+            } catch (SQLException e) {
+                log.info("Create JDBC Connection Exeption", e);
+            }
         }
 
         return false;
     }
 
+    private boolean loadDriver() {
+        try {
+            Class.forName(this.jdbcTransactionStoreConfig.getJdbcDriverClass()).newInstance();
+            log.info("Loaded the appropriate driver, {}",
+                    this.jdbcTransactionStoreConfig.getJdbcDriverClass());
+            return true;
+        } catch (Exception e) {
+            log.info("Loaded the appropriate driver Exception", e);
+        }
+
+        return false;
+    }
 
     private boolean computeTotalRecords() {
         Statement statement = null;
@@ -72,39 +96,27 @@ public class JDBCTransactionStore implements TransactionStore {
             }
 
             this.totalRecordsValue.set(resultSet.getLong(1));
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.warn("computeTotalRecords Exception", e);
             return false;
-        }
-        finally {
+        } finally {
             if (null != statement) {
                 try {
                     statement.close();
-                }
-                catch (SQLException e) {
+                } catch (SQLException e) {
                 }
             }
 
             if (null != resultSet) {
                 try {
                     resultSet.close();
-                }
-                catch (SQLException e) {
+                } catch (SQLException e) {
                 }
             }
         }
 
         return true;
     }
-
-
-    private String createTableSql() {
-        URL resource = JDBCTransactionStore.class.getClassLoader().getResource("transaction.sql");
-        String fileContent = MixAll.file2String(resource);
-        return fileContent;
-    }
-
 
     private boolean createDB() {
         Statement statement = null;
@@ -116,50 +128,25 @@ public class JDBCTransactionStore implements TransactionStore {
             statement.execute(sql);
             this.connection.commit();
             return true;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.warn("createDB Exception", e);
             return false;
-        }
-        finally {
+        } finally {
             if (null != statement) {
                 try {
                     statement.close();
-                }
-                catch (SQLException e) {
+                } catch (SQLException e) {
+                    log.warn("Close statement exception", e);
                 }
             }
         }
     }
 
-
-    @Override
-    public boolean open() {
-        if (this.loadDriver()) {
-            Properties props = new Properties();
-            props.put("user", jdbcTransactionStoreConfig.getJdbcUser());
-            props.put("password", jdbcTransactionStoreConfig.getJdbcPassword());
-
-            try {
-                this.connection =
-                        DriverManager.getConnection(this.jdbcTransactionStoreConfig.getJdbcURL(), props);
-
-                this.connection.setAutoCommit(false);
-
-                if (!this.computeTotalRecords()) {
-                    return this.createDB();
-                }
-
-                return true;
-            }
-            catch (SQLException e) {
-                log.info("Create JDBC Connection Exeption", e);
-            }
-        }
-
-        return false;
+    private String createTableSql() {
+        URL resource = JDBCTransactionStore.class.getClassLoader().getResource("transaction.sql");
+        String fileContent = MixAll.file2String(resource);
+        return fileContent;
     }
-
 
     @Override
     public void close() {
@@ -167,78 +154,9 @@ public class JDBCTransactionStore implements TransactionStore {
             if (this.connection != null) {
                 this.connection.close();
             }
-        }
-        catch (SQLException e) {
-        }
-    }
-
-
-    private long updatedRows(int[] rows) {
-        long res = 0;
-        for (int i : rows) {
-            res += i;
-        }
-
-        return res;
-    }
-
-
-    @Override
-    public void remove(List<Long> pks) {
-        PreparedStatement statement = null;
-        try {
-            this.connection.setAutoCommit(false);
-            statement = this.connection.prepareStatement("DELETE FROM t_transaction WHERE offset = ?");
-            for (long pk : pks) {
-                statement.setLong(1, pk);
-                statement.addBatch();
-            }
-            int[] executeBatch = statement.executeBatch();
-            System.out.println(Arrays.toString(executeBatch));
-            this.connection.commit();
-        }
-        catch (Exception e) {
-            log.warn("createDB Exception", e);
-        }
-        finally {
-            if (null != statement) {
-                try {
-                    statement.close();
-                }
-                catch (SQLException e) {
-                }
-            }
+        } catch (SQLException e) {
         }
     }
-
-
-    @Override
-    public List<TransactionRecord> traverse(long pk, int nums) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-
-    @Override
-    public long totalRecords() {
-        // TODO Auto-generated method stub
-        return this.totalRecordsValue.get();
-    }
-
-
-    @Override
-    public long minPK() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-
-    @Override
-    public long maxPK() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
 
     @Override
     public boolean put(List<TransactionRecord> trs) {
@@ -255,19 +173,71 @@ public class JDBCTransactionStore implements TransactionStore {
             this.connection.commit();
             this.totalRecordsValue.addAndGet(updatedRows(executeBatch));
             return true;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.warn("createDB Exception", e);
             return false;
-        }
-        finally {
+        } finally {
             if (null != statement) {
                 try {
                     statement.close();
-                }
-                catch (SQLException e) {
+                } catch (SQLException e) {
+                    log.warn("Close statement exception", e);
                 }
             }
         }
+    }
+
+    private long updatedRows(int[] rows) {
+        long res = 0;
+        for (int i : rows) {
+            res += i;
+        }
+
+        return res;
+    }
+
+    @Override
+    public void remove(List<Long> pks) {
+        PreparedStatement statement = null;
+        try {
+            this.connection.setAutoCommit(false);
+            statement = this.connection.prepareStatement("DELETE FROM t_transaction WHERE offset = ?");
+            for (long pk : pks) {
+                statement.setLong(1, pk);
+                statement.addBatch();
+            }
+            int[] executeBatch = statement.executeBatch();
+            System.out.println(Arrays.toString(executeBatch));
+            this.connection.commit();
+        } catch (Exception e) {
+            log.warn("createDB Exception", e);
+        } finally {
+            if (null != statement) {
+                try {
+                    statement.close();
+                } catch (SQLException e) {
+                }
+            }
+        }
+    }
+
+    @Override
+    public List<TransactionRecord> traverse(long pk, int nums) {
+        return null;
+    }
+
+    @Override
+    public long totalRecords() {
+        return this.totalRecordsValue.get();
+    }
+
+    @Override
+    public long minPK() {
+        return 0;
+    }
+
+    @Override
+    public long maxPK() {
+        return 0;
     }
 }

@@ -16,21 +16,21 @@
  */
 package com.alibaba.rocketmq.tools.command.topic;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-
 import com.alibaba.rocketmq.common.UtilAll;
 import com.alibaba.rocketmq.common.namesrv.NamesrvUtil;
 import com.alibaba.rocketmq.remoting.RPCHook;
 import com.alibaba.rocketmq.srvutil.ServerUtil;
 import com.alibaba.rocketmq.tools.admin.DefaultMQAdminExt;
 import com.alibaba.rocketmq.tools.command.SubCommand;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
 
 
 /**
- * 
+ *
  * @author manhong.yqd
+ *
  */
 public class UpdateOrderConfCommand implements SubCommand {
 
@@ -74,14 +74,15 @@ public class UpdateOrderConfCommand implements SubCommand {
             String type = commandLine.getOptionValue('m').trim();
 
             if ("get".equals(type)) {
+
                 defaultMQAdminExt.start();
                 String orderConf =
                         defaultMQAdminExt.getKVConfig(NamesrvUtil.NAMESPACE_ORDER_TOPIC_CONFIG, topic);
                 System.out.printf("get orderConf success. topic=[%s], orderConf=[%s] ", topic, orderConf);
 
                 return;
-            }
-            else if ("put".equals(type)) {
+            } else if ("put".equals(type)) {
+
                 defaultMQAdminExt.start();
                 String orderConf = "";
                 if (commandLine.hasOption('v')) {
@@ -93,10 +94,10 @@ public class UpdateOrderConfCommand implements SubCommand {
 
                 defaultMQAdminExt.createOrUpdateOrderConf(topic, orderConf, true);
                 System.out.printf("update orderConf success. topic=[%s], orderConf=[%s]", topic,
-                    orderConf.toString());
+                        orderConf.toString());
                 return;
-            }
-            else if ("delete".equals(type)) {
+            } else if ("delete".equals(type)) {
+
                 defaultMQAdminExt.start();
                 defaultMQAdminExt.deleteKvConfig(NamesrvUtil.NAMESPACE_ORDER_TOPIC_CONFIG, topic);
                 System.out.printf("delete orderConf success. topic=[%s]", topic);
@@ -105,11 +106,9 @@ public class UpdateOrderConfCommand implements SubCommand {
             }
 
             ServerUtil.printCommandLineHelp("mqadmin " + this.commandName(), options);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
     }

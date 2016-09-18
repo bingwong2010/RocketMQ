@@ -19,9 +19,7 @@ package com.alibaba.rocketmq.store;
 import com.alibaba.rocketmq.common.message.MessageExt;
 import com.alibaba.rocketmq.common.protocol.heartbeat.SubscriptionData;
 
-import java.net.SocketAddress;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 
@@ -32,11 +30,15 @@ public interface MessageStore {
 
     boolean load();
 
+
     void start() throws Exception;
+
 
     void shutdown();
 
+
     void destroy();
+
 
     PutMessageResult putMessage(final MessageExtBrokerInner msg);
 
@@ -67,41 +69,66 @@ public interface MessageStore {
 
     String getRunningDataInfo();
 
+
     HashMap<String, String> getRuntimeInfo();
+
 
     long getMaxPhyOffset();
 
+
     long getMinPhyOffset();
 
+
     long getEarliestMessageTime(final String topic, final int queueId);
+    long getEarliestMessageTime();
+
 
     long getMessageStoreTimeStamp(final String topic, final int queueId, final long offset);
+
 
     long getMessageTotalInQueue(final String topic, final int queueId);
 
     SelectMapedBufferResult getCommitLogData(final long offset);
 
+
     boolean appendToCommitLog(final long startOffset, final byte[] data);
 
     void excuteDeleteFilesManualy();
 
+
     QueryMessageResult queryMessage(final String topic, final String key, final int maxNum,
                                     final long begin, final long end);
 
+
     void updateHaMasterAddress(final String newAddr);
+
 
     long slaveFallBehindMuch();
 
+
     long now();
+
 
     int cleanUnusedTopic(final Set<String> topics);
 
+
     void cleanExpiredConsumerQueue();
 
-    Map<String, Long> getMessageIds(final String topic, int queueId, long minOffset,
-                                    final long maxOffset, SocketAddress storeHost);
 
     boolean checkInDiskByConsumeOffset(final String topic, final int queueId, long consumeOffset);
 
+
     long dispatchBehindBytes();
+
+    long flush();
+
+    boolean resetWriteOffset(long phyOffset);
+
+    long getConfirmOffset();
+
+    void setConfirmOffset(long phyOffset);
+
+    boolean isOSPageCacheBusy();
+
+    long lockTimeMills();
 }

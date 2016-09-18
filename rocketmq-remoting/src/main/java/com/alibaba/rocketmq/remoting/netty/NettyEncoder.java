@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 
 /**
  * @author shijia.wxr
+ *
  */
 public class NettyEncoder extends MessageToByteEncoder<RemotingCommand> {
     private static final Logger log = LoggerFactory.getLogger(RemotingHelper.RemotingLogName);

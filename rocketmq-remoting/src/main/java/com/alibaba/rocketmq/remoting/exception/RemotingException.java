@@ -17,7 +17,6 @@
 package com.alibaba.rocketmq.remoting.exception;
 
 /**
- *
  * @author shijia.wxr
  */
 public class RemotingException extends Exception {

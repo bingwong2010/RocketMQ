@@ -24,6 +24,7 @@ import com.alibaba.rocketmq.remoting.exception.RemotingCommandException;
 
 /**
  * @author manhong.yqd
+ *
  */
 public class GetTopicsByClusterRequestHeader implements CommandCustomHeader {
     @CFNotNull

@@ -31,15 +31,16 @@ public class Consumer {
 
     public static void main(String[] args) throws InterruptedException, MQClientException {
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("ConsumerGroupNamecc4");
+
         String filterCode = MixAll.file2String("/home/admin/MessageFilterImpl.java");
         consumer.subscribe("TopicFilter7", "com.alibaba.rocketmq.example.filter.MessageFilterImpl",
-            filterCode);
+                filterCode);
 
         consumer.registerMessageListener(new MessageListenerConcurrently() {
 
             @Override
             public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
-                    ConsumeConcurrentlyContext context) {
+                                                            ConsumeConcurrentlyContext context) {
                 System.out.println(Thread.currentThread().getName() + " Receive New Messages: " + msgs);
                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
             }

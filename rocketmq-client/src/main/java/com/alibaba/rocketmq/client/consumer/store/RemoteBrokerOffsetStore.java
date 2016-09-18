@@ -16,16 +16,6 @@
  */
 package com.alibaba.rocketmq.client.consumer.store;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-
-import org.slf4j.Logger;
-
 import com.alibaba.rocketmq.client.exception.MQBrokerException;
 import com.alibaba.rocketmq.client.exception.MQClientException;
 import com.alibaba.rocketmq.client.impl.FindBrokerResult;
@@ -37,6 +27,11 @@ import com.alibaba.rocketmq.common.message.MessageQueue;
 import com.alibaba.rocketmq.common.protocol.header.QueryConsumerOffsetRequestHeader;
 import com.alibaba.rocketmq.common.protocol.header.UpdateConsumerOffsetRequestHeader;
 import com.alibaba.rocketmq.remoting.exception.RemotingException;
+import org.slf4j.Logger;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 /**
@@ -48,7 +43,6 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
     private final static Logger log = ClientLogger.getLog();
     private final MQClientInstance mQClientFactory;
     private final String groupName;
-    private final AtomicLong storeTimesTotal = new AtomicLong(0);
     private ConcurrentHashMap<MessageQueue, AtomicLong> offsetTable =
             new ConcurrentHashMap<MessageQueue, AtomicLong>();
 
@@ -128,22 +122,19 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
             return;
 
         final HashSet<MessageQueue> unusedMQ = new HashSet<MessageQueue>();
-        long times = this.storeTimesTotal.getAndIncrement();
-
         if (mqs != null && !mqs.isEmpty()) {
-            for (MessageQueue mq : this.offsetTable.keySet()) {
-                AtomicLong offset = this.offsetTable.get(mq);
+            for(Map.Entry<MessageQueue, AtomicLong> entry:this.offsetTable.entrySet()){
+                MessageQueue mq = entry.getKey();
+                AtomicLong offset = entry.getValue();
                 if (offset != null) {
                     if (mqs.contains(mq)) {
                         try {
                             this.updateConsumeOffsetToBroker(mq, offset.get());
-                            if ((times % 12) == 0) {
-                                log.info("Group: {} ClientId: {} updateConsumeOffsetToBroker {} {}", //
-                                        this.groupName,//
-                                        this.mQClientFactory.getClientId(),//
-                                        mq, //
-                                        offset.get());
-                            }
+                            log.info("[persistAll] Group: {} ClientId: {} updateConsumeOffsetToBroker {} {}", //
+                                    this.groupName,//
+                                    this.mQClientFactory.getClientId(),//
+                                    mq, //
+                                    offset.get());
                         } catch (Exception e) {
                             log.error("updateConsumeOffsetToBroker exception, " + mq.toString(), e);
                         }
@@ -169,13 +160,37 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
         if (offset != null) {
             try {
                 this.updateConsumeOffsetToBroker(mq, offset.get());
-                log.debug("updateConsumeOffsetToBroker {} {}", mq, offset.get());
+                log.info("[persist] Group: {} ClientId: {} updateConsumeOffsetToBroker {} {}", //
+                        this.groupName,//
+                        this.mQClientFactory.getClientId(),//
+                        mq, //
+                        offset.get());
             } catch (Exception e) {
                 log.error("updateConsumeOffsetToBroker exception, " + mq.toString(), e);
             }
         }
     }
 
+    public void removeOffset(MessageQueue mq) {
+        if (mq != null) {
+            this.offsetTable.remove(mq);
+            log.info("remove unnecessary messageQueue offset. mq={}, offsetTableSize={}", mq,
+                    offsetTable.size());
+        }
+    }
+
+    @Override
+    public Map<MessageQueue, Long> cloneOffsetTable(String topic) {
+        Map<MessageQueue, Long> cloneOffsetTable = new HashMap<MessageQueue, Long>();
+        for (Map.Entry<MessageQueue, AtomicLong> entry : this.offsetTable.entrySet()) {
+            MessageQueue mq = entry.getKey();
+            if (!UtilAll.isBlank(topic) && !topic.equals(mq.getTopic())) {
+                continue;
+            }
+            cloneOffsetTable.put(mq, entry.getValue().get());
+        }
+        return cloneOffsetTable;
+    }
 
     /**
      * Update the Consumer Offset, once the Master is off, updated to Slave,
@@ -204,7 +219,6 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
         }
     }
 
-
     private long fetchConsumeOffsetFromBroker(MessageQueue mq) throws RemotingException, MQBrokerException,
             InterruptedException, MQClientException {
         FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInAdmin(mq.getBrokerName());
@@ -225,29 +239,5 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
         } else {
             throw new MQClientException("The broker[" + mq.getBrokerName() + "] not exist", null);
         }
-    }
-
-
-    public void removeOffset(MessageQueue mq) {
-        if (mq != null) {
-            this.offsetTable.remove(mq);
-            log.info("remove unnecessary messageQueue offset. mq={}, offsetTableSize={}", mq,
-                    offsetTable.size());
-        }
-    }
-
-
-    @Override
-    public Map<MessageQueue, Long> cloneOffsetTable(String topic) {
-        Map<MessageQueue, Long> cloneOffsetTable = new HashMap<MessageQueue, Long>();
-        Iterator<MessageQueue> iterator = this.offsetTable.keySet().iterator();
-        while (iterator.hasNext()) {
-            MessageQueue mq = iterator.next();
-            if (!UtilAll.isBlank(topic) && !topic.equals(mq.getTopic())) {
-                continue;
-            }
-            cloneOffsetTable.put(mq, this.offsetTable.get(mq).get());
-        }
-        return cloneOffsetTable;
     }
 }

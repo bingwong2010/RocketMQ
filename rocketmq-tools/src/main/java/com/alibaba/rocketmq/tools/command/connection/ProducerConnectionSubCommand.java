@@ -16,16 +16,15 @@
  */
 package com.alibaba.rocketmq.tools.command.connection;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-
 import com.alibaba.rocketmq.common.MQVersion;
 import com.alibaba.rocketmq.common.protocol.body.Connection;
 import com.alibaba.rocketmq.common.protocol.body.ProducerConnection;
 import com.alibaba.rocketmq.remoting.RPCHook;
 import com.alibaba.rocketmq.tools.admin.DefaultMQAdminExt;
 import com.alibaba.rocketmq.tools.command.SubCommand;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
 
 
 /**
@@ -51,6 +50,7 @@ public class ProducerConnectionSubCommand implements SubCommand {
         opt.setRequired(true);
         options.addOption(opt);
 
+
         opt = new Option("t", "topic", true, "topic name");
         opt.setRequired(true);
         options.addOption(opt);
@@ -75,19 +75,17 @@ public class ProducerConnectionSubCommand implements SubCommand {
 
             int i = 1;
             for (Connection conn : pc.getConnectionSet()) {
-                System.out.printf("%04d  %-32s %-22s %-8s %s\n",//
-                    i++,//
-                    conn.getClientId(),//
-                    conn.getClientAddr(),//
-                    conn.getLanguage(),//
-                    MQVersion.getVersionDesc(conn.getVersion())//
-                    );
+                System.out.printf("%04d  %-32s %-22s %-8s %s%n",//
+                        i++,//
+                        conn.getClientId(),//
+                        conn.getClientAddr(),//
+                        conn.getLanguage(),//
+                        MQVersion.getVersionDesc(conn.getVersion())//
+                );
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
     }

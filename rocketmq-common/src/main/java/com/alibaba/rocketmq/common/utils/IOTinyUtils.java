@@ -17,26 +17,22 @@
 
 package com.alibaba.rocketmq.common.utils;
 
-import java.io.BufferedReader;
-import java.io.CharArrayWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.io.Writer;
+import com.alibaba.rocketmq.remoting.common.RemotingHelper;
+
+import java.io.*;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * @author manhong.yqd
+ */
 public class IOTinyUtils {
 
     static public String toString(InputStream input, String encoding) throws IOException {
-        return (null == encoding) ? toString(new InputStreamReader(input)) : toString(new InputStreamReader(
-            input, encoding));
+        return (null == encoding) ? toString(new InputStreamReader(input, RemotingHelper.DEFAULT_CHARSET)) : toString(new InputStreamReader(
+                input, encoding));
     }
 
 
@@ -50,23 +46,26 @@ public class IOTinyUtils {
     static public long copy(Reader input, Writer output) throws IOException {
         char[] buffer = new char[1 << 12];
         long count = 0;
-        for (int n = 0; (n = input.read(buffer)) >= 0;) {
+        for (int n = 0; (n = input.read(buffer)) >= 0; ) {
             output.write(buffer, 0, n);
             count += n;
         }
         return count;
     }
 
+
+    /**
+
+     */
     static public List<String> readLines(Reader input) throws IOException {
         BufferedReader reader = toBufferedReader(input);
         List<String> list = new ArrayList<String>();
         String line = null;
-        for (;;) {
+        for (; ; ) {
             line = reader.readLine();
             if (null != line) {
                 list.add(line);
-            }
-            else {
+            } else {
                 break;
             }
         }
@@ -96,8 +95,7 @@ public class IOTinyUtils {
             tc = new FileOutputStream(tf).getChannel();
             sc = new FileInputStream(sf).getChannel();
             sc.transferTo(0, sc.size(), tc);
-        }
-        finally {
+        } finally {
             if (null != sc) {
                 sc.close();
             }
@@ -121,6 +119,9 @@ public class IOTinyUtils {
     }
 
 
+    /**
+
+     */
     public static void cleanDirectory(File directory) throws IOException {
         if (!directory.exists()) {
             String message = directory + " does not exist";
@@ -141,8 +142,7 @@ public class IOTinyUtils {
         for (File file : files) {
             try {
                 delete(file);
-            }
-            catch (IOException ioe) {
+            } catch (IOException ioe) {
                 exception = ioe;
             }
         }
@@ -158,8 +158,7 @@ public class IOTinyUtils {
         try {
             os = new FileOutputStream(file);
             os.write(data.getBytes(encoding));
-        }
-        finally {
+        } finally {
             if (null != os) {
                 os.close();
             }

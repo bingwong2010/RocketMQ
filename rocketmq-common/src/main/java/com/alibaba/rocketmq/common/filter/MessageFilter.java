@@ -19,6 +19,7 @@ package com.alibaba.rocketmq.common.filter;
 
 import com.alibaba.rocketmq.common.message.MessageExt;
 
+
 public interface MessageFilter {
-    boolean match(final MessageExt msg, final FilterContext context);
+   boolean match(final MessageExt msg, final FilterContext context);
 }

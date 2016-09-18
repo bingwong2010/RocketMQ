@@ -27,7 +27,6 @@ import com.alibaba.rocketmq.common.protocol.heartbeat.MessageModel;
 
 import java.util.List;
 
-
 public class PushConsumer {
 
     public static void main(String[] args) throws InterruptedException, MQClientException {
@@ -43,7 +42,7 @@ public class PushConsumer {
 
             @Override
             public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
-                    ConsumeConcurrentlyContext context) {
+                                                            ConsumeConcurrentlyContext context) {
                 System.out.println(Thread.currentThread().getName() + " Receive New Messages: " + msgs);
 
                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;

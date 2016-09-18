@@ -23,6 +23,7 @@ import com.alibaba.rocketmq.remoting.exception.RemotingCommandException;
 
 /**
  * @author shijia.wxr
+ *
  */
 public class WipeWritePermOfBrokerRequestHeader implements CommandCustomHeader {
     @CFNotNull
@@ -31,7 +32,6 @@ public class WipeWritePermOfBrokerRequestHeader implements CommandCustomHeader {
 
     @Override
     public void checkFields() throws RemotingCommandException {
-        // TODO Auto-generated method stub
 
     }
 

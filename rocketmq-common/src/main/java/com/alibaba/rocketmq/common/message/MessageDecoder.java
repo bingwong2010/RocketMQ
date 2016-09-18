@@ -72,6 +72,7 @@ public class MessageDecoder {
         SocketAddress address;
         long offset;
 
+
         byte[] ip = UtilAll.string2bytes(msgId.substring(0, 8));
         byte[] port = UtilAll.string2bytes(msgId.substring(8, 16));
         ByteBuffer bb = ByteBuffer.wrap(port);
@@ -88,13 +89,19 @@ public class MessageDecoder {
 
 
     public static MessageExt decode(java.nio.ByteBuffer byteBuffer) {
-        return decode(byteBuffer, true, true);
+        return decode(byteBuffer, true, true, false);
     }
 
-    public static MessageExt decode(java.nio.ByteBuffer byteBuffer, final boolean readBody) {
-        return decode(byteBuffer, readBody, true);
+    public static MessageExt clientDecode(java.nio.ByteBuffer byteBuffer, final boolean readBody) {
+        return decode(byteBuffer, readBody, true, true);
     }
-    public static byte[] encode(MessageExt messageExt) throws Exception {
+    public static MessageExt decode(java.nio.ByteBuffer byteBuffer, final boolean readBody) {
+        return decode(byteBuffer, readBody, true, false);
+    }
+
+
+
+    public static byte[] encode(MessageExt messageExt, boolean needCompress) throws Exception {
         byte[] body = messageExt.getBody();
         byte[] topics = messageExt.getTopic().getBytes(CHARSET_UTF8);
         byte topicLen = (byte) topics.length;
@@ -103,7 +110,7 @@ public class MessageDecoder {
         short propertiesLength = (short) propertiesBytes.length;
         int sysFlag = messageExt.getSysFlag();
         byte[] newBody = messageExt.getBody();
-        if ((sysFlag & MessageSysFlag.CompressedFlag) == MessageSysFlag.CompressedFlag) {
+        if (needCompress && (sysFlag & MessageSysFlag.CompressedFlag) == MessageSysFlag.CompressedFlag) {
             newBody = UtilAll.compress(body, 5);
         }
         int bodyLength = newBody.length;
@@ -111,8 +118,7 @@ public class MessageDecoder {
         ByteBuffer byteBuffer;
         if (storeSize > 0) {
             byteBuffer = ByteBuffer.allocate(storeSize);
-        }
-        else {
+        } else {
             storeSize = 4 // 1 TOTALSIZE
                     + 4 // 2 MAGICCODE
                     + 4 // 3 BODYCRC
@@ -203,10 +209,22 @@ public class MessageDecoder {
         return byteBuffer.array();
     }
 
+    public static MessageExt decode(
+                                    java.nio.ByteBuffer byteBuffer, final boolean readBody, final boolean deCompressBody) {
+        return decode(byteBuffer, readBody, deCompressBody, false);
+    }
 
-    public static MessageExt decode(java.nio.ByteBuffer byteBuffer, final boolean readBody, final boolean deCompressBody) {
+    public static MessageExt decode(
+                                    java.nio.ByteBuffer byteBuffer, final boolean readBody, final boolean deCompressBody, final boolean isClient) {
         try {
-            MessageExt msgExt = new MessageExt();
+
+            MessageExt msgExt;
+            if (isClient) {
+                msgExt = new MessageClientExt();                
+            }
+            else {
+                msgExt = new MessageExt();
+            }
 
             // 1 TOTALSIZE
             int storeSize = byteBuffer.getInt();
@@ -306,6 +324,10 @@ public class MessageDecoder {
             String msgId = createMessageId(byteBufferMsgId, msgExt.getStoreHostBytes(), msgExt.getCommitLogOffset());
             msgExt.setMsgId(msgId);
 
+            if (isClient) {
+                ((MessageClientExt)msgExt).setOffsetMsgId(msgId);
+            }
+            
             return msgExt;
         }
         catch (UnknownHostException e) {
@@ -329,7 +351,7 @@ public class MessageDecoder {
     public static List<MessageExt> decodes(java.nio.ByteBuffer byteBuffer, final boolean readBody) {
         List<MessageExt> msgExts = new ArrayList<MessageExt>();
         while (byteBuffer.hasRemaining()) {
-            MessageExt msgExt = decode(byteBuffer, readBody);
+            MessageExt msgExt = clientDecode(byteBuffer, readBody);
             if (null != msgExt) {
                 msgExts.add(msgExt);
             }
@@ -339,7 +361,6 @@ public class MessageDecoder {
         }
         return msgExts;
     }
-
     public static final char NAME_VALUE_SEPARATOR = 1;
     public static final char PROPERTY_SEPARATOR = 2;
 
@@ -359,7 +380,6 @@ public class MessageDecoder {
         }
         return sb.toString();
     }
-
 
     public static Map<String, String> string2messageProperties(final String properties) {
         Map<String, String> map = new HashMap<String, String>();

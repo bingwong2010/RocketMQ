@@ -18,6 +18,7 @@ package com.alibaba.rocketmq.remoting.netty;
 
 /**
  * @author shijia.wxr
+ *
  */
 public class NettyClientConfig {
     /**
@@ -27,7 +28,7 @@ public class NettyClientConfig {
     private int clientCallbackExecutorThreads = Runtime.getRuntime().availableProcessors();
     private int clientOnewaySemaphoreValue = NettySystemConfig.ClientOnewaySemaphoreValue;
     private int clientAsyncSemaphoreValue = NettySystemConfig.ClientAsyncSemaphoreValue;
-    private long connectTimeoutMillis = 3000;
+    private int connectTimeoutMillis = 3000;
     private long channelNotActiveInterval = 1000 * 60;
 
     /**
@@ -36,10 +37,18 @@ public class NettyClientConfig {
      */
     private int clientChannelMaxIdleTimeSeconds = 120;
 
-    private int clientSocketSndBufSize = NettySystemConfig.SocketSndbufSize;
-    private int clientSocketRcvBufSize = NettySystemConfig.SocketRcvbufSize;
+    private int clientSocketSndBufSize = NettySystemConfig.socketSndbufSize;
+    private int clientSocketRcvBufSize = NettySystemConfig.socketRcvbufSize;
     private boolean clientPooledByteBufAllocatorEnable = false;
+    private boolean clientCloseSocketIfTimeout = false;
 
+    public boolean isClientCloseSocketIfTimeout() {
+        return clientCloseSocketIfTimeout;
+    }
+
+    public void setClientCloseSocketIfTimeout(final boolean clientCloseSocketIfTimeout) {
+        this.clientCloseSocketIfTimeout = clientCloseSocketIfTimeout;
+    }
 
     public int getClientWorkerThreads() {
         return clientWorkerThreads;
@@ -61,12 +70,12 @@ public class NettyClientConfig {
     }
 
 
-    public long getConnectTimeoutMillis() {
+    public int getConnectTimeoutMillis() {
         return connectTimeoutMillis;
     }
 
 
-    public void setConnectTimeoutMillis(long connectTimeoutMillis) {
+    public void setConnectTimeoutMillis(int connectTimeoutMillis) {
         this.connectTimeoutMillis = connectTimeoutMillis;
     }
 

@@ -17,11 +17,14 @@
 package com.alibaba.rocketmq.common.admin;
 
 /**
+ *
  * @author shijia.wxr
+ *
  */
 public class OffsetWrapper {
     private long brokerOffset;
     private long consumerOffset;
+
     private long lastTimestamp;
 
 

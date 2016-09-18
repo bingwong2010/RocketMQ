@@ -17,9 +17,12 @@
 package com.alibaba.rocketmq.remoting.netty;
 
 /**
+
+ *
  * @author shijia.wxr
+ *
  */
-public class NettyServerConfig implements Cloneable{
+public class NettyServerConfig implements Cloneable {
     private int listenPort = 8888;
     private int serverWorkerThreads = 8;
     private int serverCallbackExecutorThreads = 0;
@@ -28,14 +31,14 @@ public class NettyServerConfig implements Cloneable{
     private int serverAsyncSemaphoreValue = 64;
     private int serverChannelMaxIdleTimeSeconds = 120;
 
-    private int serverSocketSndBufSize = NettySystemConfig.SocketSndbufSize;
-    private int serverSocketRcvBufSize = NettySystemConfig.SocketRcvbufSize;
+    private int serverSocketSndBufSize = NettySystemConfig.socketSndbufSize;
+    private int serverSocketRcvBufSize = NettySystemConfig.socketRcvbufSize;
     private boolean serverPooledByteBufAllocatorEnable = true;
 
     /**
      * make make install
-     * 
-     * 
+     *
+     *
      * ../glibc-2.10.1/configure \ --prefix=/usr \ --with-headers=/usr/include \
      * --host=x86_64-linux-gnu \ --build=x86_64-pc-linux-gnu \ --without-gd
      */
@@ -150,9 +153,9 @@ public class NettyServerConfig implements Cloneable{
     public void setUseEpollNativeSelector(boolean useEpollNativeSelector) {
         this.useEpollNativeSelector = useEpollNativeSelector;
     }
-    
-    @Override  
-    public Object clone() throws CloneNotSupportedException {  
-        return (NettyServerConfig)super.clone();  
-    }  
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        return (NettyServerConfig) super.clone();
+    }
 }

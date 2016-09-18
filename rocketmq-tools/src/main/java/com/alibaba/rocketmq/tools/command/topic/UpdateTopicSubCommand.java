@@ -31,7 +31,9 @@ import java.util.Set;
 
 
 /**
+ *
  * @author shijia.wxr
+ *
  */
 public class UpdateTopicSubCommand implements SubCommand {
 
@@ -69,7 +71,7 @@ public class UpdateTopicSubCommand implements SubCommand {
         opt.setRequired(false);
         options.addOption(opt);
 
-        opt = new Option("p", "perm", true, "set topic's permission(2|4|6), intro[2:R; 4:W; 6:RW]");
+        opt = new Option("p", "perm", true, "set topic's permission(2|4|6), intro[2:W 4:R; 6:RW]");
         opt.setRequired(false);
         options.addOption(opt);
 
@@ -147,12 +149,11 @@ public class UpdateTopicSubCommand implements SubCommand {
                     System.out.println(String.format("set broker orderConf. isOrder=%s, orderConf=[%s]",
                             isOrder, orderConf.toString()));
                 }
-                System.out.printf("create topic to %s success.\n", addr);
+                System.out.printf("create topic to %s success.%n", addr);
                 System.out.println(topicConfig);
                 return;
 
-            }
-            else if (commandLine.hasOption('c')) {
+            } else if (commandLine.hasOption('c')) {
                 String clusterName = commandLine.getOptionValue('c').trim();
 
                 defaultMQAdminExt.start();
@@ -161,7 +162,7 @@ public class UpdateTopicSubCommand implements SubCommand {
                         CommandUtil.fetchMasterAddrByClusterName(defaultMQAdminExt, clusterName);
                 for (String addr : masterSet) {
                     defaultMQAdminExt.createAndUpdateTopicConfig(addr, topicConfig);
-                    System.out.printf("create topic to %s success.\n", addr);
+                    System.out.printf("create topic to %s success.%n", addr);
                 }
 
                 if (isOrder) {
@@ -185,11 +186,9 @@ public class UpdateTopicSubCommand implements SubCommand {
             }
 
             ServerUtil.printCommandLineHelp("mqadmin " + this.commandName(), options);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
     }

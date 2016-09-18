@@ -24,20 +24,19 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.zip.CRC32;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
 
 /**
- *
  * @author shijia.wxr
  */
 public class UtilAll {
@@ -47,17 +46,15 @@ public class UtilAll {
 
 
     public static int getPid() {
-        RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
+        RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();        
         String name = runtime.getName(); // format: "pid@hostname"
         try {
             return Integer.parseInt(name.substring(0, name.indexOf('@')));
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return -1;
         }
-    }
-
-
+    }    
+    
     public static String currentStackTrace() {
         StringBuilder sb = new StringBuilder();
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
@@ -107,8 +104,8 @@ public class UtilAll {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(t);
         return String.format("%04d%02d%02d%02d%02d%02d%03d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1,
-            cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), cal.get(Calendar.SECOND),
-            cal.get(Calendar.MILLISECOND));
+                cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), cal.get(Calendar.SECOND),
+                cal.get(Calendar.MILLISECOND));
     }
 
 
@@ -168,26 +165,28 @@ public class UtilAll {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(t);
         return String.format("%04d-%02d-%02d %02d:%02d:%02d,%03d",//
-            cal.get(Calendar.YEAR),//
-            cal.get(Calendar.MONTH) + 1,//
-            cal.get(Calendar.DAY_OF_MONTH),//
-            cal.get(Calendar.HOUR_OF_DAY),//
-            cal.get(Calendar.MINUTE),//
-            cal.get(Calendar.SECOND),//
-            cal.get(Calendar.MILLISECOND));
+                cal.get(Calendar.YEAR),//
+                cal.get(Calendar.MONTH) + 1,//
+                cal.get(Calendar.DAY_OF_MONTH),//
+                cal.get(Calendar.HOUR_OF_DAY),//
+                cal.get(Calendar.MINUTE),//
+                cal.get(Calendar.SECOND),//
+                cal.get(Calendar.MILLISECOND));
     }
+
 
     public static String timeMillisToHumanString3(final long t) {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(t);
         return String.format("%04d%02d%02d%02d%02d%02d",//
-            cal.get(Calendar.YEAR),//
-            cal.get(Calendar.MONTH) + 1,//
-            cal.get(Calendar.DAY_OF_MONTH),//
-            cal.get(Calendar.HOUR_OF_DAY),//
-            cal.get(Calendar.MINUTE),//
-            cal.get(Calendar.SECOND));
+                cal.get(Calendar.YEAR),//
+                cal.get(Calendar.MONTH) + 1,//
+                cal.get(Calendar.DAY_OF_MONTH),//
+                cal.get(Calendar.HOUR_OF_DAY),//
+                cal.get(Calendar.MINUTE),//
+                cal.get(Calendar.SECOND));
     }
+
 
     public static double getDiskPartitionSpaceUsedPercent(final String path) {
         if (null == path || path.isEmpty())
@@ -198,7 +197,6 @@ public class UtilAll {
             if (!file.exists()) {
                 boolean result = file.mkdirs();
                 if (!result) {
-                    // TODO
                 }
             }
 
@@ -208,8 +206,7 @@ public class UtilAll {
             if (totalSpace > 0) {
                 return usedSpace / (double) totalSpace;
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return -1;
         }
 
@@ -286,25 +283,20 @@ public class UtilAll {
             }
             byteArrayOutputStream.flush();
             result = byteArrayOutputStream.toByteArray();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw e;
-        }
-        finally {
+        } finally {
             try {
                 byteArrayInputStream.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
             }
             try {
                 inflaterInputStream.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
             }
             try {
                 byteArrayOutputStream.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
             }
         }
 
@@ -322,16 +314,13 @@ public class UtilAll {
             deflaterOutputStream.finish();
             deflaterOutputStream.close();
             result = byteArrayOutputStream.toByteArray();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             deflater.end();
             throw e;
-        }
-        finally {
+        } finally {
             try {
                 byteArrayOutputStream.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
             }
 
             deflater.end();
@@ -344,8 +333,7 @@ public class UtilAll {
     public static int asInt(String str, int defaultValue) {
         try {
             return Integer.parseInt(str);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return defaultValue;
         }
     }
@@ -354,8 +342,7 @@ public class UtilAll {
     public static long asLong(String str, long defaultValue) {
         try {
             return Long.parseLong(str);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return defaultValue;
         }
     }
@@ -371,8 +358,7 @@ public class UtilAll {
         SimpleDateFormat df = new SimpleDateFormat(pattern);
         try {
             return df.parse(date);
-        }
-        catch (ParseException e) {
+        } catch (ParseException e) {
             return null;
         }
     }
@@ -423,18 +409,127 @@ public class UtilAll {
                 Thread thread = entry.getKey();
                 if (elements != null && elements.length > 0) {
                     String threadName = entry.getKey().getName();
-                    result.append(String.format("%-40sTID: %d STATE: %s\n", threadName, thread.getId(), thread.getState()));
+                    result.append(String.format("%-40sTID: %d STATE: %s%n", threadName, thread.getId(), thread.getState()));
                     for (StackTraceElement el : elements) {
-                        result.append(String.format("%-40s%s\n", threadName, el.toString()));
+                        result.append(String.format("%-40s%s%n", threadName, el.toString()));
                     }
                     result.append("\n");
                 }
             }
-        }
-        catch (Throwable e) {
+        } catch (Throwable e) {
             result.append(RemotingHelper.exceptionSimpleDesc(e));
         }
 
         return result.toString();
     }
-}
+
+    public static boolean isInternalIP(byte[] ip) {
+        if (ip.length != 4) {
+            throw new RuntimeException("illegal ipv4 bytes");
+        }
+        
+
+        //10.0.0.0~10.255.255.255
+        //172.16.0.0~172.31.255.255
+        //192.168.0.0~192.168.255.255
+        if (ip[0] == (byte)10) {
+
+            return true;
+        }
+        else if (ip[0] == (byte)172) {
+            if (ip[1] >= (byte)16 && ip[1] <= (byte)31) {
+                return true;
+            }
+        }
+        else if (ip[0] == (byte)192) {
+            if (ip[1] == (byte)168) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean ipCheck(byte[] ip) {
+        if (ip.length != 4) {
+            throw new RuntimeException("illegal ipv4 bytes");
+        }
+        
+//        if (ip[0] == (byte)30 && ip[1] == (byte)10 && ip[2] == (byte)163 && ip[3] == (byte)120) {
+//            System.out.println("right!");
+//        }
+        
+
+        if (ip[0] >= (byte)1 && ip[0] <= (byte)126) {
+            if (ip[1] == (byte)1 && ip[2] == (byte)1 && ip[3] == (byte)1) {
+                return false;
+            }
+            if (ip[1] == (byte)0 && ip[2] == (byte)0 && ip[3] == (byte)0) { 
+                return false;
+            }
+            return true;
+        }
+        else if (ip[0] >= (byte)128 && ip[0] <= (byte)191) {
+            if (ip[2] == (byte)1 && ip[3] == (byte)1) {
+                return false;
+            }
+            if (ip[2] == (byte)0 && ip[3] == (byte)0) {
+                return false;
+            }
+            return true;
+        }
+        else if (ip[0] >= (byte)192 && ip[0] <= (byte)223) {
+            if (ip[3] == (byte)1) {
+                return false;
+            }
+            if (ip[3] == (byte)0) {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public static String ipToIPv4Str(byte[] ip) {
+        if (ip.length != 4) {
+            return null;
+        }
+        return new StringBuilder().append(ip[0] & 0xFF).append(".").append(   
+                ip[1] & 0xFF).append(".").append(ip[2] & 0xFF)   
+                .append(".").append(ip[3] & 0xFF).toString(); 
+    }
+    
+    public static byte[] getIP() {
+        try {
+            Enumeration allNetInterfaces = NetworkInterface.getNetworkInterfaces();
+            InetAddress ip = null;
+            byte[] internalIP = null;
+            while (allNetInterfaces.hasMoreElements()) {
+                NetworkInterface netInterface = (NetworkInterface) allNetInterfaces.nextElement();
+                Enumeration addresses = netInterface.getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    ip = (InetAddress) addresses.nextElement();
+                    if (ip != null && ip instanceof Inet4Address) {
+                        byte[] ipByte = ip.getAddress();
+                        if (ipByte.length == 4) {
+                            if (ipCheck(ipByte)) {
+                                   if (!isInternalIP(ipByte)) {
+                                        return ipByte;
+                                    }
+                                   else if (internalIP == null){
+                                       internalIP = ipByte;
+                                   }
+                           }
+                        }
+                    } 
+                }
+            }
+            if (internalIP != null) {
+                return internalIP;
+            }
+            else {
+                throw new RuntimeException("Can not get local ip");
+            }
+        }catch (Exception e) {
+            throw new RuntimeException("Can not get local ip", e);
+        }
+}}

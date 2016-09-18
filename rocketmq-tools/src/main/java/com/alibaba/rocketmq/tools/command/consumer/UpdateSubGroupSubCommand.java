@@ -109,31 +109,31 @@ public class UpdateSubGroupSubCommand implements SubCommand {
             // consumeEnable
             if (commandLine.hasOption('s')) {
                 subscriptionGroupConfig.setConsumeEnable(Boolean.parseBoolean(commandLine.getOptionValue('s')
-                    .trim()));
+                        .trim()));
             }
 
             // consumeFromMinEnable
             if (commandLine.hasOption('m')) {
                 subscriptionGroupConfig.setConsumeFromMinEnable(Boolean.parseBoolean(commandLine
-                    .getOptionValue('m').trim()));
+                        .getOptionValue('m').trim()));
             }
 
             // consumeBroadcastEnable
             if (commandLine.hasOption('d')) {
                 subscriptionGroupConfig.setConsumeBroadcastEnable(Boolean.parseBoolean(commandLine
-                    .getOptionValue('d').trim()));
+                        .getOptionValue('d').trim()));
             }
 
             // retryQueueNums
             if (commandLine.hasOption('q')) {
                 subscriptionGroupConfig.setRetryQueueNums(Integer.parseInt(commandLine.getOptionValue('q')
-                    .trim()));
+                        .trim()));
             }
 
             // retryMaxTimes
             if (commandLine.hasOption('r')) {
                 subscriptionGroupConfig.setRetryMaxTimes(Integer.parseInt(commandLine.getOptionValue('r')
-                    .trim()));
+                        .trim()));
             }
 
             // brokerId
@@ -144,7 +144,7 @@ public class UpdateSubGroupSubCommand implements SubCommand {
             // whichBrokerWhenConsumeSlowly
             if (commandLine.hasOption('w')) {
                 subscriptionGroupConfig.setWhichBrokerWhenConsumeSlowly(Long.parseLong(commandLine
-                    .getOptionValue('w').trim()));
+                        .getOptionValue('w').trim()));
             }
 
             if (commandLine.hasOption('b')) {
@@ -153,12 +153,11 @@ public class UpdateSubGroupSubCommand implements SubCommand {
                 defaultMQAdminExt.start();
 
                 defaultMQAdminExt.createAndUpdateSubscriptionGroupConfig(addr, subscriptionGroupConfig);
-                System.out.printf("create subscription group to %s success.\n", addr);
+                System.out.printf("create subscription group to %s success.%n", addr);
                 System.out.println(subscriptionGroupConfig);
                 return;
 
-            }
-            else if (commandLine.hasOption('c')) {
+            } else if (commandLine.hasOption('c')) {
                 String clusterName = commandLine.getOptionValue('c').trim();
 
                 defaultMQAdminExt.start();
@@ -168,7 +167,7 @@ public class UpdateSubGroupSubCommand implements SubCommand {
                 for (String addr : masterSet) {
                     try {
                         defaultMQAdminExt.createAndUpdateSubscriptionGroupConfig(addr, subscriptionGroupConfig);
-                        System.out.printf("create subscription group to %s success.\n", addr);
+                        System.out.printf("create subscription group to %s success.%n", addr);
                     } catch (Exception e) {
                         e.printStackTrace();
                         Thread.sleep(1000 * 1);
@@ -179,11 +178,9 @@ public class UpdateSubGroupSubCommand implements SubCommand {
             }
 
             ServerUtil.printCommandLineHelp("mqadmin " + this.commandName(), options);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
     }

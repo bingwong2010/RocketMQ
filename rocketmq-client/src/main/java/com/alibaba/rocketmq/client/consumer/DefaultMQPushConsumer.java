@@ -29,6 +29,7 @@ import com.alibaba.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
 import com.alibaba.rocketmq.common.MixAll;
 import com.alibaba.rocketmq.common.UtilAll;
 import com.alibaba.rocketmq.common.consumer.ConsumeFromWhere;
+import com.alibaba.rocketmq.common.message.MessageDecoder;
 import com.alibaba.rocketmq.common.message.MessageExt;
 import com.alibaba.rocketmq.common.message.MessageQueue;
 import com.alibaba.rocketmq.common.protocol.heartbeat.MessageModel;
@@ -129,9 +130,20 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      */
     private boolean unitMode = false;
 
+    private int maxReconsumeTimes = 16;
+    private long suspendCurrentQueueTimeMillis = 1000;
+    private long consumeTimeout = 15;
+
 
     public DefaultMQPushConsumer() {
         this(MixAll.DEFAULT_CONSUMER_GROUP, null, new AllocateMessageQueueAveragely());
+    }
+
+
+    public DefaultMQPushConsumer(final String consumerGroup, RPCHook rpcHook, AllocateMessageQueueStrategy allocateMessageQueueStrategy) {
+        this.consumerGroup = consumerGroup;
+        this.allocateMessageQueueStrategy = allocateMessageQueueStrategy;
+        defaultMQPushConsumerImpl = new DefaultMQPushConsumerImpl(this, rpcHook);
     }
 
 
@@ -143,14 +155,6 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     public DefaultMQPushConsumer(final String consumerGroup) {
         this(consumerGroup, null, new AllocateMessageQueueAveragely());
     }
-
-
-    public DefaultMQPushConsumer(final String consumerGroup, RPCHook rpcHook, AllocateMessageQueueStrategy allocateMessageQueueStrategy) {
-        this.consumerGroup = consumerGroup;
-        this.allocateMessageQueueStrategy = allocateMessageQueueStrategy;
-        defaultMQPushConsumerImpl = new DefaultMQPushConsumerImpl(this, rpcHook);
-    }
-
 
     @Override
     public void createTopic(String key, String newTopic, int queueNum) throws MQClientException {
@@ -189,17 +193,26 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
 
 
     @Override
-    public MessageExt viewMessage(String msgId) throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
-        return this.defaultMQPushConsumerImpl.viewMessage(msgId);
+    public MessageExt viewMessage(String offsetMsgId) throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
+        return this.defaultMQPushConsumerImpl.viewMessage(offsetMsgId);
     }
 
 
     @Override
-    public QueryResult queryMessage(String topic, String key, int maxNum, long begin, long end) throws MQClientException,
-            InterruptedException {
+    public QueryResult queryMessage(String topic, String key, int maxNum, long begin, long end)
+            throws MQClientException, InterruptedException {
         return this.defaultMQPushConsumerImpl.queryMessage(topic, key, maxNum, begin, end);
     }
 
+    @Override
+    public MessageExt viewMessage(String topic, String msgId) throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
+        try {
+            MessageDecoder.decodeMessageId(msgId);
+            return this.viewMessage(msgId);
+        } catch (Exception e) {
+        }
+        return this.defaultMQPushConsumerImpl.queryMessageByUniqKey(topic, msgId);
+    }
 
     public AllocateMessageQueueStrategy getAllocateMessageQueueStrategy() {
         return allocateMessageQueueStrategy;
@@ -337,15 +350,15 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
 
 
     @Override
-    public void sendMessageBack(MessageExt msg, int delayLevel) throws RemotingException, MQBrokerException, InterruptedException,
-            MQClientException {
+    public void sendMessageBack(MessageExt msg, int delayLevel)
+            throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
         this.defaultMQPushConsumerImpl.sendMessageBack(msg, delayLevel, null);
     }
 
 
     @Override
-    public void sendMessageBack(MessageExt msg, int delayLevel, String brokerName) throws RemotingException, MQBrokerException,
-            InterruptedException, MQClientException {
+    public void sendMessageBack(MessageExt msg, int delayLevel, String brokerName)
+            throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
         this.defaultMQPushConsumerImpl.sendMessageBack(msg, delayLevel, brokerName);
     }
 
@@ -473,5 +486,34 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
 
     public void setAdjustThreadPoolNumsThreshold(long adjustThreadPoolNumsThreshold) {
         this.adjustThreadPoolNumsThreshold = adjustThreadPoolNumsThreshold;
+    }
+
+
+    public int getMaxReconsumeTimes() {
+        return maxReconsumeTimes;
+    }
+
+
+    public void setMaxReconsumeTimes(final int maxReconsumeTimes) {
+        this.maxReconsumeTimes = maxReconsumeTimes;
+    }
+
+
+    public long getSuspendCurrentQueueTimeMillis() {
+        return suspendCurrentQueueTimeMillis;
+    }
+
+
+    public void setSuspendCurrentQueueTimeMillis(final long suspendCurrentQueueTimeMillis) {
+        this.suspendCurrentQueueTimeMillis = suspendCurrentQueueTimeMillis;
+    }
+
+
+    public long getConsumeTimeout() {
+        return consumeTimeout;
+    }
+
+    public void setConsumeTimeout(final long consumeTimeout) {
+        this.consumeTimeout = consumeTimeout;
     }
 }

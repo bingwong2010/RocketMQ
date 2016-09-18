@@ -25,8 +25,8 @@ import com.alibaba.rocketmq.common.help.FAQUrl;
  */
 public class MQClientException extends Exception {
     private static final long serialVersionUID = -5758410930844185841L;
-    private final int responseCode;
-    private final String errorMessage;
+    private int responseCode;
+    private String errorMessage;
 
 
     public MQClientException(String errorMessage, Throwable cause) {
@@ -43,13 +43,20 @@ public class MQClientException extends Exception {
         this.errorMessage = errorMessage;
     }
 
-
     public int getResponseCode() {
         return responseCode;
     }
 
+    public MQClientException setResponseCode(final int responseCode) {
+        this.responseCode = responseCode;
+        return this;
+    }
 
     public String getErrorMessage() {
         return errorMessage;
+    }
+
+    public void setErrorMessage(final String errorMessage) {
+        this.errorMessage = errorMessage;
     }
 }

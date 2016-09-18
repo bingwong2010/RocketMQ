@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-
 public class PullConsumer {
     private static final Map<MessageQueue, Long> offseTable = new HashMap<MessageQueue, Long>();
 
@@ -38,26 +37,26 @@ public class PullConsumer {
         Set<MessageQueue> mqs = consumer.fetchSubscribeMessageQueues("TopicTest1");
         for (MessageQueue mq : mqs) {
             System.out.println("Consume from the queue: " + mq);
-            SINGLE_MQ: while (true) {
+            SINGLE_MQ:
+            while (true) {
                 try {
                     PullResult pullResult =
                             consumer.pullBlockIfNotFound(mq, null, getMessageQueueOffset(mq), 32);
                     System.out.println(pullResult);
                     putMessageQueueOffset(mq, pullResult.getNextBeginOffset());
                     switch (pullResult.getPullStatus()) {
-                    case FOUND:
-                        break;
-                    case NO_MATCHED_MSG:
-                        break;
-                    case NO_NEW_MSG:
-                        break SINGLE_MQ;
-                    case OFFSET_ILLEGAL:
-                        break;
-                    default:
-                        break;
+                        case FOUND:
+                            break;
+                        case NO_MATCHED_MSG:
+                            break;
+                        case NO_NEW_MSG:
+                            break SINGLE_MQ;
+                        case OFFSET_ILLEGAL:
+                            break;
+                        default:
+                            break;
                     }
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -66,18 +65,16 @@ public class PullConsumer {
         consumer.shutdown();
     }
 
-
-    private static void putMessageQueueOffset(MessageQueue mq, long offset) {
-        offseTable.put(mq, offset);
-    }
-
-
     private static long getMessageQueueOffset(MessageQueue mq) {
         Long offset = offseTable.get(mq);
         if (offset != null)
             return offset;
 
         return 0;
+    }
+
+    private static void putMessageQueueOffset(MessageQueue mq, long offset) {
+        offseTable.put(mq, offset);
     }
 
 }

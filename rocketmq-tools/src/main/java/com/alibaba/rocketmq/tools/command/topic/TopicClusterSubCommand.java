@@ -26,6 +26,11 @@ import org.apache.commons.cli.Options;
 import java.util.Set;
 
 
+/**
+ *
+ * @author zhouli
+ *
+ */
 public class TopicClusterSubCommand implements SubCommand {
 
     @Override
@@ -36,7 +41,7 @@ public class TopicClusterSubCommand implements SubCommand {
 
     @Override
     public String commandDesc() {
-        return "Fetch all cluster list for topic";
+        return "get cluster info for topic";
     }
 
 
@@ -56,14 +61,12 @@ public class TopicClusterSubCommand implements SubCommand {
         try {
             defaultMQAdminExt.start();
             Set<String> clusters = defaultMQAdminExt.getTopicClusterList(topic);
-            for (String value : clusters){
+            for (String value : clusters) {
                 System.out.println(value);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
     }

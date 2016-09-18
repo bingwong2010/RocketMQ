@@ -17,8 +17,8 @@
 
 package com.alibaba.rocketmq.broker.longpolling;
 
-
 import com.alibaba.rocketmq.store.MessageArrivingListener;
+
 
 public class NotifyMessageArrivingListener implements MessageArrivingListener {
     private final PullRequestHoldService pullRequestHoldService;
@@ -30,7 +30,7 @@ public class NotifyMessageArrivingListener implements MessageArrivingListener {
 
 
     @Override
-    public void arriving(String topic, int queueId, long logicOffset) {
-        this.pullRequestHoldService.notifyMessageArriving(topic, queueId, logicOffset);
+    public void arriving(String topic, int queueId, long logicOffset, long tagsCode) {
+        this.pullRequestHoldService.notifyMessageArriving(topic, queueId, logicOffset, tagsCode);
     }
 }

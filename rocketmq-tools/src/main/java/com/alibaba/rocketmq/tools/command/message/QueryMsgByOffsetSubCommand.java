@@ -16,10 +16,6 @@
  */
 package com.alibaba.rocketmq.tools.command.message;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-
 import com.alibaba.rocketmq.client.consumer.DefaultMQPullConsumer;
 import com.alibaba.rocketmq.client.consumer.PullResult;
 import com.alibaba.rocketmq.common.MixAll;
@@ -27,10 +23,15 @@ import com.alibaba.rocketmq.common.message.MessageQueue;
 import com.alibaba.rocketmq.remoting.RPCHook;
 import com.alibaba.rocketmq.tools.admin.DefaultMQAdminExt;
 import com.alibaba.rocketmq.tools.command.SubCommand;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
 
 
 /**
+ *
  * @author shijia.wxr
+ *
  */
 public class QueryMsgByOffsetSubCommand implements SubCommand {
 
@@ -71,7 +72,7 @@ public class QueryMsgByOffsetSubCommand implements SubCommand {
     @Override
     public void execute(CommandLine commandLine, Options options, RPCHook rpcHook) {
         DefaultMQAdminExt defaultMQAdminExt = new DefaultMQAdminExt(rpcHook);
-        DefaultMQPullConsumer defaultMQPullConsumer = new DefaultMQPullConsumer(MixAll.TOOLS_CONSUMER_GROUP);
+        DefaultMQPullConsumer defaultMQPullConsumer = new DefaultMQPullConsumer(MixAll.TOOLS_CONSUMER_GROUP,rpcHook);
 
         defaultMQAdminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
         defaultMQPullConsumer.setInstanceName(Long.toString(System.currentTimeMillis()));
@@ -93,22 +94,20 @@ public class QueryMsgByOffsetSubCommand implements SubCommand {
             PullResult pullResult = defaultMQPullConsumer.pull(mq, "*", Long.parseLong(offset), 1);
             if (pullResult != null) {
                 switch (pullResult.getPullStatus()) {
-                case FOUND:
-                    QueryMsgByIdSubCommand.queryById(defaultMQAdminExt, pullResult.getMsgFoundList().get(0)
-                        .getMsgId());
-                    break;
-                case NO_MATCHED_MSG:
-                case NO_NEW_MSG:
-                case OFFSET_ILLEGAL:
-                default:
-                    break;
+                    case FOUND:
+                        QueryMsgByIdSubCommand.queryById(defaultMQAdminExt, pullResult.getMsgFoundList().get(0)
+                                .getMsgId());
+                        break;
+                    case NO_MATCHED_MSG:
+                    case NO_NEW_MSG:
+                    case OFFSET_ILLEGAL:
+                    default:
+                        break;
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQPullConsumer.shutdown();
             defaultMQAdminExt.shutdown();
         }

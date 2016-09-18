@@ -22,7 +22,6 @@ package com.alibaba.rocketmq.common.sysflag;
 public class MessageSysFlag {
     public final static int CompressedFlag = (0x1 << 0);
     public final static int MultiTagsFlag = (0x1 << 1);
-
     public final static int TransactionNotType = (0x0 << 2);
     public final static int TransactionPreparedType = (0x1 << 2);
     public final static int TransactionCommitType = (0x2 << 2);

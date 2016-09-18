@@ -28,8 +28,8 @@ import com.alibaba.rocketmq.remoting.common.RemotingUtil;
  * @author vongosling
  */
 public class ClientConfig {
+    public static final String SendMessageWithVIPChannelProperty = "com.rocketmq.sendMessageWithVIPChannel";
     private String namesrvAddr = System.getProperty(MixAll.NAMESRV_ADDR_PROPERTY, System.getenv(MixAll.NAMESRV_ADDR_ENV));
-
     private String clientIP = RemotingUtil.getLocalAddress();
     private String instanceName = System.getProperty("rocketmq.client.name", "DEFAULT");
     private int clientCallbackExecutorThreads = Runtime.getRuntime().availableProcessors();
@@ -47,6 +47,8 @@ public class ClientConfig {
     private int persistConsumerOffsetInterval = 1000 * 5;
     private boolean unitMode = false;
     private String unitName;
+    private boolean vipChannelEnabled = Boolean.parseBoolean(System.getProperty(SendMessageWithVIPChannelProperty, "true"));
+    ;
 
 
     public String buildMQClientId() {
@@ -55,7 +57,7 @@ public class ClientConfig {
 
         sb.append("@");
         sb.append(this.getInstanceName());
-        if(!UtilAll.isBlank(this.unitName)) {
+        if (!UtilAll.isBlank(this.unitName)) {
             sb.append("@");
             sb.append(this.unitName);
         }
@@ -63,13 +65,27 @@ public class ClientConfig {
         return sb.toString();
     }
 
+    public String getClientIP() {
+        return clientIP;
+    }
+
+    public void setClientIP(String clientIP) {
+        this.clientIP = clientIP;
+    }
+
+    public String getInstanceName() {
+        return instanceName;
+    }
+
+    public void setInstanceName(String instanceName) {
+        this.instanceName = instanceName;
+    }
 
     public void changeInstanceNameToPID() {
         if (this.instanceName.equals("DEFAULT")) {
             this.instanceName = String.valueOf(UtilAll.getPid());
         }
     }
-
 
     public void resetClientConfig(final ClientConfig cc) {
         this.namesrvAddr = cc.namesrvAddr;
@@ -81,8 +97,8 @@ public class ClientConfig {
         this.persistConsumerOffsetInterval = cc.persistConsumerOffsetInterval;
         this.unitMode = cc.unitMode;
         this.unitName = cc.unitName;
+        this.vipChannelEnabled = cc.vipChannelEnabled;
     }
-
 
     public ClientConfig cloneClientConfig() {
         ClientConfig cc = new ClientConfig();
@@ -95,39 +111,17 @@ public class ClientConfig {
         cc.persistConsumerOffsetInterval = persistConsumerOffsetInterval;
         cc.unitMode = unitMode;
         cc.unitName = unitName;
+        cc.vipChannelEnabled = vipChannelEnabled;
         return cc;
     }
-
 
     public String getNamesrvAddr() {
         return namesrvAddr;
     }
 
-
     public void setNamesrvAddr(String namesrvAddr) {
         this.namesrvAddr = namesrvAddr;
     }
-
-
-    public String getClientIP() {
-        return clientIP;
-    }
-
-
-    public void setClientIP(String clientIP) {
-        this.clientIP = clientIP;
-    }
-
-
-    public String getInstanceName() {
-        return instanceName;
-    }
-
-
-    public void setInstanceName(String instanceName) {
-        this.instanceName = instanceName;
-    }
-
 
     public int getClientCallbackExecutorThreads() {
         return clientCallbackExecutorThreads;
@@ -189,11 +183,22 @@ public class ClientConfig {
     }
 
 
+    public boolean isVipChannelEnabled() {
+        return vipChannelEnabled;
+    }
+
+
+    public void setVipChannelEnabled(final boolean vipChannelEnabled) {
+        this.vipChannelEnabled = vipChannelEnabled;
+    }
+
+
     @Override
     public String toString() {
         return "ClientConfig [namesrvAddr=" + namesrvAddr + ", clientIP=" + clientIP + ", instanceName=" + instanceName
                 + ", clientCallbackExecutorThreads=" + clientCallbackExecutorThreads + ", pollNameServerInteval=" + pollNameServerInteval
                 + ", heartbeatBrokerInterval=" + heartbeatBrokerInterval + ", persistConsumerOffsetInterval="
-                + persistConsumerOffsetInterval + ", unitMode=" + unitMode + ", unitName=" + unitName + "]";
+                + persistConsumerOffsetInterval + ", unitMode=" + unitMode + ", unitName=" + unitName + ", vipChannelEnabled="
+                + vipChannelEnabled + "]";
     }
 }

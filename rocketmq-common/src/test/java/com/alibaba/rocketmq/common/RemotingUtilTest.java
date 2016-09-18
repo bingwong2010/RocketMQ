@@ -16,9 +16,8 @@
  */
 package com.alibaba.rocketmq.common;
 
-import org.junit.Test;
-
 import com.alibaba.rocketmq.remoting.common.RemotingUtil;
+import org.junit.Test;
 
 
 public class RemotingUtilTest {

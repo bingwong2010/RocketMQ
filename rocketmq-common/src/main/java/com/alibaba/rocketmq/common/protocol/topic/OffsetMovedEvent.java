@@ -27,6 +27,7 @@ public class OffsetMovedEvent extends RemotingSerializable {
     private long offsetRequest;
     private long offsetNew;
 
+
     public String getConsumerGroup() {
         return consumerGroup;
     }

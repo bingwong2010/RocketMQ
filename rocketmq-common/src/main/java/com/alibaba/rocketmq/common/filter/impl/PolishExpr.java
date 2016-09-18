@@ -25,89 +25,18 @@ import static com.alibaba.rocketmq.common.filter.impl.Operator.*;
 
 public class PolishExpr {
 
-    private static List<Op> participle(String expression) {
-        List<Op> segments = new ArrayList<Op>();
-
-        int size = expression.length();
-        int wordStartIndex = -1;
-        int wordLen = 0;
-        Type preType = Type.NULL;
-
-        for (int i = 0; i < size; i++) {
-            int chValue = (int) expression.charAt(i);
-
-            if ((97 <= chValue && chValue <= 122) || (65 <= chValue && chValue <= 90)
-                    || (49 <= chValue && chValue <= 57) || 95 == chValue) {
-                if (Type.OPERATOR == preType || Type.SEPAERATOR == preType || Type.NULL == preType
-                        || Type.PARENTHESIS == preType) {
-                    if (Type.OPERATOR == preType) {
-                        segments.add(createOperator(expression.substring(wordStartIndex, wordStartIndex
-                                + wordLen)));
-                    }
-                    wordStartIndex = i;
-                    wordLen = 0;
-                }
-                preType = Type.OPERAND;
-                wordLen++;
-            }
-            else if (40 == chValue || 41 == chValue) {
-                if (Type.OPERATOR == preType) {
-                    segments.add(createOperator(expression
-                        .substring(wordStartIndex, wordStartIndex + wordLen)));
-                    wordStartIndex = -1;
-                    wordLen = 0;
-                }
-                else if (Type.OPERAND == preType) {
-                    segments.add(new Operand(expression.substring(wordStartIndex, wordStartIndex + wordLen)));
-                    wordStartIndex = -1;
-                    wordLen = 0;
-                }
-
-                preType = Type.PARENTHESIS;
-                segments.add(createOperator((char) chValue + ""));
-            }
-            else if (38 == chValue || 124 == chValue) {
-                if (Type.OPERAND == preType || Type.SEPAERATOR == preType || Type.PARENTHESIS == preType) {
-                    if (Type.OPERAND == preType) {
-                        segments.add(new Operand(expression.substring(wordStartIndex, wordStartIndex
-                                + wordLen)));
-                    }
-                    wordStartIndex = i;
-                    wordLen = 0;
-                }
-                preType = Type.OPERATOR;
-                wordLen++;
-            }
-            else if (32 == chValue || 9 == chValue) {
-                if (Type.OPERATOR == preType) {
-                    segments.add(createOperator(expression
-                        .substring(wordStartIndex, wordStartIndex + wordLen)));
-                    wordStartIndex = -1;
-                    wordLen = 0;
-                }
-                else if (Type.OPERAND == preType) {
-                    segments.add(new Operand(expression.substring(wordStartIndex, wordStartIndex + wordLen)));
-                    wordStartIndex = -1;
-                    wordLen = 0;
-                }
-                preType = Type.SEPAERATOR;
-            }
-            else {
-                throw new IllegalArgumentException("illegal expression, at index " + i + " " + (char) chValue);
-            }
-
-        }
-
-        if (wordLen > 0) {
-            segments.add(new Operand(expression.substring(wordStartIndex, wordStartIndex + wordLen)));
-        }
-        return segments;
-    }
-
     public static List<Op> reversePolish(String expression) {
         return reversePolish(participle(expression));
     }
 
+    /**
+     * Shunting-yard algorithm <br/>
+     * http://en.wikipedia.org/wiki/Shunting_yard_algorithm
+     *
+     * @param tokens
+     *
+     * @return
+     */
     public static List<Op> reversePolish(List<Op> tokens) {
         List<Op> segments = new ArrayList<Op>();
         Stack<Operator> operatorStack = new Stack<Operator>();
@@ -115,20 +44,21 @@ public class PolishExpr {
         for (int i = 0; i < tokens.size(); i++) {
             Op token = tokens.get(i);
             if (isOperand(token)) {
+
                 segments.add(token);
-            }
-            else if (isLeftParenthesis(token)) {
+            } else if (isLeftParenthesis(token)) {
+
                 operatorStack.push((Operator) token);
-            }
-            else if (isRightParenthesis(token)) {
+            } else if (isRightParenthesis(token)) {
+
                 Operator opNew = null;
                 while (!operatorStack.empty() && LEFTPARENTHESIS != (opNew = operatorStack.pop())) {
                     segments.add(opNew);
                 }
                 if (null == opNew || LEFTPARENTHESIS != opNew)
                     throw new IllegalArgumentException("mismatched parentheses");
-            }
-            else if (isOperator(token)) {
+            } else if (isOperator(token)) {
+
                 Operator opNew = (Operator) token;
                 if (!operatorStack.empty()) {
                     Operator opOld = operatorStack.peek();
@@ -137,8 +67,7 @@ public class PolishExpr {
                     }
                 }
                 operatorStack.push(opNew);
-            }
-            else
+            } else
                 throw new IllegalArgumentException("illegal token " + token);
         }
 
@@ -152,23 +81,108 @@ public class PolishExpr {
         return segments;
     }
 
+    /**
+     *
+     * @param expression
+     *
+     * @return
+     *
+     * @throws Exception
+     */
+    private static List<Op> participle(String expression) {
+        List<Op> segments = new ArrayList<Op>();
+
+        int size = expression.length();
+        int wordStartIndex = -1;
+        int wordLen = 0;
+        Type preType = Type.NULL;
+
+        for (int i = 0; i < size; i++) {
+            int chValue = (int) expression.charAt(i);
+
+            if ((97 <= chValue && chValue <= 122) || (65 <= chValue && chValue <= 90)
+                    || (49 <= chValue && chValue <= 57) || 95 == chValue) {
+
+
+                if (Type.OPERATOR == preType || Type.SEPAERATOR == preType || Type.NULL == preType
+                        || Type.PARENTHESIS == preType) {
+                    if (Type.OPERATOR == preType) {
+                        segments.add(createOperator(expression.substring(wordStartIndex, wordStartIndex
+                                + wordLen)));
+                    }
+                    wordStartIndex = i;
+                    wordLen = 0;
+                }
+                preType = Type.OPERAND;
+                wordLen++;
+            } else if (40 == chValue || 41 == chValue) {
+
+
+                if (Type.OPERATOR == preType) {
+                    segments.add(createOperator(expression
+                            .substring(wordStartIndex, wordStartIndex + wordLen)));
+                    wordStartIndex = -1;
+                    wordLen = 0;
+                } else if (Type.OPERAND == preType) {
+                    segments.add(new Operand(expression.substring(wordStartIndex, wordStartIndex + wordLen)));
+                    wordStartIndex = -1;
+                    wordLen = 0;
+                }
+
+                preType = Type.PARENTHESIS;
+                segments.add(createOperator((char) chValue + ""));
+            } else if (38 == chValue || 124 == chValue) {
+
+                if (Type.OPERAND == preType || Type.SEPAERATOR == preType || Type.PARENTHESIS == preType) {
+                    if (Type.OPERAND == preType) {
+                        segments.add(new Operand(expression.substring(wordStartIndex, wordStartIndex
+                                + wordLen)));
+                    }
+                    wordStartIndex = i;
+                    wordLen = 0;
+                }
+                preType = Type.OPERATOR;
+                wordLen++;
+            } else if (32 == chValue || 9 == chValue) {
+
+
+                if (Type.OPERATOR == preType) {
+                    segments.add(createOperator(expression
+                            .substring(wordStartIndex, wordStartIndex + wordLen)));
+                    wordStartIndex = -1;
+                    wordLen = 0;
+                } else if (Type.OPERAND == preType) {
+                    segments.add(new Operand(expression.substring(wordStartIndex, wordStartIndex + wordLen)));
+                    wordStartIndex = -1;
+                    wordLen = 0;
+                }
+                preType = Type.SEPAERATOR;
+            } else {
+
+                throw new IllegalArgumentException("illegal expression, at index " + i + " " + (char) chValue);
+            }
+
+        }
+
+        if (wordLen > 0) {
+            segments.add(new Operand(expression.substring(wordStartIndex, wordStartIndex + wordLen)));
+        }
+        return segments;
+    }
 
     public static boolean isOperand(Op token) {
         return token instanceof Operand;
     }
 
-
-    public static boolean isOperator(Op token) {
-        return token instanceof Operator;
-    }
-
-
     public static boolean isLeftParenthesis(Op token) {
         return token instanceof Operator && LEFTPARENTHESIS == (Operator) token;
     }
 
-
     public static boolean isRightParenthesis(Op token) {
         return token instanceof Operator && RIGHTPARENTHESIS == (Operator) token;
+    }
+
+    public static boolean isOperator(Op token) {
+        return token instanceof Operator;
     }
 }

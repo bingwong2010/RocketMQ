@@ -16,20 +16,21 @@
  */
 package com.alibaba.rocketmq.tools.command.message;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-
 import com.alibaba.rocketmq.client.QueryResult;
 import com.alibaba.rocketmq.client.exception.MQClientException;
 import com.alibaba.rocketmq.common.message.MessageExt;
 import com.alibaba.rocketmq.remoting.RPCHook;
 import com.alibaba.rocketmq.tools.admin.DefaultMQAdminExt;
 import com.alibaba.rocketmq.tools.command.SubCommand;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
 
 
 /**
+ *
  * @author shijia.wxr
+ *
  */
 public class QueryMsgByKeySubCommand implements SubCommand {
 
@@ -58,22 +59,6 @@ public class QueryMsgByKeySubCommand implements SubCommand {
         return options;
     }
 
-
-    void queryByKey(final DefaultMQAdminExt admin, final String topic, final String key)
-            throws MQClientException, InterruptedException {
-        admin.start();
-
-        QueryResult queryResult = admin.queryMessage(topic, key, 64, 0, Long.MAX_VALUE);
-        System.out.printf("%-50s %4s %40s\n",//
-            "#Message ID",//
-            "#QID",//
-            "#Offset");
-        for (MessageExt msg : queryResult.getMessageList()) {
-            System.out.printf("%-50s %4d %40d\n", msg.getMsgId(), msg.getQueueId(), msg.getQueueOffset());
-        }
-    }
-
-
     @Override
     public void execute(CommandLine commandLine, Options options, RPCHook rpcHook) {
         DefaultMQAdminExt defaultMQAdminExt = new DefaultMQAdminExt(rpcHook);
@@ -85,12 +70,24 @@ public class QueryMsgByKeySubCommand implements SubCommand {
             final String key = commandLine.getOptionValue('k').trim();
 
             this.queryByKey(defaultMQAdminExt, topic, key);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
+        }
+    }
+
+    void queryByKey(final DefaultMQAdminExt admin, final String topic, final String key)
+            throws MQClientException, InterruptedException {
+        admin.start();
+
+        QueryResult queryResult = admin.queryMessage(topic, key, 64, 0, Long.MAX_VALUE);
+        System.out.printf("%-50s %4s %40s%n",//
+                "#Message ID",//
+                "#QID",//
+                "#Offset");
+        for (MessageExt msg : queryResult.getMessageList()) {
+            System.out.printf("%-50s %4d %40d%n", msg.getMsgId(), msg.getQueueId(), msg.getQueueOffset());
         }
     }
 }

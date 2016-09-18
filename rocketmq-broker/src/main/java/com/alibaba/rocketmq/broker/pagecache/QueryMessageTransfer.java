@@ -51,20 +51,22 @@ public class QueryMessageTransfer extends AbstractReferenceCounted implements Fi
         return pos;
     }
 
+    @Override
+    public long transfered() {
+        return transfered;
+    }
 
     @Override
     public long count() {
         return byteBufferHeader.limit() + this.queryMessageResult.getBufferTotalSize();
     }
 
-
     @Override
     public long transferTo(WritableByteChannel target, long position) throws IOException {
         if (this.byteBufferHeader.hasRemaining()) {
             transfered += target.write(this.byteBufferHeader);
             return transfered;
-        }
-        else {
+        } else {
             List<ByteBuffer> messageBufferList = this.queryMessageResult.getMessageBufferList();
             for (ByteBuffer bb : messageBufferList) {
                 if (bb.hasRemaining()) {
@@ -77,20 +79,12 @@ public class QueryMessageTransfer extends AbstractReferenceCounted implements Fi
         return 0;
     }
 
-
     public void close() {
         this.deallocate();
     }
 
-
     @Override
     protected void deallocate() {
         this.queryMessageResult.release();
-    }
-
-
-    @Override
-    public long transfered() {
-        return transfered;
     }
 }

@@ -20,12 +20,18 @@ package com.alibaba.rocketmq.store;
  * @author shijia.wxr
  */
 public class RunningFlags {
+
     private static final int NotReadableBit = 1;
+
     private static final int NotWriteableBit = 1 << 1;
+
     private static final int WriteLogicsQueueErrorBit = 1 << 2;
+
     private static final int WriteIndexFileErrorBit = 1 << 3;
+
     private static final int DiskFullBit = 1 << 4;
     private volatile int flagBits = 0;
+
 
     public RunningFlags() {
     }
@@ -117,11 +123,13 @@ public class RunningFlags {
         return false;
     }
 
+
     public boolean getAndMakeDiskFull() {
         boolean result = !((this.flagBits & DiskFullBit) == DiskFullBit);
         this.flagBits |= DiskFullBit;
         return result;
     }
+
 
     public boolean getAndMakeDiskOK() {
         boolean result = !((this.flagBits & DiskFullBit) == DiskFullBit);

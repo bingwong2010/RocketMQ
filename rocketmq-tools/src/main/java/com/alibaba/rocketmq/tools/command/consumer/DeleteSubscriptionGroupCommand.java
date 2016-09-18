@@ -31,7 +31,7 @@ import java.util.Set;
 
 
 /**
- * @author manhong.yqd
+ * @author lansheng.zj
  */
 public class DeleteSubscriptionGroupCommand implements SubCommand {
     @Override
@@ -69,6 +69,7 @@ public class DeleteSubscriptionGroupCommand implements SubCommand {
         DefaultMQAdminExt adminExt = new DefaultMQAdminExt(rpcHook);
         adminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
         try {
+            // groupName
             String groupName = commandLine.getOptionValue('g').trim();
 
             if (commandLine.hasOption('b')) {
@@ -76,12 +77,11 @@ public class DeleteSubscriptionGroupCommand implements SubCommand {
                 adminExt.start();
 
                 adminExt.deleteSubscriptionGroup(addr, groupName);
-                System.out.printf("delete subscription group [%s] from broker [%s] success.\n", groupName,
-                    addr);
+                System.out.printf("delete subscription group [%s] from broker [%s] success.%n", groupName,
+                        addr);
 
                 return;
-            }
-            else if (commandLine.hasOption('c')) {
+            } else if (commandLine.hasOption('c')) {
                 String clusterName = commandLine.getOptionValue('c').trim();
                 adminExt.start();
 
@@ -89,8 +89,8 @@ public class DeleteSubscriptionGroupCommand implements SubCommand {
                 for (String master : masterSet) {
                     adminExt.deleteSubscriptionGroup(master, groupName);
                     System.out.printf(
-                        "delete subscription group [%s] from broker [%s] in cluster [%s] success.\n",
-                        groupName, master, clusterName);
+                            "delete subscription group [%s] from broker [%s] in cluster [%s] success.%n",
+                            groupName, master, clusterName);
                 }
 
                 try {
@@ -98,18 +98,15 @@ public class DeleteSubscriptionGroupCommand implements SubCommand {
                             + groupName);
                     DeleteTopicSubCommand.deleteTopic(adminExt, clusterName, MixAll.DLQ_GROUP_TOPIC_PREFIX
                             + groupName);
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                 }
                 return;
             }
 
             ServerUtil.printCommandLineHelp("mqadmin " + this.commandName(), options);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             adminExt.shutdown();
         }
     }

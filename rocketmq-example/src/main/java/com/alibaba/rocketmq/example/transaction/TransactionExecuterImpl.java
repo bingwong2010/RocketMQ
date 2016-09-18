@@ -32,11 +32,9 @@ public class TransactionExecuterImpl implements LocalTransactionExecuter {
 
         if (value == 0) {
             throw new RuntimeException("Could not find db");
-        }
-        else if ((value % 5) == 0) {
+        } else if ((value % 5) == 0) {
             return LocalTransactionState.ROLLBACK_MESSAGE;
-        }
-        else if ((value % 4) == 0) {
+        } else if ((value % 4) == 0) {
             return LocalTransactionState.COMMIT_MESSAGE;
         }
 

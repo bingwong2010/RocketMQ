@@ -66,11 +66,11 @@ public class ClusterInfo extends RemotingSerializable {
             }
         }
 
-        return addrs.toArray(new String[] {});
+        return addrs.toArray(new String[]{});
     }
 
 
     public String[] retrieveAllClusterNames() {
-        return clusterAddrTable.keySet().toArray(new String[] {});
+        return clusterAddrTable.keySet().toArray(new String[]{});
     }
 }

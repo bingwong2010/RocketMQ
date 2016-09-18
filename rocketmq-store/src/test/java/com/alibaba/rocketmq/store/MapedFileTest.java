@@ -62,17 +62,20 @@ public class MapedFileTest {
             System.out.println("Read: " + readString);
             assertTrue(readString.equals(StoreMessage));
 
+
             mapedFile.shutdown(1000);
+
 
             assertTrue(!mapedFile.isAvailable());
 
             selectMapedBufferResult.release();
 
+
             assertTrue(mapedFile.isCleanupOver());
 
+
             assertTrue(mapedFile.destroy(1000));
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -93,8 +96,8 @@ public class MapedFileTest {
             selectMapedBufferResult.getByteBuffer().get(data);
             String readString = new String(data);
             System.out.println(readString);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }

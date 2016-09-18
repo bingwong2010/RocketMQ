@@ -24,7 +24,8 @@ import java.util.Map;
 
 
 /**
- * @author: manhong.yqd
+ * @author manhong.yqd
+ *
  */
 public class ResetOffsetBody extends RemotingSerializable {
     private Map<MessageQueue, Long> offsetTable;

@@ -26,17 +26,9 @@ import java.util.Set;
 
 /**
  * Computer room Hashing queue algorithm, such as Alipay logic room
- *
  */
 public class AllocateMessageQueueByMachineRoom implements AllocateMessageQueueStrategy {
     private Set<String> consumeridcs;
-
-
-    @Override
-    public String getName() {
-        return "MACHINE_ROOM";
-    }
-
 
     @Override
     public List<MessageQueue> allocate(String consumerGroup, String currentCID, List<MessageQueue> mqAll,
@@ -67,6 +59,10 @@ public class AllocateMessageQueueByMachineRoom implements AllocateMessageQueueSt
         return result;
     }
 
+    @Override
+    public String getName() {
+        return "MACHINE_ROOM";
+    }
 
     public Set<String> getConsumeridcs() {
         return consumeridcs;

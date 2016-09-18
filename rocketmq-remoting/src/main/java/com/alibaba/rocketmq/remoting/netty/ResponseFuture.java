@@ -29,9 +29,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author shijia.wxr
  */
 public class ResponseFuture {
-    private volatile RemotingCommand responseCommand;
-    private volatile boolean sendRequestOK = true;
-    private volatile Throwable cause;
     private final int opaque;
     private final long timeoutMillis;
     private final InvokeCallback invokeCallback;
@@ -41,10 +38,13 @@ public class ResponseFuture {
     private final SemaphoreReleaseOnlyOnce once;
 
     private final AtomicBoolean executeCallbackOnlyOnce = new AtomicBoolean(false);
+    private volatile RemotingCommand responseCommand;
+    private volatile boolean sendRequestOK = true;
+    private volatile Throwable cause;
 
 
     public ResponseFuture(int opaque, long timeoutMillis, InvokeCallback invokeCallback,
-            SemaphoreReleaseOnlyOnce once) {
+                          SemaphoreReleaseOnlyOnce once) {
         this.opaque = opaque;
         this.timeoutMillis = timeoutMillis;
         this.invokeCallback = invokeCallback;

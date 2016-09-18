@@ -24,19 +24,24 @@ import java.util.List;
 
 
 /**
- *
  * @author shijia.wxr
  */
 public class GetMessageResult {
+
     private final List<SelectMapedBufferResult> messageMapedList =
             new ArrayList<SelectMapedBufferResult>(100);
+
     private final List<ByteBuffer> messageBufferList = new ArrayList<ByteBuffer>(100);
+
     private GetMessageStatus status;
     private long nextBeginOffset;
     private long minOffset;
     private long maxOffset;
+
     private int bufferTotalSize = 0;
+
     private boolean suggestPullingFromSlave = false;
+
     private int msgCount4Commercial = 0;
 
 

@@ -17,18 +17,16 @@
 
 package com.alibaba.rocketmq.common.filter;
 
-import java.util.List;
-
-import junit.framework.Assert;
-
-import org.junit.Test;
-
 import com.alibaba.rocketmq.common.filter.impl.Op;
 import com.alibaba.rocketmq.common.filter.impl.PolishExpr;
+import junit.framework.Assert;
+import org.junit.Test;
+
+import java.util.List;
 
 
 /**
- * @auther lansheng.zj@taobao.com
+ * @author lansheng.zj
  */
 public class PolishExprTest {
 

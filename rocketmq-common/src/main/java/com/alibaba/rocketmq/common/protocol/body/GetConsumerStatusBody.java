@@ -25,8 +25,7 @@ import java.util.Map;
 
 
 /**
- *
- * @author: manhong.yqd
+ * @author manhong.yqd
  */
 @Deprecated
 public class GetConsumerStatusBody extends RemotingSerializable {

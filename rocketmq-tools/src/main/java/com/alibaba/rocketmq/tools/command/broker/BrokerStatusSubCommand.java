@@ -69,19 +69,18 @@ public class BrokerStatusSubCommand implements SubCommand {
 
             KVTable kvTable = defaultMQAdminExt.fetchBrokerRuntimeStats(brokerAddr);
 
+
             TreeMap<String, String> tmp = new TreeMap<String, String>();
             tmp.putAll(kvTable.getTable());
 
             Iterator<Entry<String, String>> it = tmp.entrySet().iterator();
             while (it.hasNext()) {
                 Entry<String, String> next = it.next();
-                System.out.printf("%-32s: %s\n", next.getKey(), next.getValue());
+                System.out.printf("%-32s: %s%n", next.getKey(), next.getValue());
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
     }

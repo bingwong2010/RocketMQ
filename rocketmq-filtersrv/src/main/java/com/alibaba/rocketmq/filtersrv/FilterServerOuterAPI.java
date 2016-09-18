@@ -54,8 +54,8 @@ public class FilterServerOuterAPI {
 
 
     public RegisterFilterServerResponseHeader registerFilterServerToBroker(//
-            final String brokerAddr,// 1
-            final String filterServerAddr// 2
+                                                                           final String brokerAddr,// 1
+                                                                           final String filterServerAddr// 2
     ) throws RemotingCommandException, RemotingConnectException, RemotingSendRequestException,
             RemotingTimeoutException, InterruptedException, MQBrokerException {
         RegisterFilterServerRequestHeader requestHeader = new RegisterFilterServerRequestHeader();
@@ -66,15 +66,15 @@ public class FilterServerOuterAPI {
         RemotingCommand response = this.remotingClient.invokeSync(brokerAddr, request, 3000);
         assert response != null;
         switch (response.getCode()) {
-        case ResponseCode.SUCCESS: {
-            RegisterFilterServerResponseHeader responseHeader =
-                    (RegisterFilterServerResponseHeader) response
-                        .decodeCommandCustomHeader(RegisterFilterServerResponseHeader.class);
+            case ResponseCode.SUCCESS: {
+                RegisterFilterServerResponseHeader responseHeader =
+                        (RegisterFilterServerResponseHeader) response
+                                .decodeCommandCustomHeader(RegisterFilterServerResponseHeader.class);
 
-            return responseHeader;
-        }
-        default:
-            break;
+                return responseHeader;
+            }
+            default:
+                break;
         }
 
         throw new MQBrokerException(response.getCode(), response.getRemark());

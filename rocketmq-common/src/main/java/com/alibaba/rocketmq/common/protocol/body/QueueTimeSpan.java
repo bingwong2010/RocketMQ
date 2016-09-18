@@ -24,13 +24,14 @@ import java.util.Date;
 
 
 /**
- * @author: manhong.yqd
+ * @author manhong.yqd
  */
 public class QueueTimeSpan {
     private MessageQueue messageQueue;
     private long minTimeStamp;
     private long maxTimeStamp;
     private long consumeTimeStamp;
+    private long delayTime;
 
 
     public MessageQueue getMessageQueue() {
@@ -85,5 +86,15 @@ public class QueueTimeSpan {
 
     public String getConsumeTimeStampStr() {
         return UtilAll.formatDate(new Date(consumeTimeStamp), UtilAll.yyyy_MM_dd_HH_mm_ss_SSS);
+    }
+
+
+    public long getDelayTime() {
+        return delayTime;
+    }
+
+
+    public void setDelayTime(long delayTime) {
+        this.delayTime = delayTime;
     }
 }

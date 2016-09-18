@@ -31,6 +31,7 @@ import org.apache.commons.cli.Options;
 import java.util.List;
 import java.util.Set;
 
+
 public class UpdateTopicPermSubCommand implements SubCommand {
 
     @Override
@@ -74,11 +75,13 @@ public class UpdateTopicPermSubCommand implements SubCommand {
         try {
             defaultMQAdminExt.start();
             TopicConfig topicConfig = new TopicConfig();
+
             String topic = commandLine.getOptionValue('t').trim();
             TopicRouteData topicRouteData = defaultMQAdminExt.examineTopicRouteInfo(topic);
             assert topicRouteData != null;
             List<QueueData> queueDatas = topicRouteData.getQueueDatas();
             assert queueDatas != null && queueDatas.size() > 0;
+
             QueueData queueData = queueDatas.get(0);
             topicConfig.setTopicName(topic);
             topicConfig.setWriteQueueNums(queueData.getWriteQueueNums());
@@ -97,26 +100,23 @@ public class UpdateTopicPermSubCommand implements SubCommand {
             if (commandLine.hasOption('b')) {
                 String addr = commandLine.getOptionValue('b').trim();
                 defaultMQAdminExt.createAndUpdateTopicConfig(addr, topicConfig);
-                System.out.printf("update topic perm from %s to %s in %s success.\n", oldPerm, perm, addr);
+                System.out.printf("update topic perm from %s to %s in %s success.%n", oldPerm, perm, addr);
                 System.out.println(topicConfig);
                 return;
-            }
-            else if (commandLine.hasOption('c')) {
+            } else if (commandLine.hasOption('c')) {
                 String clusterName = commandLine.getOptionValue('c').trim();
                 Set<String> masterSet =
                         CommandUtil.fetchMasterAddrByClusterName(defaultMQAdminExt, clusterName);
                 for (String addr : masterSet) {
                     defaultMQAdminExt.createAndUpdateTopicConfig(addr, topicConfig);
-                    System.out.printf("update topic perm from %s to %s in %s success.\n", oldPerm, perm, addr);
+                    System.out.printf("update topic perm from %s to %s in %s success.%n", oldPerm, perm, addr);
                 }
                 return;
             }
             ServerUtil.printCommandLineHelp("mqadmin " + this.commandName(), options);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
     }

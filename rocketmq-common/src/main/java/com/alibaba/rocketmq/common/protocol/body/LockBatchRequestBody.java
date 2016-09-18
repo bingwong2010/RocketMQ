@@ -26,6 +26,7 @@ import java.util.Set;
 
 /**
  * @author shijia.wxr
+ *
  */
 public class LockBatchRequestBody extends RemotingSerializable {
     private String consumerGroup;

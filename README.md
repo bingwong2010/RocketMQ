@@ -41,13 +41,6 @@ It offers a variety of features as follows:
 * [Integrate with Alibaba Canal](https://github.com/alibaba/canal)
 * [RocketMQ Community Projects](https://github.com/rocketmq)
 
-----------
-
-## PMC members & Committers
-* vintagewang([@vintagewang](https://github.com/vintagewang))
-* vongosling([@vongosling](https://github.com/vongosling))
-* manhong([@YangJodie](https://github.com/YangJodie))
-* mouyu([@lollipopjin](https://github.com/lollipopjin))
 
 ----------
 

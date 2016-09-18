@@ -38,24 +38,10 @@ public class Validators {
     public static final Pattern PATTERN = Pattern.compile(VALID_PATTERN_STR);
     public static final int CHARACTER_MAX_LENGTH = 255;
 
-
-    /**
-     * @param origin
-     * @param pattern
-     * @return
-     */
-    public static boolean regularExpressionMatcher(String origin, Pattern pattern) {
-        if (pattern == null) {
-            return true;
-        }
-        Matcher matcher = pattern.matcher(origin);
-        return matcher.matches();
-    }
-
-
     /**
      * @param origin
      * @param patternStr
+     *
      * @return
      */
     public static String getGroupWithRegularExpression(String origin, String patternStr) {
@@ -67,40 +53,11 @@ public class Validators {
         return null;
     }
 
-
-    /**
-     * Validate topic
-     *
-     * @param topic
-     * @throws com.alibaba.rocketmq.client.exception.MQClientException
-     */
-    public static void checkTopic(String topic) throws MQClientException {
-        if (UtilAll.isBlank(topic)) {
-            throw new MQClientException("the specified topic is blank", null);
-        }
-
-        if (!regularExpressionMatcher(topic, PATTERN)) {
-            throw new MQClientException(String.format(
-                    "the specified topic[%s] contains illegal characters, allowing only %s", topic,
-                    VALID_PATTERN_STR), null);
-        }
-
-        if (topic.length() > CHARACTER_MAX_LENGTH) {
-            throw new MQClientException("the specified topic is longer than topic max length 255.", null);
-        }
-
-        //whether the same with system reserved keyword
-        if (topic.equals(MixAll.DEFAULT_TOPIC)) {
-            throw new MQClientException(
-                    String.format("the topic[%s] is conflict with default topic.", topic), null);
-        }
-    }
-
-
     /**
      * Validate group
      *
      * @param group
+     *
      * @throws com.alibaba.rocketmq.client.exception.MQClientException
      */
     public static void checkGroup(String group) throws MQClientException {
@@ -117,12 +74,26 @@ public class Validators {
         }
     }
 
+    /**
+     * @param origin
+     * @param pattern
+     *
+     * @return
+     */
+    public static boolean regularExpressionMatcher(String origin, Pattern pattern) {
+        if (pattern == null) {
+            return true;
+        }
+        Matcher matcher = pattern.matcher(origin);
+        return matcher.matches();
+    }
 
     /**
      * Validate message
      *
      * @param msg
      * @param defaultMQProducer
+     *
      * @throws com.alibaba.rocketmq.client.exception.MQClientException
      */
     public static void checkMessage(Message msg, DefaultMQProducer defaultMQProducer)
@@ -144,6 +115,35 @@ public class Validators {
         if (msg.getBody().length > defaultMQProducer.getMaxMessageSize()) {
             throw new MQClientException(ResponseCode.MESSAGE_ILLEGAL,
                     "the message body size over max value, MAX: " + defaultMQProducer.getMaxMessageSize());
+        }
+    }
+
+    /**
+     * Validate topic
+     *
+     * @param topic
+     *
+     * @throws com.alibaba.rocketmq.client.exception.MQClientException
+     */
+    public static void checkTopic(String topic) throws MQClientException {
+        if (UtilAll.isBlank(topic)) {
+            throw new MQClientException("the specified topic is blank", null);
+        }
+
+        if (!regularExpressionMatcher(topic, PATTERN)) {
+            throw new MQClientException(String.format(
+                    "the specified topic[%s] contains illegal characters, allowing only %s", topic,
+                    VALID_PATTERN_STR), null);
+        }
+
+        if (topic.length() > CHARACTER_MAX_LENGTH) {
+            throw new MQClientException("the specified topic is longer than topic max length 255.", null);
+        }
+
+        //whether the same with system reserved keyword
+        if (topic.equals(MixAll.DEFAULT_TOPIC)) {
+            throw new MQClientException(
+                    String.format("the topic[%s] is conflict with default topic.", topic), null);
         }
     }
 }

@@ -52,6 +52,7 @@ public class SendMessageRequestHeader implements CommandCustomHeader {
     private Integer reconsumeTimes;
     @CFNullable
     private boolean unitMode = false;
+    private Integer maxReconsumeTimes;
 
 
     @Override
@@ -166,5 +167,15 @@ public class SendMessageRequestHeader implements CommandCustomHeader {
 
     public void setUnitMode(boolean isUnitMode) {
         this.unitMode = isUnitMode;
+    }
+
+
+    public Integer getMaxReconsumeTimes() {
+        return maxReconsumeTimes;
+    }
+
+
+    public void setMaxReconsumeTimes(final Integer maxReconsumeTimes) {
+        this.maxReconsumeTimes = maxReconsumeTimes;
     }
 }

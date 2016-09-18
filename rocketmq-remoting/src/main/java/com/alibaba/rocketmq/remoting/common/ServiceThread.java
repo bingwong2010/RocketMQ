@@ -24,11 +24,12 @@ import org.slf4j.LoggerFactory;
  * Base class for background thread
  *
  * @author shijia.wxr
+ *
  */
 public abstract class ServiceThread implements Runnable {
     private static final Logger stlog = LoggerFactory.getLogger(RemotingHelper.RemotingLogName);
-    protected final Thread thread;
     private static final long JoinTime = 90 * 1000;
+    protected final Thread thread;
     protected volatile boolean hasNotified = false;
     protected volatile boolean stoped = false;
 
@@ -49,34 +50,6 @@ public abstract class ServiceThread implements Runnable {
     public void shutdown() {
         this.shutdown(false);
     }
-
-
-    public void stop() {
-        this.stop(false);
-    }
-
-
-    public void makeStop() {
-        this.stoped = true;
-        stlog.info("makestop thread " + this.getServiceName());
-    }
-
-
-    public void stop(final boolean interrupt) {
-        this.stoped = true;
-        stlog.info("stop thread " + this.getServiceName() + " interrupt " + interrupt);
-        synchronized (this) {
-            if (!this.hasNotified) {
-                this.hasNotified = true;
-                this.notify();
-            }
-        }
-
-        if (interrupt) {
-            this.thread.interrupt();
-        }
-    }
-
 
     public void shutdown(final boolean interrupt) {
         this.stoped = true;
@@ -103,6 +76,33 @@ public abstract class ServiceThread implements Runnable {
         }
     }
 
+    public long getJointime() {
+        return JoinTime;
+    }
+
+    public void stop() {
+        this.stop(false);
+    }
+
+    public void stop(final boolean interrupt) {
+        this.stoped = true;
+        stlog.info("stop thread " + this.getServiceName() + " interrupt " + interrupt);
+        synchronized (this) {
+            if (!this.hasNotified) {
+                this.hasNotified = true;
+                this.notify();
+            }
+        }
+
+        if (interrupt) {
+            this.thread.interrupt();
+        }
+    }
+
+    public void makeStop() {
+        this.stoped = true;
+        stlog.info("makestop thread " + this.getServiceName());
+    }
 
     public void wakeup() {
         synchronized (this) {
@@ -112,7 +112,6 @@ public abstract class ServiceThread implements Runnable {
             }
         }
     }
-
 
     protected void waitForRunning(long interval) {
         synchronized (this) {
@@ -133,17 +132,10 @@ public abstract class ServiceThread implements Runnable {
         }
     }
 
-
     protected void onWaitEnd() {
     }
 
-
     public boolean isStoped() {
         return stoped;
-    }
-
-
-    public long getJointime() {
-        return JoinTime;
     }
 }

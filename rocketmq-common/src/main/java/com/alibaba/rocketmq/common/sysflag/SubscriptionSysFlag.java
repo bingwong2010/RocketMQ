@@ -16,8 +16,16 @@
  */
 package com.alibaba.rocketmq.common.sysflag;
 
+/**
+
+ *
+ * @author manhong.yqd
+ *
+ */
 public class SubscriptionSysFlag {
+
     private final static int FLAG_UNIT = 0x1 << 0;
+
 
     public static int buildSysFlag(final boolean unit) {
         int sysFlag = 0;

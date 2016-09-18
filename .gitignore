@@ -6,3 +6,4 @@ target/
 *.iml
 .idea/
 *.versionsBackup
+*.DS_Store

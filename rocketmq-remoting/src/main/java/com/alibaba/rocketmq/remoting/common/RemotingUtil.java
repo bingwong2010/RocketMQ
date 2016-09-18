@@ -36,9 +36,9 @@ import java.util.Enumeration;
  * @author shijia.wxr
  */
 public class RemotingUtil {
-    private static final Logger log = LoggerFactory.getLogger(RemotingHelper.RemotingLogName);
     public static final String OS_NAME = System.getProperty("os.name");
 
+    private static final Logger log = LoggerFactory.getLogger(RemotingHelper.RemotingLogName);
     private static boolean isLinuxPlatform = false;
     private static boolean isWindowsPlatform = false;
 
@@ -52,19 +52,13 @@ public class RemotingUtil {
         }
     }
 
-
-    public static boolean isLinuxPlatform() {
-        return isLinuxPlatform;
-    }
-
-
     public static boolean isWindowsPlatform() {
         return isWindowsPlatform;
     }
 
-
     public static Selector openSelector() throws IOException {
         Selector result = null;
+
         if (isLinuxPlatform()) {
             try {
                 final Class<?> providerClazz = Class.forName("sun.nio.ch.EPollSelectorProvider");
@@ -77,13 +71,11 @@ public class RemotingUtil {
                                 result = selectorProvider.openSelector();
                             }
                         }
-                    }
-                    catch (final Exception e) {
-                        // ignore
+                    } catch (final Exception e) {
+                        log.warn("Open ePoll Selector for linux platform exception", e);
                     }
                 }
-            }
-            catch (final Exception e) {
+            } catch (final Exception e) {
                 // ignore
             }
         }
@@ -95,6 +87,9 @@ public class RemotingUtil {
         return result;
     }
 
+    public static boolean isLinuxPlatform() {
+        return isLinuxPlatform;
+    }
 
     public static String getLocalAddress() {
         try {
@@ -110,8 +105,7 @@ public class RemotingUtil {
                     if (!address.isLoopbackAddress()) {
                         if (address instanceof Inet6Address) {
                             ipv6Result.add(normalizeHostAddress(address));
-                        }
-                        else {
+                        } else {
                             ipv4Result.add(normalizeHostAddress(address));
                         }
                     }
@@ -129,17 +123,15 @@ public class RemotingUtil {
                 }
 
                 return ipv4Result.get(ipv4Result.size() - 1);
-            }else if (!ipv6Result.isEmpty()) {
+            } else if (!ipv6Result.isEmpty()) {
                 return ipv6Result.get(0);
             }
             //If failed to find,fall back to localhost
             final InetAddress localHost = InetAddress.getLocalHost();
             return normalizeHostAddress(localHost);
-        }
-        catch (SocketException e) {
+        } catch (SocketException e) {
             e.printStackTrace();
-        }
-        catch (UnknownHostException e) {
+        } catch (UnknownHostException e) {
             e.printStackTrace();
         }
 
@@ -150,15 +142,14 @@ public class RemotingUtil {
     public static String normalizeHostAddress(final InetAddress localHost) {
         if (localHost instanceof Inet6Address) {
             return "[" + localHost.getHostAddress() + "]";
-        }
-        else {
+        } else {
             return localHost.getHostAddress();
         }
     }
 
     public static SocketAddress string2SocketAddress(final String addr) {
         String[] s = addr.split(":");
-        InetSocketAddress isa = new InetSocketAddress(s[0], Integer.valueOf(s[1]));
+        InetSocketAddress isa = new InetSocketAddress(s[0], Integer.parseInt(s[1]));
         return isa;
     }
 
@@ -190,13 +181,11 @@ public class RemotingUtil {
             sc.socket().connect(remote, timeoutMillis);
             sc.configureBlocking(false);
             return sc;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             if (sc != null) {
                 try {
                     sc.close();
-                }
-                catch (IOException e1) {
+                } catch (IOException e1) {
                     e1.printStackTrace();
                 }
             }
@@ -212,7 +201,7 @@ public class RemotingUtil {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
                 log.info("closeChannel: close the connection to remote address[{}] result: {}", addrRemote,
-                    future.isSuccess());
+                        future.isSuccess());
             }
         });
     }

@@ -22,16 +22,25 @@ import com.alibaba.rocketmq.common.MixAll;
 
 /**
  * @author shijia.wxr
+ *
  */
 public class SubscriptionGroupConfig {
+
     private String groupName;
+
     private boolean consumeEnable = true;
     private boolean consumeFromMinEnable = true;
+
     private boolean consumeBroadcastEnable = true;
+
     private int retryQueueNums = 1;
+
     private int retryMaxTimes = 16;
+
     private long brokerId = MixAll.MASTER_ID;
+
     private long whichBrokerWhenConsumeSlowly = 1;
+
 
     public String getGroupName() {
         return groupName;
@@ -150,8 +159,7 @@ public class SubscriptionGroupConfig {
         if (groupName == null) {
             if (other.groupName != null)
                 return false;
-        }
-        else if (!groupName.equals(other.groupName))
+        } else if (!groupName.equals(other.groupName))
             return false;
         if (retryMaxTimes != other.retryMaxTimes)
             return false;

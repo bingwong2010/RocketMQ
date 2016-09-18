@@ -23,8 +23,15 @@ import java.net.URL;
 
 /**
  * @author shijia.wxr
+ *
  */
 public class FilterAPI {
+    public static URL classFile(final String className) {
+        final String javaSource = simpleClassName(className) + ".java";
+        URL url = FilterAPI.class.getClassLoader().getResource(javaSource);
+        return url;
+    }
+
     public static String simpleClassName(final String className) {
         String simple = className;
         int index = className.lastIndexOf(".");
@@ -35,24 +42,15 @@ public class FilterAPI {
         return simple;
     }
 
-
-    public static URL classFile(final String className) {
-        final String javaSource = simpleClassName(className) + ".java";
-        URL url = FilterAPI.class.getClassLoader().getResource(javaSource);
-        return url;
-    }
-
-
     public static SubscriptionData buildSubscriptionData(final String consumerGroup, String topic,
-            String subString) throws Exception {
+                                                         String subString) throws Exception {
         SubscriptionData subscriptionData = new SubscriptionData();
         subscriptionData.setTopic(topic);
         subscriptionData.setSubString(subString);
 
         if (null == subString || subString.equals(SubscriptionData.SUB_ALL) || subString.length() == 0) {
             subscriptionData.setSubString(SubscriptionData.SUB_ALL);
-        }
-        else {
+        } else {
             String[] tags = subString.split("\\|\\|");
             if (tags != null && tags.length > 0) {
                 for (String tag : tags) {
@@ -64,8 +62,7 @@ public class FilterAPI {
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 throw new Exception("subString split error");
             }
         }

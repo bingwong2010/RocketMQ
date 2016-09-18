@@ -37,18 +37,118 @@ import java.util.concurrent.TimeUnit;
 
 
 public class FilterServerManager {
-    private static final Logger log = LoggerFactory.getLogger(LoggerName.BrokerLoggerName);
-    public static final long FilterServerMaxIdleTimeMills = 30000;
 
+    public static final long FilterServerMaxIdleTimeMills = 30000;
+    private static final Logger log = LoggerFactory.getLogger(LoggerName.BrokerLoggerName);
     private final ConcurrentHashMap<Channel, FilterServerInfo> filterServerTable =
             new ConcurrentHashMap<Channel, FilterServerInfo>(16);
-
     private final BrokerController brokerController;
 
     private ScheduledExecutorService scheduledExecutorService = Executors
-        .newSingleThreadScheduledExecutor(new ThreadFactoryImpl("FilterServerManagerScheduledThread"));
+            .newSingleThreadScheduledExecutor(new ThreadFactoryImpl("FilterServerManagerScheduledThread"));
 
-    class FilterServerInfo {
+    public FilterServerManager(final BrokerController brokerController) {
+        this.brokerController = brokerController;
+    }
+
+    public void start() {
+
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    FilterServerManager.this.createFilterServer();
+                } catch (Exception e) {
+                    log.error("", e);
+                }
+            }
+        }, 1000 * 5, 1000 * 30, TimeUnit.MILLISECONDS);
+    }
+
+    public void createFilterServer() {
+        int more =
+                this.brokerController.getBrokerConfig().getFilterServerNums() - this.filterServerTable.size();
+        String cmd = this.buildStartCommand();
+        for (int i = 0; i < more; i++) {
+            FilterServerUtil.callShell(cmd, log);
+        }
+    }
+
+    private String buildStartCommand() {
+        String config = "";
+        if (BrokerStartup.configFile != null) {
+            config = String.format("-c %s", BrokerStartup.configFile);
+        }
+
+        if (this.brokerController.getBrokerConfig().getNamesrvAddr() != null) {
+            config += String.format(" -n %s", this.brokerController.getBrokerConfig().getNamesrvAddr());
+        }
+
+        if (RemotingUtil.isWindowsPlatform()) {
+            return String.format("start /b %s\\bin\\mqfiltersrv.exe %s", //
+                    this.brokerController.getBrokerConfig().getRocketmqHome(),//
+                    config);
+        } else {
+            return String.format("sh %s/bin/startfsrv.sh %s", //
+                    this.brokerController.getBrokerConfig().getRocketmqHome(),//
+                    config);
+        }
+    }
+
+    public void shutdown() {
+        this.scheduledExecutorService.shutdown();
+    }
+
+    public void registerFilterServer(final Channel channel, final String filterServerAddr) {
+        FilterServerInfo filterServerInfo = this.filterServerTable.get(channel);
+        if (filterServerInfo != null) {
+            filterServerInfo.setLastUpdateTimestamp(System.currentTimeMillis());
+        } else {
+            filterServerInfo = new FilterServerInfo();
+            filterServerInfo.setFilterServerAddr(filterServerAddr);
+            filterServerInfo.setLastUpdateTimestamp(System.currentTimeMillis());
+            this.filterServerTable.put(channel, filterServerInfo);
+            log.info("Receive a New Filter Server<{}>", filterServerAddr);
+        }
+    }
+
+    /**
+
+     */
+    public void scanNotActiveChannel() {
+
+        Iterator<Entry<Channel, FilterServerInfo>> it = this.filterServerTable.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<Channel, FilterServerInfo> next = it.next();
+            long timestamp = next.getValue().getLastUpdateTimestamp();
+            Channel channel = next.getKey();
+            if ((System.currentTimeMillis() - timestamp) > FilterServerMaxIdleTimeMills) {
+                log.info("The Filter Server<{}> expired, remove it", next.getKey());
+                it.remove();
+                RemotingUtil.closeChannel(channel);
+            }
+        }
+    }
+
+    public void doChannelCloseEvent(final String remoteAddr, final Channel channel) {
+        FilterServerInfo old = this.filterServerTable.remove(channel);
+        if (old != null) {
+            log.warn("The Filter Server<{}> connection<{}> closed, remove it", old.getFilterServerAddr(),
+                    remoteAddr);
+        }
+    }
+
+    public List<String> buildNewFilterServerList() {
+        List<String> addr = new ArrayList<String>();
+        Iterator<Entry<Channel, FilterServerInfo>> it = this.filterServerTable.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<Channel, FilterServerInfo> next = it.next();
+            addr.add(next.getValue().getFilterServerAddr());
+        }
+        return addr;
+    }
+
+    static class FilterServerInfo {
         private String filterServerAddr;
         private long lastUpdateTimestamp;
 
@@ -71,116 +171,5 @@ public class FilterServerManager {
         public void setLastUpdateTimestamp(long lastUpdateTimestamp) {
             this.lastUpdateTimestamp = lastUpdateTimestamp;
         }
-    }
-
-
-    public FilterServerManager(final BrokerController brokerController) {
-        this.brokerController = brokerController;
-    }
-
-
-    public void start() {
-        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    FilterServerManager.this.createFilterServer();
-                }
-                catch (Exception e) {
-                    log.error("", e);
-                }
-            }
-        }, 1000 * 5, 1000 * 30, TimeUnit.MILLISECONDS);
-    }
-
-
-    public void shutdown() {
-        this.scheduledExecutorService.shutdown();
-    }
-
-
-    private String buildStartCommand() {
-        String config = "";
-        if (BrokerStartup.configFile != null) {
-            config = String.format("-c %s", BrokerStartup.configFile);
-        }
-
-        if (this.brokerController.getBrokerConfig().getNamesrvAddr() != null) {
-            config += String.format(" -n %s", this.brokerController.getBrokerConfig().getNamesrvAddr());
-        }
-
-        if (RemotingUtil.isWindowsPlatform()) {
-            return String.format("start /b %s\\bin\\mqfiltersrv.exe %s", //
-                this.brokerController.getBrokerConfig().getRocketmqHome(),//
-                config);
-        }
-        else {
-            return String.format("sh %s/bin/startfsrv.sh %s", //
-                this.brokerController.getBrokerConfig().getRocketmqHome(),//
-                config);
-        }
-    }
-
-
-    public void createFilterServer() {
-        int more =
-                this.brokerController.getBrokerConfig().getFilterServerNums() - this.filterServerTable.size();
-        String cmd = this.buildStartCommand();
-        for (int i = 0; i < more; i++) {
-            FilterServerUtil.callShell(cmd, log);
-        }
-    }
-
-
-    public void registerFilterServer(final Channel channel, final String filterServerAddr) {
-        FilterServerInfo filterServerInfo = this.filterServerTable.get(channel);
-        if (filterServerInfo != null) {
-            filterServerInfo.setLastUpdateTimestamp(System.currentTimeMillis());
-        }
-        else {
-            filterServerInfo = new FilterServerInfo();
-            filterServerInfo.setFilterServerAddr(filterServerAddr);
-            filterServerInfo.setLastUpdateTimestamp(System.currentTimeMillis());
-            this.filterServerTable.put(channel, filterServerInfo);
-            log.info("Receive a New Filter Server<{}>", filterServerAddr);
-        }
-    }
-
-
-    /**
-     * Filter Server register to broker every 10s ,if over 30s,no registration info.,remove it
-     */
-    public void scanNotActiveChannel() {
-        Iterator<Entry<Channel, FilterServerInfo>> it = this.filterServerTable.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<Channel, FilterServerInfo> next = it.next();
-            long timestamp = next.getValue().getLastUpdateTimestamp();
-            Channel channel = next.getKey();
-            if ((System.currentTimeMillis() - timestamp) > FilterServerMaxIdleTimeMills) {
-                log.info("The Filter Server<{}> expired, remove it", next.getKey());
-                it.remove();
-                RemotingUtil.closeChannel(channel);
-            }
-        }
-    }
-
-
-    public void doChannelCloseEvent(final String remoteAddr, final Channel channel) {
-        FilterServerInfo old = this.filterServerTable.remove(channel);
-        if (old != null) {
-            log.warn("The Filter Server<{}> connection<{}> closed, remove it", old.getFilterServerAddr(),
-                remoteAddr);
-        }
-    }
-
-
-    public List<String> buildNewFilterServerList() {
-        List<String> addr = new ArrayList<String>();
-        Iterator<Entry<Channel, FilterServerInfo>> it = this.filterServerTable.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<Channel, FilterServerInfo> next = it.next();
-            addr.add(next.getValue().getFilterServerAddr());
-        }
-        return addr;
     }
 }

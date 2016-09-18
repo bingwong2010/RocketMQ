@@ -22,7 +22,7 @@ package com.alibaba.rocketmq.client.consumer;
  * @author shijia.wxr
  */
 public interface PullCallback {
-    void onSuccess(final PullResult pullResult);
+    public void onSuccess(final PullResult pullResult);
 
-    void onException(final Throwable e);
+    public void onException(final Throwable e);
 }

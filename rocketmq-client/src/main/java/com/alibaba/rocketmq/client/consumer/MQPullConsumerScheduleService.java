@@ -38,15 +38,103 @@ import java.util.concurrent.TimeUnit;
  */
 public class MQPullConsumerScheduleService {
     private final Logger log = ClientLogger.getLog();
+    private final MessageQueueListener messageQueueListener = new MessageQueueListenerImpl();
+    private final ConcurrentHashMap<MessageQueue, PullTaskImpl> taskTable =
+            new ConcurrentHashMap<MessageQueue, PullTaskImpl>();
     private DefaultMQPullConsumer defaultMQPullConsumer;
     private int pullThreadNums = 20;
     private ConcurrentHashMap<String /* topic */, PullTaskCallback> callbackTable =
             new ConcurrentHashMap<String, PullTaskCallback>();
     private ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
-    private final MessageQueueListener messageQueueListener = new MessageQueueListenerImpl();
 
-    private final ConcurrentHashMap<MessageQueue, PullTaskImpl> taskTable =
-            new ConcurrentHashMap<MessageQueue, PullTaskImpl>();
+    public MQPullConsumerScheduleService(final String consumerGroup) {
+        this.defaultMQPullConsumer = new DefaultMQPullConsumer(consumerGroup);
+        this.defaultMQPullConsumer.setMessageModel(MessageModel.CLUSTERING);
+    }
+
+    public void putTask(String topic, Set<MessageQueue> mqNewSet) {
+        Iterator<Entry<MessageQueue, PullTaskImpl>> it = this.taskTable.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<MessageQueue, PullTaskImpl> next = it.next();
+            if (next.getKey().getTopic().equals(topic)) {
+                if (!mqNewSet.contains(next.getKey())) {
+                    next.getValue().setCancelled(true);
+                    it.remove();
+                }
+            }
+        }
+
+        for (MessageQueue mq : mqNewSet) {
+            if (!this.taskTable.containsKey(mq)) {
+                PullTaskImpl command = new PullTaskImpl(mq);
+                this.taskTable.put(mq, command);
+                this.scheduledThreadPoolExecutor.schedule(command, 0, TimeUnit.MILLISECONDS);
+
+            }
+        }
+    }
+
+    public void start() throws MQClientException {
+        final String group = this.defaultMQPullConsumer.getConsumerGroup();
+        this.scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(//
+                this.pullThreadNums,//
+                new ThreadFactoryImpl("PullMsgThread-" + group)//
+        );
+
+        this.defaultMQPullConsumer.setMessageQueueListener(this.messageQueueListener);
+
+        this.defaultMQPullConsumer.start();
+
+        log.info("MQPullConsumerScheduleService start OK, {} {}",
+                this.defaultMQPullConsumer.getConsumerGroup(), this.callbackTable);
+    }
+
+    public void registerPullTaskCallback(final String topic, final PullTaskCallback callback) {
+        this.callbackTable.put(topic, callback);
+        this.defaultMQPullConsumer.registerMessageQueueListener(topic, null);
+    }
+
+    public void shutdown() {
+        if (this.scheduledThreadPoolExecutor != null) {
+            this.scheduledThreadPoolExecutor.shutdown();
+        }
+
+        if (this.defaultMQPullConsumer != null) {
+            this.defaultMQPullConsumer.shutdown();
+        }
+    }
+
+    public ConcurrentHashMap<String, PullTaskCallback> getCallbackTable() {
+        return callbackTable;
+    }
+
+    public void setCallbackTable(ConcurrentHashMap<String, PullTaskCallback> callbackTable) {
+        this.callbackTable = callbackTable;
+    }
+
+    public int getPullThreadNums() {
+        return pullThreadNums;
+    }
+
+    public void setPullThreadNums(int pullThreadNums) {
+        this.pullThreadNums = pullThreadNums;
+    }
+
+    public DefaultMQPullConsumer getDefaultMQPullConsumer() {
+        return defaultMQPullConsumer;
+    }
+
+    public void setDefaultMQPullConsumer(DefaultMQPullConsumer defaultMQPullConsumer) {
+        this.defaultMQPullConsumer = defaultMQPullConsumer;
+    }
+
+    public MessageModel getMessageModel() {
+        return this.defaultMQPullConsumer.getMessageModel();
+    }
+
+    public void setMessageModel(MessageModel messageModel) {
+        this.defaultMQPullConsumer.setMessageModel(messageModel);
+    }
 
     class MessageQueueListenerImpl implements MessageQueueListener {
         @Override
@@ -120,105 +208,5 @@ public class MQPullConsumerScheduleService {
         public MessageQueue getMessageQueue() {
             return messageQueue;
         }
-    }
-
-
-    public MQPullConsumerScheduleService(final String consumerGroup) {
-        this.defaultMQPullConsumer = new DefaultMQPullConsumer(consumerGroup);
-        this.defaultMQPullConsumer.setMessageModel(MessageModel.CLUSTERING);
-    }
-
-
-    public void putTask(String topic, Set<MessageQueue> mqNewSet) {
-        Iterator<Entry<MessageQueue, PullTaskImpl>> it = this.taskTable.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<MessageQueue, PullTaskImpl> next = it.next();
-            if (next.getKey().getTopic().equals(topic)) {
-                if (!mqNewSet.contains(next.getKey())) {
-                    next.getValue().setCancelled(true);
-                    it.remove();
-                }
-            }
-        }
-
-        for (MessageQueue mq : mqNewSet) {
-            if (!this.taskTable.containsKey(mq)) {
-                PullTaskImpl command = new PullTaskImpl(mq);
-                this.taskTable.put(mq, command);
-                this.scheduledThreadPoolExecutor.schedule(command, 0, TimeUnit.MILLISECONDS);
-            }
-        }
-    }
-
-    public void start() throws MQClientException {
-        final String group = this.defaultMQPullConsumer.getConsumerGroup();
-        this.scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(//
-                this.pullThreadNums,//
-                new ThreadFactoryImpl("PullMsgThread-" + group)//
-        );
-
-        this.defaultMQPullConsumer.setMessageQueueListener(this.messageQueueListener);
-
-        this.defaultMQPullConsumer.start();
-
-        log.info("MQPullConsumerScheduleService start OK, {} {}",
-                this.defaultMQPullConsumer.getConsumerGroup(), this.callbackTable);
-    }
-
-
-    public void registerPullTaskCallback(final String topic, final PullTaskCallback callback) {
-        this.callbackTable.put(topic, callback);
-        this.defaultMQPullConsumer.registerMessageQueueListener(topic, null);
-    }
-
-
-    public void shutdown() {
-        if (this.scheduledThreadPoolExecutor != null) {
-            this.scheduledThreadPoolExecutor.shutdown();
-        }
-
-        if (this.defaultMQPullConsumer != null) {
-            this.defaultMQPullConsumer.shutdown();
-        }
-    }
-
-
-    public ConcurrentHashMap<String, PullTaskCallback> getCallbackTable() {
-        return callbackTable;
-    }
-
-
-    public void setCallbackTable(ConcurrentHashMap<String, PullTaskCallback> callbackTable) {
-        this.callbackTable = callbackTable;
-    }
-
-
-    public int getPullThreadNums() {
-        return pullThreadNums;
-    }
-
-
-    public void setPullThreadNums(int pullThreadNums) {
-        this.pullThreadNums = pullThreadNums;
-    }
-
-
-    public DefaultMQPullConsumer getDefaultMQPullConsumer() {
-        return defaultMQPullConsumer;
-    }
-
-
-    public void setDefaultMQPullConsumer(DefaultMQPullConsumer defaultMQPullConsumer) {
-        this.defaultMQPullConsumer = defaultMQPullConsumer;
-    }
-
-
-    public MessageModel getMessageModel() {
-        return this.defaultMQPullConsumer.getMessageModel();
-    }
-
-
-    public void setMessageModel(MessageModel messageModel) {
-        this.defaultMQPullConsumer.setMessageModel(messageModel);
     }
 }

@@ -27,11 +27,9 @@ import java.util.TreeMap;
 
 
 public class DefaultMonitorListener implements MonitorListener {
-    private final Logger log = ClientLogger.getLog();
-
     private final static String LogPrefix = "[MONITOR] ";
-
     private final static String LogNotify = LogPrefix + " [NOTIFY] ";
+    private final Logger log = ClientLogger.getLog();
 
 
     public DefaultMonitorListener() {
@@ -64,14 +62,16 @@ public class DefaultMonitorListener implements MonitorListener {
 
     @Override
     public void reportConsumerRunningInfo(TreeMap<String, ConsumerRunningInfo> criTable) {
+
         {
             boolean result = ConsumerRunningInfo.analyzeSubscription(criTable);
             if (!result) {
                 log.info(String.format(LogNotify
                         + "reportConsumerRunningInfo: ConsumerGroup: %s, Subscription different", criTable
-                    .firstEntry().getValue().getProperties().getProperty("consumerGroup")));
+                        .firstEntry().getValue().getProperties().getProperty("consumerGroup")));
             }
         }
+
 
         {
             Iterator<Entry<String, ConsumerRunningInfo>> it = criTable.entrySet().iterator();
@@ -80,10 +80,10 @@ public class DefaultMonitorListener implements MonitorListener {
                 String result = ConsumerRunningInfo.analyzeProcessQueue(next.getKey(), next.getValue());
                 if (result != null && !result.isEmpty()) {
                     log.info(String.format(LogNotify
-                            + "reportConsumerRunningInfo: ConsumerGroup: %s, ClientId: %s, %s", //
-                        criTable.firstEntry().getValue().getProperties().getProperty("consumerGroup"),//
-                        next.getKey(),//
-                        result));
+                                    + "reportConsumerRunningInfo: ConsumerGroup: %s, ClientId: %s, %s", //
+                            criTable.firstEntry().getValue().getProperties().getProperty("consumerGroup"),//
+                            next.getKey(),//
+                            result));
                 }
             }
         }

@@ -16,11 +16,10 @@
  */
 package com.alibaba.rocketmq.store.stats;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alibaba.rocketmq.common.constant.LoggerName;
 import com.alibaba.rocketmq.store.DefaultMessageStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -28,20 +27,25 @@ import com.alibaba.rocketmq.store.DefaultMessageStore;
  */
 public class BrokerStats {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BrokerLoggerName);
+    private final DefaultMessageStore defaultMessageStore;
 
     private volatile long msgPutTotalYesterdayMorning;
+
     private volatile long msgPutTotalTodayMorning;
 
     private volatile long msgGetTotalYesterdayMorning;
-    private volatile long msgGetTotalTodayMorning;
 
-    private final DefaultMessageStore defaultMessageStore;
+    private volatile long msgGetTotalTodayMorning;
 
 
     public BrokerStats(DefaultMessageStore defaultMessageStore) {
         this.defaultMessageStore = defaultMessageStore;
     }
 
+
+    /**
+
+     */
     public void record() {
         this.msgPutTotalYesterdayMorning = this.msgPutTotalTodayMorning;
         this.msgGetTotalYesterdayMorning = this.msgGetTotalTodayMorning;

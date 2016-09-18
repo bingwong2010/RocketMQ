@@ -23,18 +23,19 @@ import java.io.File;
 
 
 /**
- * 
- * @author shijia.wxr
  * @author vongosling
+ * @author shijia.wxr
  */
 public class MessageStoreConfig {
     //The root directory in which the log data is kept
     @ImportantField
     private String storePathRootDir = System.getProperty("user.home") + File.separator + "store";
+
     //The directory in which the commitlog is kept
     @ImportantField
     private String storePathCommitLog = System.getProperty("user.home") + File.separator + "store"
             + File.separator + "commitlog";
+
     // CommitLog file size,default is 1G
     private int mapedFileSizeCommitLog = 1024 * 1024 * 1024;
     // ConsumeQueue file size, default is 30W
@@ -65,7 +66,7 @@ public class MessageStoreConfig {
     // Flow control for ConsumeQueue
     private int putMsgIndexHightWater = 600000;
     // The maximum size of a single log file，default is 512K
-    private int maxMessageSize = 1024 * 512;
+    private int maxMessageSize = 1024 * 1024 * 4;
     // Whether check the CRC32 of the records consumed.
     // This ensures no on-the-wire or on-disk corruption to the messages occurred.
     // This check adds some overhead, so it may be disabled in cases seeking extreme performance.
@@ -113,7 +114,35 @@ public class MessageStoreConfig {
     private boolean cleanFileForciblyEnable = true;
     private boolean warmMapedFileEnable = false;
     private boolean offsetCheckInSlave = false;
+    private boolean debugLockEnable = false;
+    private boolean duplicationEnable = false;
     private boolean diskFallRecorded = true;
+    private long osPageCacheBusyTimeOutMills = 1000;
+    private int defaultQueryMaxNum = 32;
+    
+    public boolean isDebugLockEnable() {
+        return debugLockEnable;
+    }
+
+    public void setDebugLockEnable(final boolean debugLockEnable) {
+        this.debugLockEnable = debugLockEnable;
+    }
+
+    public boolean isDuplicationEnable() {
+        return duplicationEnable;
+    }
+
+    public void setDuplicationEnable(final boolean duplicationEnable) {
+        this.duplicationEnable = duplicationEnable;
+    }
+
+    public long getOsPageCacheBusyTimeOutMills() {
+        return osPageCacheBusyTimeOutMills;
+    }
+
+    public void setOsPageCacheBusyTimeOutMills(final long osPageCacheBusyTimeOutMills) {
+        this.osPageCacheBusyTimeOutMills = osPageCacheBusyTimeOutMills;
+    }
 
     public boolean isDiskFallRecorded() {
         return diskFallRecorded;
@@ -144,8 +173,9 @@ public class MessageStoreConfig {
 
 
     public int getMapedFileSizeConsumeQueue() {
+
         int factor = (int) Math.ceil(this.mapedFileSizeConsumeQueue / (ConsumeQueue.CQStoreUnitSize * 1.0));
-        return factor * ConsumeQueue.CQStoreUnitSize;
+        return (int) (factor * ConsumeQueue.CQStoreUnitSize);
     }
 
 
@@ -469,16 +499,13 @@ public class MessageStoreConfig {
         return brokerRole;
     }
 
-
     public void setBrokerRole(BrokerRole brokerRole) {
         this.brokerRole = brokerRole;
     }
 
-
     public void setBrokerRole(String brokerRole) {
         this.brokerRole = BrokerRole.valueOf(brokerRole);
     }
-
 
     public int getHaTransferBatchSize() {
         return haTransferBatchSize;
@@ -504,16 +531,13 @@ public class MessageStoreConfig {
         return flushDiskType;
     }
 
-
     public void setFlushDiskType(FlushDiskType flushDiskType) {
         this.flushDiskType = flushDiskType;
     }
 
-
     public void setFlushDiskType(String type) {
         this.flushDiskType = FlushDiskType.valueOf(type);
     }
-
 
     public int getSyncFlushTimeout() {
         return syncFlushTimeout;
@@ -613,4 +637,14 @@ public class MessageStoreConfig {
     public void setOffsetCheckInSlave(boolean offsetCheckInSlave) {
         this.offsetCheckInSlave = offsetCheckInSlave;
     }
+
+    public int getDefaultQueryMaxNum() {
+        return defaultQueryMaxNum;
+    }
+
+    public void setDefaultQueryMaxNum(int defaultQueryMaxNum) {
+        this.defaultQueryMaxNum = defaultQueryMaxNum;
+    }
+    
+    
 }

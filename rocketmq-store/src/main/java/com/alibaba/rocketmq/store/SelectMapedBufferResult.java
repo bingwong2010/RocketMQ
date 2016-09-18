@@ -23,10 +23,15 @@ import java.nio.ByteBuffer;
  * @author shijia.wxr
  */
 public class SelectMapedBufferResult {
+
     private final long startOffset;
+
     private final ByteBuffer byteBuffer;
+
     private int size;
+
     private MapedFile mapedFile;
+
 
     public SelectMapedBufferResult(long startOffset, ByteBuffer byteBuffer, int size, MapedFile mapedFile) {
         this.startOffset = startOffset;
@@ -64,12 +69,14 @@ public class SelectMapedBufferResult {
         }
     }
 
+
     public synchronized void release() {
         if (this.mapedFile != null) {
             this.mapedFile.release();
             this.mapedFile = null;
         }
     }
+
 
     public long getStartOffset() {
         return startOffset;

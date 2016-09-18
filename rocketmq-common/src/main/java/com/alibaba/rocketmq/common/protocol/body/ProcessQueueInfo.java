@@ -22,12 +22,15 @@ import com.alibaba.rocketmq.common.UtilAll;
 
 public class ProcessQueueInfo {
     private long commitOffset;
+
     private long cachedMsgMinOffset;
     private long cachedMsgMaxOffset;
     private int cachedMsgCount;
+
     private long transactionMsgMinOffset;
     private long transactionMsgMaxOffset;
     private int transactionMsgCount;
+
     private boolean locked;
     private long tryUnlockTimes;
     private long lastLockTimestamp;

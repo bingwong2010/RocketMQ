@@ -23,5 +23,5 @@ import com.alibaba.rocketmq.common.message.Message;
  * @author shijia.wxr
  */
 public interface LocalTransactionExecuter {
-    LocalTransactionState executeLocalTransactionBranch(final Message msg, final Object arg);
+    public LocalTransactionState executeLocalTransactionBranch(final Message msg, final Object arg);
 }

@@ -46,7 +46,7 @@ public class IndexFile {
 
 
     public IndexFile(final String fileName, final int hashSlotNum, final int indexNum,
-            final long endPhyOffset, final long endTimestamp) throws IOException {
+                     final long endPhyOffset, final long endTimestamp) throws IOException {
         int fileTotalSize =
                 IndexHeader.INDEX_HEADER_SIZE + (hashSlotNum * HASH_SLOT_SIZE) + (indexNum * INDEX_SIZE);
         this.mapedFile = new MapedFile(fileName, fileTotalSize);
@@ -94,6 +94,7 @@ public class IndexFile {
         return this.indexHeader.getIndexCount() >= this.indexNum;
     }
 
+
     public boolean destroy(final long intervalForcibly) {
         return this.mapedFile.destroy(intervalForcibly);
     }
@@ -107,6 +108,7 @@ public class IndexFile {
             FileLock fileLock = null;
 
             try {
+
                 // fileLock = this.fileChannel.lock(absSlotPos, HASH_SLOT_SIZE,
                 // false);
                 int slotValue = this.mappedByteBuffer.getInt(absSlotPos);
@@ -116,15 +118,15 @@ public class IndexFile {
 
                 long timeDiff = storeTimestamp - this.indexHeader.getBeginTimestamp();
 
+
                 timeDiff = timeDiff / 1000;
+
 
                 if (this.indexHeader.getBeginTimestamp() <= 0) {
                     timeDiff = 0;
-                }
-                else if (timeDiff > Integer.MAX_VALUE) {
+                } else if (timeDiff > Integer.MAX_VALUE) {
                     timeDiff = Integer.MAX_VALUE;
-                }
-                else if (timeDiff < 0) {
+                } else if (timeDiff < 0) {
                     timeDiff = 0;
                 }
 
@@ -132,12 +134,15 @@ public class IndexFile {
                         IndexHeader.INDEX_HEADER_SIZE + this.hashSlotNum * HASH_SLOT_SIZE
                                 + this.indexHeader.getIndexCount() * INDEX_SIZE;
 
+
                 this.mappedByteBuffer.putInt(absIndexPos, keyHash);
                 this.mappedByteBuffer.putLong(absIndexPos + 4, phyOffset);
                 this.mappedByteBuffer.putInt(absIndexPos + 4 + 8, (int) timeDiff);
                 this.mappedByteBuffer.putInt(absIndexPos + 4 + 8 + 4, slotValue);
 
+
                 this.mappedByteBuffer.putInt(absSlotPos, this.indexHeader.getIndexCount());
+
 
                 if (this.indexHeader.getIndexCount() <= 1) {
                     this.indexHeader.setBeginPhyOffset(phyOffset);
@@ -150,61 +155,24 @@ public class IndexFile {
                 this.indexHeader.setEndTimestamp(storeTimestamp);
 
                 return true;
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 log.error("putKey exception, Key: " + key + " KeyHashCode: " + key.hashCode(), e);
-            }
-            finally {
+            } finally {
                 if (fileLock != null) {
                     try {
                         fileLock.release();
-                    }
-                    catch (IOException e) {
+                    } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
             }
-        }
-        else {
+        } else {
             log.warn("putKey index count " + this.indexHeader.getIndexCount() + " index max num "
                     + this.indexNum);
         }
 
         return false;
     }
-
-
-    public long getBeginTimestamp() {
-        return this.indexHeader.getBeginTimestamp();
-    }
-
-
-    public long getEndTimestamp() {
-        return this.indexHeader.getEndTimestamp();
-    }
-
-
-    public long getEndPhyOffset() {
-        return this.indexHeader.getEndPhyOffset();
-    }
-
-
-    public boolean isTimeMatched(final long begin, final long end) {
-        boolean result =
-                begin < this.indexHeader.getBeginTimestamp() && end > this.indexHeader.getEndTimestamp();
-
-        result =
-                result
-                        || (begin >= this.indexHeader.getBeginTimestamp() && begin <= this.indexHeader
-                            .getEndTimestamp());
-
-        result =
-                result
-                        || (end >= this.indexHeader.getBeginTimestamp() && end <= this.indexHeader
-                            .getEndTimestamp());
-        return result;
-    }
-
 
     public int indexKeyHashMethod(final String key) {
         int keyHash = key.hashCode();
@@ -214,8 +182,36 @@ public class IndexFile {
         return keyHashPositive;
     }
 
+    public long getBeginTimestamp() {
+        return this.indexHeader.getBeginTimestamp();
+    }
+
+    public long getEndTimestamp() {
+        return this.indexHeader.getEndTimestamp();
+    }
+
+    public long getEndPhyOffset() {
+        return this.indexHeader.getEndPhyOffset();
+    }
+
+    public boolean isTimeMatched(final long begin, final long end) {
+        boolean result =
+                begin < this.indexHeader.getBeginTimestamp() && end > this.indexHeader.getEndTimestamp();
+
+        result =
+                result
+                        || (begin >= this.indexHeader.getBeginTimestamp() && begin <= this.indexHeader
+                        .getEndTimestamp());
+
+        result =
+                result
+                        || (end >= this.indexHeader.getBeginTimestamp() && end <= this.indexHeader
+                        .getEndTimestamp());
+        return result;
+    }
+
     public void selectPhyOffset(final List<Long> phyOffsets, final String key, final int maxNum,
-            final long begin, final long end, boolean lock) {
+                                final long begin, final long end, boolean lock) {
         if (this.mapedFile.hold()) {
             int keyHash = indexKeyHashMethod(key);
             int slotPos = keyHash % this.hashSlotNum;
@@ -237,9 +233,8 @@ public class IndexFile {
                 if (slotValue <= INVALID_INDEX || slotValue > this.indexHeader.getIndexCount()
                         || this.indexHeader.getIndexCount() <= 1) {
                     // TODO NOTFOUND
-                }
-                else {
-                    for (int nextIndexToRead = slotValue;;) {
+                } else {
+                    for (int nextIndexToRead = slotValue; ; ) {
                         if (phyOffsets.size() >= maxNum) {
                             break;
                         }
@@ -250,8 +245,10 @@ public class IndexFile {
 
                         int keyHashRead = this.mappedByteBuffer.getInt(absIndexPos);
                         long phyOffsetRead = this.mappedByteBuffer.getLong(absIndexPos + 4);
+
                         long timeDiff = (long) this.mappedByteBuffer.getInt(absIndexPos + 4 + 8);
                         int prevIndexRead = this.mappedByteBuffer.getInt(absIndexPos + 4 + 8 + 4);
+
 
                         if (timeDiff < 0) {
                             break;
@@ -275,16 +272,13 @@ public class IndexFile {
                         nextIndexToRead = prevIndexRead;
                     }
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 log.error("selectPhyOffset exception ", e);
-            }
-            finally {
+            } finally {
                 if (fileLock != null) {
                     try {
                         fileLock.release();
-                    }
-                    catch (IOException e) {
+                    } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }

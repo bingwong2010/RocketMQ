@@ -16,9 +16,9 @@
  */
 package com.alibaba.rocketmq.broker.longpolling;
 
-import io.netty.channel.Channel;
-
+import com.alibaba.rocketmq.common.protocol.heartbeat.SubscriptionData;
 import com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
+import io.netty.channel.Channel;
 
 
 /**
@@ -30,15 +30,17 @@ public class PullRequest {
     private final long timeoutMillis;
     private final long suspendTimestamp;
     private final long pullFromThisOffset;
+    private final SubscriptionData subscriptionData;
 
 
-    public PullRequest(RemotingCommand requestCommand, Channel clientChannel, long timeoutMillis,
-            long suspendTimestamp, long pullFromThisOffset) {
+    public PullRequest(RemotingCommand requestCommand, Channel clientChannel, long timeoutMillis, long suspendTimestamp,
+                       long pullFromThisOffset, SubscriptionData subscriptionData) {
         this.requestCommand = requestCommand;
         this.clientChannel = clientChannel;
         this.timeoutMillis = timeoutMillis;
         this.suspendTimestamp = suspendTimestamp;
         this.pullFromThisOffset = pullFromThisOffset;
+        this.subscriptionData = subscriptionData;
     }
 
 
@@ -64,5 +66,9 @@ public class PullRequest {
 
     public long getPullFromThisOffset() {
         return pullFromThisOffset;
+    }
+
+    public SubscriptionData getSubscriptionData() {
+        return subscriptionData;
     }
 }

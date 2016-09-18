@@ -17,36 +17,36 @@
   -->
 
 <assembly>
-	<id>client</id>
-	<baseDirectory>alibaba-rocketmq-client-java</baseDirectory>
-	<formats>
-		<format>dir</format>
-		<format>tar.gz</format>
-	</formats>
-	<fileSets>
-		<fileSet>
-			<includes>
-				<include>LICENSE</include>
-				<include>NOTICE</include>
-			</includes>
-		</fileSet>
-	</fileSets>
+    <id>client</id>
+    <baseDirectory>alibaba-rocketmq-client-java</baseDirectory>
+    <formats>
+        <format>dir</format>
+        <format>tar.gz</format>
+    </formats>
+    <fileSets>
+        <fileSet>
+            <includes>
+                <include>LICENSE</include>
+                <include>NOTICE</include>
+            </includes>
+        </fileSet>
+    </fileSets>
 
 
-	<moduleSets>
-		<moduleSet>
-			<includes>
-				<include>com.alibaba.rocketmq:rocketmq-client</include>
-			</includes>
-			<binaries>
-				<outputDirectory>./</outputDirectory>
-				<unpack>false</unpack>
-				<dependencySets>
-					<dependencySet>
-						<outputDirectory>./</outputDirectory>
-					</dependencySet>
-				</dependencySets>
-			</binaries>
-		</moduleSet>
-	</moduleSets>
+    <moduleSets>
+        <moduleSet>
+            <includes>
+                <include>com.alibaba.rocketmq:rocketmq-client</include>
+            </includes>
+            <binaries>
+                <outputDirectory>./</outputDirectory>
+                <unpack>false</unpack>
+                <dependencySets>
+                    <dependencySet>
+                        <outputDirectory>./</outputDirectory>
+                    </dependencySet>
+                </dependencySets>
+            </binaries>
+        </moduleSet>
+    </moduleSets>
 </assembly>

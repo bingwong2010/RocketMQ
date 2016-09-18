@@ -42,13 +42,14 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Store all metadata downtime for recovery, data protection reliability
- * 
+ *
  * @author shijia.wxr
+ *
  */
 public class CommitLog {
-    private static final Logger log = LoggerFactory.getLogger(LoggerName.StoreLoggerName);
     // Message's MAGIC CODE daa320a7
     public final static int MessageMagicCode = 0xAABBCCDD ^ 1880681586 + 8;
+    private static final Logger log = LoggerFactory.getLogger(LoggerName.StoreLoggerName);
     // End of file empty MAGIC CODE cbd43194
     private final static int BlankMagicCode = 0xBBCCDDEE ^ 1880681586 + 8;
     private final MapedFileQueue mapedFileQueue;
@@ -56,24 +57,23 @@ public class CommitLog {
     private final FlushCommitLogService flushCommitLogService;
     private final AppendMessageCallback appendMessageCallback;
     private HashMap<String/* topic-queueid */, Long/* offset */> topicQueueTable = new HashMap<String, Long>(1024);
+    private volatile long confirmOffset = -1L;
+    private volatile long beginTimeInLock = 0;
 
 
     public CommitLog(final DefaultMessageStore defaultMessageStore) {
-        this.mapedFileQueue =
-                new MapedFileQueue(defaultMessageStore.getMessageStoreConfig().getStorePathCommitLog(), defaultMessageStore
-                    .getMessageStoreConfig().getMapedFileSizeCommitLog(), defaultMessageStore.getAllocateMapedFileService());
+        this.mapedFileQueue = new MapedFileQueue(defaultMessageStore.getMessageStoreConfig().getStorePathCommitLog(),
+                defaultMessageStore.getMessageStoreConfig().getMapedFileSizeCommitLog(), defaultMessageStore.getAllocateMapedFileService());
         this.defaultMessageStore = defaultMessageStore;
 
         if (FlushDiskType.SYNC_FLUSH == defaultMessageStore.getMessageStoreConfig().getFlushDiskType()) {
             this.flushCommitLogService = new GroupCommitService();
-        }
-        else {
+        } else {
             this.flushCommitLogService = new FlushRealTimeService();
         }
 
         this.appendMessageCallback = new DefaultAppendMessageCallback(defaultMessageStore.getMessageStoreConfig().getMaxMessageSize());
     }
-
 
     public boolean load() {
         boolean result = this.mapedFileQueue.load();
@@ -81,37 +81,18 @@ public class CommitLog {
         return result;
     }
 
-
     public void start() {
         this.flushCommitLogService.start();
     }
-
 
     public void shutdown() {
         this.flushCommitLogService.shutdown();
     }
 
-
-    public long getMinOffset() {
-        MapedFile mapedFile = this.mapedFileQueue.getFirstMapedFileOnLock();
-        if (mapedFile != null) {
-            if (mapedFile.isAvailable()) {
-                return mapedFile.getFileFromOffset();
-            }
-            else {
-                return this.rollNextFile(mapedFile.getFileFromOffset());
-            }
-        }
-
-        return -1;
+    public long flush() {
+        this.mapedFileQueue.commit(0);
+        return this.mapedFileQueue.getCommittedWhere();
     }
-
-
-    public long rollNextFile(final long offset) {
-        int mapedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMapedFileSizeCommitLog();
-        return (offset + mapedFileSize - offset % mapedFileSize);
-    }
-
 
     public long getMaxOffset() {
         return this.mapedFileQueue.getMaxOffset();
@@ -119,10 +100,10 @@ public class CommitLog {
 
 
     public int deleteExpiredFile(//
-            final long expiredTime, //
-            final int deleteFilesInterval, //
-            final long intervalForcibly,//
-            final boolean cleanImmediately//
+                                 final long expiredTime, //
+                                 final int deleteFilesInterval, //
+                                 final long intervalForcibly, //
+                                 final boolean cleanImmediately//
     ) {
         return this.mapedFileQueue.deleteExpiredFileByTime(expiredTime, deleteFilesInterval, intervalForcibly, cleanImmediately);
     }
@@ -181,8 +162,7 @@ public class CommitLog {
                         // Current branch can not happen
                         log.info("recover last 3 physics file over, last maped file " + mapedFile.getFileName());
                         break;
-                    }
-                    else {
+                    } else {
                         mapedFile = mapedFiles.get(index);
                         byteBuffer = mapedFile.sliceByteBuffer();
                         processOffset = mapedFile.getFileFromOffset();
@@ -203,17 +183,23 @@ public class CommitLog {
         }
     }
 
-
     public DispatchRequest checkMessageAndReturnSize(java.nio.ByteBuffer byteBuffer, final boolean checkCRC) {
         return this.checkMessageAndReturnSize(byteBuffer, checkCRC, true);
     }
 
+    private void doNothingForDeadCode(final Object obj) {
+        if (obj != null) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.valueOf(obj.hashCode()));
+            }
+        }
+    }
 
     /**
      * check the message and returns the message size
-     * 
+     *
      * @return 0 Come the end of the file // >0 Normal messages // -1 Message
-     *         checksum failure
+     * checksum failure
      */
     public DispatchRequest checkMessageAndReturnSize(java.nio.ByteBuffer byteBuffer, final boolean checkCRC, final boolean readBody) {
         try {
@@ -224,13 +210,13 @@ public class CommitLog {
             // 2 MAGIC CODE
             int magicCode = byteBuffer.getInt();
             switch (magicCode) {
-            case MessageMagicCode:
-                break;
-            case BlankMagicCode:
-                return new DispatchRequest(0, true /* success */);
-            default:
-                log.warn("found a illegal magic code 0x" + Integer.toHexString(magicCode));
-                return new DispatchRequest(-1, false /* success */);
+                case MessageMagicCode:
+                    break;
+                case BlankMagicCode:
+                    return new DispatchRequest(0, true /* success */);
+                default:
+                    log.warn("found a illegal magic code 0x" + Integer.toHexString(magicCode));
+                    return new DispatchRequest(-1, false /* success */);
             }
 
             // 3 BODYCRC
@@ -241,7 +227,6 @@ public class CommitLog {
 
             // 5 FLAG
             int flag = byteBuffer.getInt();
-            flag = flag + 0;
 
             // 6 QUEUEOFFSET
             long queueOffset = byteBuffer.getLong();
@@ -254,16 +239,15 @@ public class CommitLog {
 
             // 9 BORNTIMESTAMP
             long bornTimeStamp = byteBuffer.getLong();
-            bornTimeStamp = bornTimeStamp + 0;
 
-            // 10 BORNHOST（IP+PORT）
-            byteBuffer.get(bytesContent, 0, 8);
+            // 10
+            ByteBuffer byteBuffer1 = byteBuffer.get(bytesContent, 0, 8);
 
             // 11 STORETIMESTAMP
             long storeTimestamp = byteBuffer.getLong();
 
-            // 12 STOREHOST（IP+PORT）
-            byteBuffer.get(bytesContent, 0, 8);
+            // 12
+            ByteBuffer byteBuffer2 = byteBuffer.get(bytesContent, 0, 8);
 
             // 13 RECONSUMETIMES
             int reconsumeTimes = byteBuffer.getInt();
@@ -284,8 +268,7 @@ public class CommitLog {
                             return new DispatchRequest(-1, false/* success */);
                         }
                     }
-                }
-                else {
+                } else {
                     byteBuffer.position(byteBuffer.position() + bodyLen);
                 }
             }
@@ -297,6 +280,7 @@ public class CommitLog {
 
             long tagsCode = 0;
             String keys = "";
+            String uniqKey = null;
 
             // 17 properties
             short propertiesLength = byteBuffer.getShort();
@@ -306,6 +290,9 @@ public class CommitLog {
                 Map<String, String> propertiesMap = MessageDecoder.string2messageProperties(properties);
 
                 keys = propertiesMap.get(MessageConst.PROPERTY_KEYS);
+
+                uniqKey = propertiesMap.get(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX);
+
                 String tags = propertiesMap.get(MessageConst.PROPERTY_TAGS);
                 if (tags != null && tags.length() > 0) {
                     tagsCode = MessageExtBrokerInner.tagsString2tagsCode(MessageExt.parseTopicFilterType(sysFlag), tags);
@@ -322,9 +309,8 @@ public class CommitLog {
                         }
 
                         if (delayLevel > 0) {
-                            tagsCode =
-                                    this.defaultMessageStore.getScheduleMessageService()
-                                        .computeDeliverTimestamp(delayLevel, storeTimestamp);
+                            tagsCode = this.defaultMessageStore.getScheduleMessageService().computeDeliverTimestamp(delayLevel,
+                                    storeTimestamp);
                         }
                     }
                 }
@@ -332,31 +318,35 @@ public class CommitLog {
 
             int readLength = calMsgLength(bodyLen, topicLen, propertiesLength);
             if (totalSize != readLength) {
+                doNothingForDeadCode(reconsumeTimes);
+                doNothingForDeadCode(flag);
+                doNothingForDeadCode(bornTimeStamp);
+                doNothingForDeadCode(byteBuffer1);
+                doNothingForDeadCode(byteBuffer2);
                 log.error(
-                    "[BUG]read total count not equals msg total size. totalSize={}, readTotalCount={}, bodyLen={}, topicLen={}, propertiesLength={}",
-                    totalSize, readLength, bodyLen, topicLen, propertiesLength);
+                        "[BUG]read total count not equals msg total size. totalSize={}, readTotalCount={}, bodyLen={}, topicLen={}, propertiesLength={}",
+                        totalSize, readLength, bodyLen, topicLen, propertiesLength);
                 return new DispatchRequest(totalSize, false/* success */);
             }
 
             return new DispatchRequest(//
-                topic,// 1
-                queueId,// 2
-                physicOffset,// 3
-                totalSize,// 4
-                tagsCode,// 5
-                storeTimestamp,// 6
-                queueOffset,// 7
-                keys,// 8
-                sysFlag,// 9
+                topic, // 1
+                queueId, // 2
+                physicOffset, // 3
+                totalSize, // 4
+                tagsCode, // 5
+                storeTimestamp, // 6
+                queueOffset, // 7
+                keys, // 8
+                uniqKey, //9
+                sysFlag, // 9
                 preparedTransactionOffset// 10
             );
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
         }
 
         return new DispatchRequest(-1, false /* success */);
     }
-
 
     private int calMsgLength(int bodyLength, int topicLength, int propertiesLength) {
         final int msgLen = 4 // 1 TOTALSIZE
@@ -376,11 +366,18 @@ public class CommitLog {
                 + 4 + (bodyLength > 0 ? bodyLength : 0) // 14 BODY
                 + 1 + topicLength // 15 TOPIC
                 + 2 + (propertiesLength > 0 ? propertiesLength : 0) // 16
-                                                                    // propertiesLength
+                // propertiesLength
                 + 0;
         return msgLen;
     }
 
+    public long getConfirmOffset() {
+        return this.confirmOffset;
+    }
+
+    public void setConfirmOffset(long phyOffset) {
+        this.confirmOffset = phyOffset;
+    }
 
     public void recoverAbnormally() {
         // recover by the minimum time stamp
@@ -409,11 +406,19 @@ public class CommitLog {
             while (true) {
                 DispatchRequest dispatchRequest = this.checkMessageAndReturnSize(byteBuffer, checkCRCOnRecover);
                 int size = dispatchRequest.getMsgSize();
+
                 // Normal data
                 if (size > 0) {
                     mapedFileOffset += size;
-                    this.defaultMessageStore.doDispatch(dispatchRequest);
 
+
+                    if (this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable()) {
+                        if (dispatchRequest.getCommitLogOffset() < this.defaultMessageStore.getConfirmOffset()) {
+                            this.defaultMessageStore.doDispatch(dispatchRequest);
+                        }
+                    } else {
+                        this.defaultMessageStore.doDispatch(dispatchRequest);
+                    }
                 }
                 // Intermediate file read error
                 else if (size == -1) {
@@ -430,8 +435,7 @@ public class CommitLog {
                         // not happen
                         log.info("recover physics file over, last maped file " + mapedFile.getFileName());
                         break;
-                    }
-                    else {
+                    } else {
                         mapedFile = mapedFiles.get(index);
                         byteBuffer = mapedFile.sliceByteBuffer();
                         processOffset = mapedFile.getFileFromOffset();
@@ -455,12 +459,6 @@ public class CommitLog {
         }
     }
 
-
-    private void notifyMessageArriving() {
-
-    }
-
-
     private boolean isMapedFileMatchedRecover(final MapedFile mapedFile) {
         ByteBuffer byteBuffer = mapedFile.sliceByteBuffer();
 
@@ -478,16 +476,15 @@ public class CommitLog {
                 && this.defaultMessageStore.getMessageStoreConfig().isMessageIndexSafe()) {
             if (storeTimestamp <= this.defaultMessageStore.getStoreCheckpoint().getMinTimestampIndex()) {
                 log.info("find check timestamp, {} {}", //
-                    storeTimestamp,//
-                    UtilAll.timeMillisToHumanString(storeTimestamp));
+                        storeTimestamp, //
+                        UtilAll.timeMillisToHumanString(storeTimestamp));
                 return true;
             }
-        }
-        else {
+        } else {
             if (storeTimestamp <= this.defaultMessageStore.getStoreCheckpoint().getMinTimestamp()) {
                 log.info("find check timestamp, {} {}", //
-                    storeTimestamp,//
-                    UtilAll.timeMillisToHumanString(storeTimestamp));
+                        storeTimestamp, //
+                        UtilAll.timeMillisToHumanString(storeTimestamp));
                 return true;
             }
         }
@@ -495,6 +492,17 @@ public class CommitLog {
         return false;
     }
 
+    private void notifyMessageArriving() {
+
+    }
+
+    public boolean resetOffset(long offset) {
+        return this.mapedFileQueue.resetOffset(offset);
+    }
+
+    public long getBeginTimeInLock() {
+        return beginTimeInLock;
+    }
 
     public PutMessageResult putMessage(final MessageExtBrokerInner msg) {
         // Set the storage time
@@ -533,9 +541,11 @@ public class CommitLog {
         }
 
         long eclipseTimeInLock = 0;
+        MapedFile unlockMapedFile = null;
         MapedFile mapedFile = this.mapedFileQueue.getLastMapedFileWithLock();
         synchronized (this) {
             long beginLockTimestamp = this.defaultMessageStore.getSystemClock().now();
+            this.beginTimeInLock = beginLockTimestamp;
 
             // Here settings are stored timestamp, in order to ensure an orderly
             // global
@@ -544,39 +554,48 @@ public class CommitLog {
             if (null == mapedFile || mapedFile.isFull()) {
                 mapedFile = this.mapedFileQueue.getLastMapedFile();
             }
-
             if (null == mapedFile) {
                 log.error("create maped file1 error, topic: " + msg.getTopic() + " clientAddr: " + msg.getBornHostString());
+                beginTimeInLock = 0;
                 return new PutMessageResult(PutMessageStatus.CREATE_MAPEDFILE_FAILED, null);
             }
             result = mapedFile.appendMessage(msg, this.appendMessageCallback);
             switch (result.getStatus()) {
-            case PUT_OK:
-                break;
-            case END_OF_FILE:
-                // Create a new file, re-write the message
-                mapedFile = this.mapedFileQueue.getLastMapedFile();
-                if (null == mapedFile) {
-                    // XXX: warn and notify me
-                    log.error("create maped file2 error, topic: " + msg.getTopic() + " clientAddr: " + msg.getBornHostString());
-                    return new PutMessageResult(PutMessageStatus.CREATE_MAPEDFILE_FAILED, result);
-                }
-                result = mapedFile.appendMessage(msg, this.appendMessageCallback);
-                break;
-            case MESSAGE_SIZE_EXCEEDED:
-            case PROPERTIES_SIZE_EXCEEDED:
-                return new PutMessageResult(PutMessageStatus.MESSAGE_ILLEGAL, result);
-            case UNKNOWN_ERROR:
-                return new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, result);
-            default:
-                return new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, result);
+                case PUT_OK:
+                    break;
+                case END_OF_FILE:
+                    unlockMapedFile = mapedFile;
+                    // Create a new file, re-write the message
+                    mapedFile = this.mapedFileQueue.getLastMapedFile();
+                    if (null == mapedFile) {
+                        // XXX: warn and notify me
+                        log.error("create maped file2 error, topic: " + msg.getTopic() + " clientAddr: " + msg.getBornHostString());
+                        beginTimeInLock = 0;
+                        return new PutMessageResult(PutMessageStatus.CREATE_MAPEDFILE_FAILED, result);
+                    }
+                    result = mapedFile.appendMessage(msg, this.appendMessageCallback);
+                    break;
+                case MESSAGE_SIZE_EXCEEDED:
+                case PROPERTIES_SIZE_EXCEEDED:
+                    beginTimeInLock = 0;
+                    return new PutMessageResult(PutMessageStatus.MESSAGE_ILLEGAL, result);
+                case UNKNOWN_ERROR:
+                    beginTimeInLock = 0;
+                    return new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, result);
+                default:
+                    beginTimeInLock = 0;
+                    return new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, result);
             }
 
             eclipseTimeInLock = this.defaultMessageStore.getSystemClock().now() - beginLockTimestamp;
+            beginTimeInLock = 0;
         } // end of synchronized
 
-        if (eclipseTimeInLock > 500) {
-            log.warn("[NOTIFYME]putMessage in lock eclipse time(ms) " + eclipseTimeInLock);
+        if (eclipseTimeInLock > 1000) {
+            log.warn("[NOTIFYME]putMessage in lock cost time(ms)={}, bodyLength={} AppendMessageResult={}", eclipseTimeInLock, msg.getBody().length, result);
+        }
+        if (null != unlockMapedFile) {
+            this.defaultMessageStore.unlockMapedFile(unlockMapedFile);
         }
 
         PutMessageResult putMessageResult = new PutMessageResult(PutMessageStatus.PUT_OK, result);
@@ -599,8 +618,7 @@ public class CommitLog {
                             + " client address: " + msg.getBornHostString());
                     putMessageResult.setPutMessageStatus(PutMessageStatus.FLUSH_DISK_TIMEOUT);
                 }
-            }
-            else {
+            } else {
                 service.wakeup();
             }
         }
@@ -623,7 +641,7 @@ public class CommitLog {
                     service.getWaitNotifyObject().wakeupAll();
 
                     boolean flushOK =
-                    // TODO
+                            // TODO
                             request.waitForFlush(this.defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout());
                     if (!flushOK) {
                         log.error("do sync transfer other node, wait return, but failed, topic: " + msg.getTopic() + " tags: "
@@ -642,19 +660,17 @@ public class CommitLog {
         return putMessageResult;
     }
 
-
     /**
      * According to receive certain message or offset storage time if an error
      * occurs, it returns -1
      */
     public long pickupStoretimestamp(final long offset, final int size) {
-        if (offset > this.getMinOffset()) {
+        if (offset >= this.getMinOffset()) {
             SelectMapedBufferResult result = this.getMessage(offset, size);
             if (null != result) {
                 try {
                     return result.getByteBuffer().getLong(MessageDecoder.MessageStoreTimestampPostion);
-                }
-                finally {
+                } finally {
                     result.release();
                 }
             }
@@ -663,6 +679,18 @@ public class CommitLog {
         return -1;
     }
 
+    public long getMinOffset() {
+        MapedFile mapedFile = this.mapedFileQueue.getFirstMapedFileOnLock();
+        if (mapedFile != null) {
+            if (mapedFile.isAvailable()) {
+                return mapedFile.getFileFromOffset();
+            } else {
+                return this.rollNextFile(mapedFile.getFileFromOffset());
+            }
+        }
+
+        return -1;
+    }
 
     public SelectMapedBufferResult getMessage(final long offset, final int size) {
         int mapedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMapedFileSizeCommitLog();
@@ -676,6 +704,10 @@ public class CommitLog {
         return null;
     }
 
+    public long rollNextFile(final long offset) {
+        int mapedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMapedFileSizeCommitLog();
+        return (offset + mapedFileSize - offset % mapedFileSize);
+    }
 
     public HashMap<String, Long> getTopicQueueTable() {
         return topicQueueTable;
@@ -707,6 +739,19 @@ public class CommitLog {
 
     public boolean retryDeleteFirstFile(final long intervalForcibly) {
         return this.mapedFileQueue.retryDeleteFirstFile(intervalForcibly);
+    }
+
+    public void removeQueurFromTopicQueueTable(final String topic, final int queueId) {
+        String key = topic + "-" + queueId;
+        synchronized (this) {
+            this.topicQueueTable.remove(key);
+        }
+
+        log.info("removeQueurFromTopicQueueTable OK Topic: {} QueueId: {}", topic, queueId);
+    }
+
+    public void checkSelf() {
+        mapedFileQueue.checkSelf();
     }
 
     abstract class FlushCommitLogService extends ServiceThread {
@@ -743,8 +788,7 @@ public class CommitLog {
                 try {
                     if (flushCommitLogTimed) {
                         Thread.sleep(interval);
-                    }
-                    else {
+                    } else {
                         this.waitForRunning(interval);
                     }
 
@@ -757,8 +801,7 @@ public class CommitLog {
                     if (storeTimestamp > 0) {
                         CommitLog.this.defaultMessageStore.getStoreCheckpoint().setPhysicMsgTimestamp(storeTimestamp);
                     }
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     CommitLog.log.warn(this.getServiceName() + " service has exception. ", e);
                     this.printFlushProgress();
                 }
@@ -795,7 +838,7 @@ public class CommitLog {
         }
     }
 
-    public class GroupCommitRequest {
+    public static class GroupCommitRequest {
         private final long nextOffset;
         private final CountDownLatch countDownLatch = new CountDownLatch(1);
         private volatile boolean flushOK = false;
@@ -821,8 +864,7 @@ public class CommitLog {
             try {
                 this.countDownLatch.await(timeout, TimeUnit.MILLISECONDS);
                 return this.flushOK;
-            }
-            catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 e.printStackTrace();
                 return false;
             }
@@ -878,8 +920,7 @@ public class CommitLog {
                 }
 
                 this.requestsRead.clear();
-            }
-            else {
+            } else {
                 // Because of individual messages is set to not sync flush, it
                 // will come to this process
                 CommitLog.this.mapedFileQueue.commit(0);
@@ -894,8 +935,7 @@ public class CommitLog {
                 try {
                     this.waitForRunning(0);
                     this.doCommit();
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     CommitLog.log.warn(this.getServiceName() + " service has exception. ", e);
                 }
             }
@@ -904,8 +944,7 @@ public class CommitLog {
             // request, and then flush
             try {
                 Thread.sleep(10);
-            }
-            catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 CommitLog.log.warn("GroupCommitService Exception, ", e);
             }
 
@@ -964,6 +1003,8 @@ public class CommitLog {
             MessageExtBrokerInner msgInner = (MessageExtBrokerInner) msg;
             // PHY OFFSET
             long wroteOffset = fileFromOffset + byteBuffer.position();
+
+
             String msgId = MessageDecoder.createMessageId(this.msgIdMemory, msgInner.getStoreHostBytes(), wroteOffset);
 
             // Record ConsumeQueue information
@@ -977,16 +1018,16 @@ public class CommitLog {
             // Transaction messages that require special handling
             final int tranType = MessageSysFlag.getTransactionValue(msgInner.getSysFlag());
             switch (tranType) {
-            // Prepared and Rollback message is not consumed, will not enter the
-            // consumer queuec
-            case MessageSysFlag.TransactionPreparedType:
-            case MessageSysFlag.TransactionRollbackType:
-                queueOffset = 0L;
-                break;
-            case MessageSysFlag.TransactionNotType:
-            case MessageSysFlag.TransactionCommitType:
-            default:
-                break;
+                // Prepared and Rollback message is not consumed, will not enter the
+                // consumer queuec
+                case MessageSysFlag.TransactionPreparedType:
+                case MessageSysFlag.TransactionRollbackType:
+                    queueOffset = 0L;
+                    break;
+                case MessageSysFlag.TransactionNotType:
+                case MessageSysFlag.TransactionCommitType:
+                default:
+                    break;
             }
 
             /**
@@ -1026,9 +1067,10 @@ public class CommitLog {
                 //
 
                 // Here the length of the specially set maxBlank
+                final long beginTimeMills = CommitLog.this.defaultMessageStore.now();
                 byteBuffer.put(this.msgStoreItemMemory.array(), 0, maxBlank);
                 return new AppendMessageResult(AppendMessageStatus.END_OF_FILE, wroteOffset, maxBlank, msgId, msgInner.getStoreTimestamp(),
-                    queueOffset);
+                        queueOffset, CommitLog.this.defaultMessageStore.now() - beginTimeMills);
             }
 
             // Initialization of storage space
@@ -1073,24 +1115,24 @@ public class CommitLog {
             if (propertiesLength > 0)
                 this.msgStoreItemMemory.put(propertiesData);
 
+            final long beginTimeMills = CommitLog.this.defaultMessageStore.now();
             // Write messages to the queue buffer
             byteBuffer.put(this.msgStoreItemMemory.array(), 0, msgLen);
 
-            AppendMessageResult result =
-                    new AppendMessageResult(AppendMessageStatus.PUT_OK, wroteOffset, msgLen, msgId, msgInner.getStoreTimestamp(),
-                        queueOffset);
+            AppendMessageResult result = new AppendMessageResult(AppendMessageStatus.PUT_OK, wroteOffset, msgLen, msgId,
+                    msgInner.getStoreTimestamp(), queueOffset, CommitLog.this.defaultMessageStore.now() - beginTimeMills);
 
             switch (tranType) {
-            case MessageSysFlag.TransactionPreparedType:
-            case MessageSysFlag.TransactionRollbackType:
-                break;
-            case MessageSysFlag.TransactionNotType:
-            case MessageSysFlag.TransactionCommitType:
-                // The next update ConsumeQueue information
-                CommitLog.this.topicQueueTable.put(key, ++queueOffset);
-                break;
-            default:
-                break;
+                case MessageSysFlag.TransactionPreparedType:
+                case MessageSysFlag.TransactionRollbackType:
+                    break;
+                case MessageSysFlag.TransactionNotType:
+                case MessageSysFlag.TransactionCommitType:
+                    // The next update ConsumeQueue information
+                    CommitLog.this.topicQueueTable.put(key, ++queueOffset);
+                    break;
+                default:
+                    break;
             }
 
             return result;
@@ -1103,18 +1145,17 @@ public class CommitLog {
         }
     }
 
-
-    public void removeQueurFromTopicQueueTable(final String topic, final int queueId) {
-        String key = topic + "-" + queueId;
-        synchronized (this) {
-            this.topicQueueTable.remove(key);
+    public long lockTimeMills() {
+        long diff = 0;
+        long begin = this.beginTimeInLock;
+        if (begin > 0) {
+            diff = this.defaultMessageStore.now() - begin;
         }
 
-        log.info("removeQueurFromTopicQueueTable OK Topic: {} QueueId: {}", topic, queueId);
-    }
+        if (diff < 0) {
+            diff = 0;
+        }
 
-
-    public void checkSelf() {
-        mapedFileQueue.checkSelf();
+        return diff;
     }
 }

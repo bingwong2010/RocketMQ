@@ -32,36 +32,26 @@ public abstract class ConfigManager {
 
     public abstract String encode();
 
-
-    public abstract String encode(final boolean prettyFormat);
-
-
-    public abstract void decode(final String jsonString);
-
-
-    public abstract String configFilePath();
-
-
     public boolean load() {
         String fileName = null;
         try {
             fileName = this.configFilePath();
             String jsonString = MixAll.file2String(fileName);
+
             if (null == jsonString || jsonString.length() == 0) {
                 return this.loadBak();
-            }
-            else {
+            } else {
                 this.decode(jsonString);
                 plog.info("load {} OK", fileName);
                 return true;
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             plog.error("load " + fileName + " Failed, and try to load backup file", e);
             return this.loadBak();
         }
     }
 
+    public abstract String configFilePath();
 
     private boolean loadBak() {
         String fileName = null;
@@ -73,8 +63,7 @@ public abstract class ConfigManager {
                 plog.info("load " + fileName + " OK");
                 return true;
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             plog.error("load " + fileName + " Failed", e);
             return false;
         }
@@ -82,6 +71,7 @@ public abstract class ConfigManager {
         return true;
     }
 
+    public abstract void decode(final String jsonString);
 
     public synchronized void persist() {
         String jsonString = this.encode(true);
@@ -89,10 +79,11 @@ public abstract class ConfigManager {
             String fileName = this.configFilePath();
             try {
                 MixAll.string2File(jsonString, fileName);
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 plog.error("persist file Exception, " + fileName, e);
             }
         }
     }
+
+    public abstract String encode(final boolean prettyFormat);
 }

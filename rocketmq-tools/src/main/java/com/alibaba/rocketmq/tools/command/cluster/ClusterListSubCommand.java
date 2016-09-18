@@ -6,13 +6,13 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.alibaba.rocketmq.tools.command.cluster;
 
@@ -66,94 +66,52 @@ public class ClusterListSubCommand implements SubCommand {
         return options;
     }
 
+    @Override
+    public void execute(final CommandLine commandLine, final Options options, RPCHook rpcHook) {
+        DefaultMQAdminExt defaultMQAdminExt = new DefaultMQAdminExt(rpcHook);
 
-    private void printClusterBaseInfo(final DefaultMQAdminExt defaultMQAdminExt) throws RemotingConnectException, RemotingTimeoutException,
-            RemotingSendRequestException, InterruptedException, MQBrokerException {
+        defaultMQAdminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
 
-        ClusterInfo clusterInfoSerializeWrapper = defaultMQAdminExt.examineBrokerClusterInfo();
+        long printInterval = 1;
+        boolean enableInterval = commandLine.hasOption('i');
 
-        System.out.printf("%-16s  %-32s  %-4s  %-22s %-22s %11s %11s\n",//
-            "#Cluster Name",//
-            "#Broker Name",//
-            "#BID",//
-            "#Addr",//
-            "#Version",//
-            "#InTPS",//
-            "#OutTPS"//
-        );
+        if (enableInterval) {
+            printInterval = Long.parseLong(commandLine.getOptionValue('i')) * 1000;
+        }
 
-        Iterator<Map.Entry<String, Set<String>>> itCluster = clusterInfoSerializeWrapper.getClusterAddrTable().entrySet().iterator();
-        while (itCluster.hasNext()) {
-            Map.Entry<String, Set<String>> next = itCluster.next();
-            String clusterName = next.getKey();
-            TreeSet<String> brokerNameSet = new TreeSet<String>();
-            brokerNameSet.addAll(next.getValue());
+        try {
+            defaultMQAdminExt.start();
 
-            for (String brokerName : brokerNameSet) {
-                BrokerData brokerData = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
-                if (brokerData != null) {
-
-                    Iterator<Map.Entry<Long, String>> itAddr = brokerData.getBrokerAddrs().entrySet().iterator();
-                    while (itAddr.hasNext()) {
-                        Map.Entry<Long, String> next1 = itAddr.next();
-                        double in = 0;
-                        double out = 0;
-                        String version = "";
-
-                        try {
-                            KVTable kvTable = defaultMQAdminExt.fetchBrokerRuntimeStats(next1.getValue());
-                            String putTps = kvTable.getTable().get("putTps");
-                            String getTransferedTps = kvTable.getTable().get("getTransferedTps");
-                            version = kvTable.getTable().get("brokerVersionDesc");
-                            {
-                                String[] tpss = putTps.split(" ");
-                                if (tpss != null && tpss.length > 0) {
-                                    in = Double.parseDouble(tpss[0]);
-                                }
-                            }
-
-                            {
-                                String[] tpss = getTransferedTps.split(" ");
-                                if (tpss != null && tpss.length > 0) {
-                                    out = Double.parseDouble(tpss[0]);
-                                }
-                            }
-                        }
-                        catch (Exception e) {
-                        }
-
-                        System.out.printf("%-16s  %-32s  %-4s  %-22s %-22s %11.2f %11.2f\n",//
-                            clusterName,//
-                            brokerName,//
-                            next1.getKey().longValue(),//
-                            next1.getValue(),//
-                            version,//
-                            in,//
-                            out//
-                            );
-                    }
+            do {
+                if (commandLine.hasOption('m')) {
+                    this.printClusterMoreStats(defaultMQAdminExt);
+                } else {
+                    this.printClusterBaseInfo(defaultMQAdminExt);
                 }
-            }
 
-            if (itCluster.hasNext()) {
+                Thread.sleep(printInterval);
+
                 System.out.println("");
-            }
+            } while (enableInterval);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            defaultMQAdminExt.shutdown();
         }
     }
-
 
     private void printClusterMoreStats(final DefaultMQAdminExt defaultMQAdminExt) throws RemotingConnectException,
             RemotingTimeoutException, RemotingSendRequestException, InterruptedException, MQBrokerException {
 
         ClusterInfo clusterInfoSerializeWrapper = defaultMQAdminExt.examineBrokerClusterInfo();
 
-        System.out.printf("%-16s  %-32s %14s %14s %14s %14s\n",//
-            "#Cluster Name",//
-            "#Broker Name",//
-            "#InTotalYest",//
-            "#OutTotalYest",//
-            "#InTotalToday",//
-            "#OutTotalToday"//
+        System.out.printf("%-16s  %-32s %14s %14s %14s %14s%n",//
+                "#Cluster Name",//
+                "#Broker Name",//
+                "#InTotalYest",//
+                "#OutTotalYest",//
+                "#InTotalToday",//
+                "#OutTotalToday"//
         );
 
         Iterator<Map.Entry<String, Set<String>>> itCluster = clusterInfoSerializeWrapper.getClusterAddrTable().entrySet().iterator();
@@ -190,18 +148,17 @@ public class ClusterListSubCommand implements SubCommand {
                             InTotalToday = Long.parseLong(msgPutTotalTodayNow) - Long.parseLong(msgPutTotalTodayMorning);
                             OutTotalToday = Long.parseLong(msgGetTotalTodayNow) - Long.parseLong(msgGetTotalTodayMorning);
 
-                        }
-                        catch (Exception e) {
+                        } catch (Exception e) {
                         }
 
-                        System.out.printf("%-16s  %-32s %14d %14d %14d %14d\n",//
-                            clusterName,//
-                            brokerName,//
-                            InTotalYest,//
-                            OutTotalYest,//
-                            InTotalToday,//
-                            OutTotalToday//
-                            );
+                        System.out.printf("%-16s  %-32s %14d %14d %14d %14d%n",//
+                                clusterName,//
+                                brokerName,//
+                                InTotalYest,//
+                                OutTotalYest,//
+                                InTotalToday,//
+                                OutTotalToday//
+                        );
                     }
                 }
             }
@@ -212,41 +169,92 @@ public class ClusterListSubCommand implements SubCommand {
         }
     }
 
+    private void printClusterBaseInfo(final DefaultMQAdminExt defaultMQAdminExt) throws RemotingConnectException, RemotingTimeoutException,
+            RemotingSendRequestException, InterruptedException, MQBrokerException {
 
-    @Override
-    public void execute(final CommandLine commandLine, final Options options, RPCHook rpcHook) {
-        DefaultMQAdminExt defaultMQAdminExt = new DefaultMQAdminExt(rpcHook);
+        ClusterInfo clusterInfoSerializeWrapper = defaultMQAdminExt.examineBrokerClusterInfo();
 
-        defaultMQAdminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
+        System.out.printf("%-16s  %-22s  %-4s  %-22s %-16s %19s %19s %10s%n",//
+                "#Cluster Name",//
+                "#Broker Name",//
+                "#BID",//
+                "#Addr",//
+                "#Version",//
+                "#InTPS(LOAD)",//
+                "#OutTPS(LOAD)",//
+                "#PCWait(ms)"//
+        );
 
-        long printInterval = 1;
-        boolean enableInterval = commandLine.hasOption('i');
+        Iterator<Map.Entry<String, Set<String>>> itCluster = clusterInfoSerializeWrapper.getClusterAddrTable().entrySet().iterator();
+        while (itCluster.hasNext()) {
+            Map.Entry<String, Set<String>> next = itCluster.next();
+            String clusterName = next.getKey();
+            TreeSet<String> brokerNameSet = new TreeSet<String>();
+            brokerNameSet.addAll(next.getValue());
 
-        if (enableInterval) {
-            printInterval = Long.parseLong(commandLine.getOptionValue('i')) * 1000;
-        }
+            for (String brokerName : brokerNameSet) {
+                BrokerData brokerData = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
+                if (brokerData != null) {
 
-        try {
-            defaultMQAdminExt.start();
+                    Iterator<Map.Entry<Long, String>> itAddr = brokerData.getBrokerAddrs().entrySet().iterator();
+                    while (itAddr.hasNext()) {
+                        Map.Entry<Long, String> next1 = itAddr.next();
+                        double in = 0;
+                        double out = 0;
+                        String version = "";
+                        String sendThreadPoolQueueSize = "";
+                        String pullThreadPoolQueueSize = "";
+                        String sendThreadPoolQueueHeadWaitTimeMills = "";
+                        String pullThreadPoolQueueHeadWaitTimeMills = "";
+                        String pageCacheLockTimeMills = "";
+                        try {
+                            KVTable kvTable = defaultMQAdminExt.fetchBrokerRuntimeStats(next1.getValue());
+                            String putTps = kvTable.getTable().get("putTps");
+                            String getTransferedTps = kvTable.getTable().get("getTransferedTps");
+                            sendThreadPoolQueueSize = kvTable.getTable().get("sendThreadPoolQueueSize");
+                            pullThreadPoolQueueSize = kvTable.getTable().get("pullThreadPoolQueueSize");
 
-            do {
-                if (commandLine.hasOption('m')) {
-                    this.printClusterMoreStats(defaultMQAdminExt);
+                            sendThreadPoolQueueSize = kvTable.getTable().get("sendThreadPoolQueueSize");
+                            pullThreadPoolQueueSize = kvTable.getTable().get("pullThreadPoolQueueSize");
+
+                            sendThreadPoolQueueHeadWaitTimeMills = kvTable.getTable().get("sendThreadPoolQueueHeadWaitTimeMills");
+                            pullThreadPoolQueueHeadWaitTimeMills = kvTable.getTable().get("pullThreadPoolQueueHeadWaitTimeMills");
+                            pageCacheLockTimeMills = kvTable.getTable().get("pageCacheLockTimeMills");
+
+                            version = kvTable.getTable().get("brokerVersionDesc");
+                            {
+                                String[] tpss = putTps.split(" ");
+                                if (tpss != null && tpss.length > 0) {
+                                    in = Double.parseDouble(tpss[0]);
+                                }
+                            }
+
+                            {
+                                String[] tpss = getTransferedTps.split(" ");
+                                if (tpss != null && tpss.length > 0) {
+                                    out = Double.parseDouble(tpss[0]);
+                                }
+                            }
+                        } catch (Exception e) {
+                        }
+
+                        System.out.printf("%-16s  %-22s  %-4s  %-22s %-16s %19s %19s %10s%n",//
+                                clusterName,//
+                                brokerName,//
+                                String.valueOf(next1.getKey()),//
+                                next1.getValue(),//
+                                version,//
+                                String.format("%9.2f(%s,%sms)", in, sendThreadPoolQueueSize, sendThreadPoolQueueHeadWaitTimeMills),//
+                                String.format("%9.2f(%s,%sms)", out, pullThreadPoolQueueSize, pullThreadPoolQueueHeadWaitTimeMills),//
+                                pageCacheLockTimeMills
+                        );
+                    }
                 }
-                else {
-                    this.printClusterBaseInfo(defaultMQAdminExt);
-                }
+            }
 
-                Thread.sleep(printInterval);
-
+            if (itCluster.hasNext()) {
                 System.out.println("");
-            } while (enableInterval);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-        finally {
-            defaultMQAdminExt.shutdown();
+            }
         }
     }
 }

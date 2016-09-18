@@ -38,8 +38,9 @@ public class TransactionMQProducer extends DefaultMQProducer {
     public TransactionMQProducer(final String producerGroup) {
         super(producerGroup);
     }
-    public TransactionMQProducer(final String producerGroup,RPCHook rpcHook) {
-        super(producerGroup,rpcHook);
+
+    public TransactionMQProducer(final String producerGroup, RPCHook rpcHook) {
+        super(producerGroup, rpcHook);
     }
 
     @Override
@@ -58,7 +59,7 @@ public class TransactionMQProducer extends DefaultMQProducer {
 
     @Override
     public TransactionSendResult sendMessageInTransaction(final Message msg,
-            final LocalTransactionExecuter tranExecuter, final Object arg) throws MQClientException {
+                                                          final LocalTransactionExecuter tranExecuter, final Object arg) throws MQClientException {
         if (null == this.transactionCheckListener) {
             throw new MQClientException("localTransactionBranchCheckListener is null", null);
         }

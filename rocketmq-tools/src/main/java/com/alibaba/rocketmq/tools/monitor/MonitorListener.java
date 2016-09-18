@@ -21,7 +21,6 @@ import com.alibaba.rocketmq.common.protocol.body.ConsumerRunningInfo;
 
 import java.util.TreeMap;
 
-
 public interface MonitorListener {
     void beginRound();
 

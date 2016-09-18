@@ -23,7 +23,9 @@ import java.util.HashMap;
 
 
 /**
+ *
  * @author shijia.wxr
+ *
  */
 public class TopicStatsTable extends RemotingSerializable {
     private HashMap<MessageQueue, TopicOffset> offsetTable = new HashMap<MessageQueue, TopicOffset>();

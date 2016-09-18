@@ -20,7 +20,6 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import com.alibaba.rocketmq.common.MQVersion;
 import com.alibaba.rocketmq.common.MixAll;
-import com.alibaba.rocketmq.common.conflict.PackageConflictDetect;
 import com.alibaba.rocketmq.common.constant.LoggerName;
 import com.alibaba.rocketmq.remoting.netty.NettyServerConfig;
 import com.alibaba.rocketmq.remoting.netty.NettySystemConfig;
@@ -41,36 +40,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
- *
  * @author shijia.wxr
  */
 public class FiltersrvStartup {
     public static Logger log;
 
-
-    public static Options buildCommandlineOptions(final Options options) {
-        Option opt = new Option("c", "configFile", true, "Filter server config properties file");
-        opt.setRequired(false);
-        options.addOption(opt);
-
-        opt = new Option("p", "printConfigItem", false, "Print all config item");
-        opt.setRequired(false);
-        options.addOption(opt);
-
-        return options;
-    }
-
-
     public static void main(String[] args) {
         start(createController(args));
     }
 
-
     public static FiltersrvController start(FiltersrvController controller) {
+
         try {
             controller.start();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             System.exit(-1);
         }
@@ -82,29 +65,33 @@ public class FiltersrvStartup {
         return controller;
     }
 
-
     public static FiltersrvController createController(String[] args) {
         System.setProperty(RemotingCommand.RemotingVersionKey, Integer.toString(MQVersion.CurrentVersion));
 
+
         if (null == System.getProperty(NettySystemConfig.SystemPropertySocketSndbufSize)) {
-            NettySystemConfig.SocketSndbufSize = 65535;
+            NettySystemConfig.socketSndbufSize = 65535;
         }
 
+
         if (null == System.getProperty(NettySystemConfig.SystemPropertySocketRcvbufSize)) {
-            NettySystemConfig.SocketRcvbufSize = 1024;
+            NettySystemConfig.socketRcvbufSize = 1024;
         }
 
         try {
-            PackageConflictDetect.detectFastjson();
+
+            //PackageConflictDetect.detectFastjson();
+
 
             Options options = ServerUtil.buildCommandlineOptions(new Options());
             final CommandLine commandLine =
                     ServerUtil.parseCmdLine("mqfiltersrv", args, buildCommandlineOptions(options),
-                        new PosixParser());
+                            new PosixParser());
             if (null == commandLine) {
                 System.exit(-1);
                 return null;
             }
+
 
             final FiltersrvConfig filtersrvConfig = new FiltersrvConfig();
             final NettyServerConfig nettyServerConfig = new NettyServerConfig();
@@ -126,12 +113,14 @@ public class FiltersrvStartup {
                 }
             }
 
+
             nettyServerConfig.setListenPort(0);
 
             nettyServerConfig.setServerAsyncSemaphoreValue(filtersrvConfig.getFsServerAsyncSemaphoreValue());
             nettyServerConfig.setServerCallbackExecutorThreads(filtersrvConfig
-                .getFsServerCallbackExecutorThreads());
+                    .getFsServerCallbackExecutorThreads());
             nettyServerConfig.setServerWorkerThreads(filtersrvConfig.getFsServerWorkerThreads());
+
 
             if (commandLine.hasOption('p')) {
                 MixAll.printObjectProperties(null, filtersrvConfig);
@@ -153,6 +142,7 @@ public class FiltersrvStartup {
             lc.reset();
             configurator.doConfigure(filtersrvConfig.getRocketmqHome() + "/conf/logback_filtersrv.xml");
             log = LoggerFactory.getLogger(LoggerName.FiltersrvLoggerName);
+
 
             final FiltersrvController controller =
                     new FiltersrvController(filtersrvConfig, nettyServerConfig);
@@ -183,12 +173,23 @@ public class FiltersrvStartup {
             }, "ShutdownHook"));
 
             return controller;
-        }
-        catch (Throwable e) {
+        } catch (Throwable e) {
             e.printStackTrace();
             System.exit(-1);
         }
 
         return null;
+    }
+
+    public static Options buildCommandlineOptions(final Options options) {
+        Option opt = new Option("c", "configFile", true, "Filter server config properties file");
+        opt.setRequired(false);
+        options.addOption(opt);
+
+        opt = new Option("p", "printConfigItem", false, "Print all config item");
+        opt.setRequired(false);
+        options.addOption(opt);
+
+        return options;
     }
 }

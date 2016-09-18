@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 
 public class MomentStatsItem {
+
     private final AtomicLong value = new AtomicLong(0);
 
     private final String statsName;
@@ -35,7 +36,7 @@ public class MomentStatsItem {
 
 
     public MomentStatsItem(String statsName, String statsKey,
-            ScheduledExecutorService scheduledExecutorService, Logger log) {
+                           ScheduledExecutorService scheduledExecutorService, Logger log) {
         this.statsName = statsName;
         this.statsKey = statsKey;
         this.scheduledExecutorService = scheduledExecutorService;
@@ -44,27 +45,28 @@ public class MomentStatsItem {
 
 
     public void init() {
+
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    printAtMinutes();
-                }
-                catch (Throwable e) {
-                }
-            }
-        }, Math.abs(UtilAll.computNextMinutesTimeMillis() - System.currentTimeMillis()), //
-            1000 * 60 * 5, TimeUnit.MILLISECONDS);
+                                                              @Override
+                                                              public void run() {
+                                                                  try {
+                                                                      printAtMinutes();
+
+                                                                      MomentStatsItem.this.value.set(0);
+                                                                  } catch (Throwable e) {
+                                                                  }
+                                                              }
+                                                          }, Math.abs(UtilAll.computNextMinutesTimeMillis() - System.currentTimeMillis()), //
+                1000 * 60 * 5, TimeUnit.MILLISECONDS);
     }
 
 
     public void printAtMinutes() {
         log.info(String.format("[%s] [%s] Stats Every 5 Minutes, Value: %d", //
-            this.statsName,//
-            this.statsKey,//
-            this.value.get()));
+                this.statsName,//
+                this.statsKey,//
+                this.value.get()));
     }
-
 
     public AtomicLong getValue() {
         return value;

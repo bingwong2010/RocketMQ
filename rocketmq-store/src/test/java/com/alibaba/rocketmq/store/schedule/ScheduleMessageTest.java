@@ -35,14 +35,86 @@ import static org.junit.Assert.assertTrue;
 
 
 public class ScheduleMessageTest {
-    private static int QUEUE_TOTAL = 100;
-    private static AtomicInteger QueueId = new AtomicInteger(0);
-    private static SocketAddress BornHost;
-    private static SocketAddress StoreHost;
-    private static byte[] MessageBody;
-
     private static final String StoreMessage = "Once, there was a chance for me!";
 
+    private static int QUEUE_TOTAL = 100;
+
+    private static AtomicInteger QueueId = new AtomicInteger(0);
+
+    private static SocketAddress BornHost;
+
+    private static SocketAddress StoreHost;
+
+    private static byte[] MessageBody;
+
+    @BeforeClass
+    public static void setUpBeforeClass() throws Exception {
+        StoreHost = new InetSocketAddress(InetAddress.getLocalHost(), 8123);
+        BornHost = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0);
+    }
+
+    @AfterClass
+    public static void tearDownAfterClass() throws Exception {
+    }
+
+    @Test
+    public void test_delay_message() throws Exception {
+        System.out.println("================================================================");
+        long totalMsgs = 10000;
+        QUEUE_TOTAL = 32;
+
+
+        MessageBody = StoreMessage.getBytes();
+
+        MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
+        messageStoreConfig.setMapedFileSizeCommitLog(1024 * 32);
+        messageStoreConfig.setMapedFileSizeConsumeQueue(1024 * 16);
+        messageStoreConfig.setMaxHashSlotNum(100);
+        messageStoreConfig.setMaxIndexNum(1000 * 10);
+
+        MessageStore master = new DefaultMessageStore(messageStoreConfig, null, null, null);
+
+        boolean load = master.load();
+        assertTrue(load);
+
+
+        master.start();
+        for (int i = 0; i < totalMsgs; i++) {
+            MessageExtBrokerInner msg = buildMessage();
+            msg.setDelayTimeLevel(i % 4);
+
+            PutMessageResult result = master.putMessage(msg);
+            System.out.println(i + "\t" + result.getAppendMessageResult().getMsgId());
+        }
+
+        System.out.println("write message over, wait time up");
+        Thread.sleep(1000 * 20);
+
+
+        for (long i = 0; i < totalMsgs; i++) {
+            try {
+                GetMessageResult result = master.getMessage("GROUP_A", "TOPIC_A", 0, i, 1024 * 1024, null);
+                if (result == null) {
+                    System.out.println("result == null " + i);
+                }
+                assertTrue(result != null);
+                result.release();
+                System.out.println("read " + i + " OK");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        Thread.sleep(1000 * 15);
+
+
+        master.shutdown();
+
+
+        master.destroy();
+        System.out.println("================================================================");
+    }
 
     public MessageExtBrokerInner buildMessage() {
         MessageExtBrokerInner msg = new MessageExtBrokerInner();
@@ -58,72 +130,5 @@ public class ScheduleMessageTest {
         msg.setBornHost(BornHost);
 
         return msg;
-    }
-
-
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
-        StoreHost = new InetSocketAddress(InetAddress.getLocalHost(), 8123);
-        BornHost = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0);
-    }
-
-
-    @AfterClass
-    public static void tearDownAfterClass() throws Exception {
-    }
-
-
-    @Test
-    public void test_delay_message() throws Exception {
-        System.out.println("================================================================");
-        long totalMsgs = 10000;
-        QUEUE_TOTAL = 32;
-
-        MessageBody = StoreMessage.getBytes();
-
-        MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
-        messageStoreConfig.setMapedFileSizeCommitLog(1024 * 32);
-        messageStoreConfig.setMapedFileSizeConsumeQueue(1024 * 16);
-        messageStoreConfig.setMaxHashSlotNum(100);
-        messageStoreConfig.setMaxIndexNum(1000 * 10);
-
-        MessageStore master = new DefaultMessageStore(messageStoreConfig, null, null, null);
-        boolean load = master.load();
-        assertTrue(load);
-
-        master.start();
-        for (int i = 0; i < totalMsgs; i++) {
-            MessageExtBrokerInner msg = buildMessage();
-            msg.setDelayTimeLevel(i % 4);
-
-            PutMessageResult result = master.putMessage(msg);
-            System.out.println(i + "\t" + result.getAppendMessageResult().getMsgId());
-        }
-
-        System.out.println("write message over, wait time up");
-        Thread.sleep(1000 * 20);
-
-        for (long i = 0; i < totalMsgs; i++) {
-            try {
-                GetMessageResult result = master.getMessage("GROUP_A", "TOPIC_A", 0, i, 1024 * 1024, null);
-                if (result == null) {
-                    System.out.println("result == null " + i);
-                }
-                assertTrue(result != null);
-                result.release();
-                System.out.println("read " + i + " OK");
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
-
-        }
-
-        Thread.sleep(1000 * 15);
-
-        master.shutdown();
-
-        master.destroy();
-        System.out.println("================================================================");
     }
 }

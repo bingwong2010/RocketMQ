@@ -31,37 +31,9 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author shijia.wxr
+ *
  */
 public class NettyIdleTest {
-    public static RemotingClient createRemotingClient() {
-        NettyClientConfig config = new NettyClientConfig();
-        config.setClientChannelMaxIdleTimeSeconds(15);
-        RemotingClient client = new NettyRemotingClient(config);
-        client.start();
-        return client;
-    }
-
-
-    public static RemotingServer createRemotingServer() throws InterruptedException {
-        NettyServerConfig config = new NettyServerConfig();
-        config.setServerChannelMaxIdleTimeSeconds(30);
-        RemotingServer remotingServer = new NettyRemotingServer(config);
-        remotingServer.registerProcessor(0, new NettyRequestProcessor() {
-            private int i = 0;
-
-
-            @Override
-            public RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request) {
-                System.out.println("processRequest=" + request + " " + (i++));
-                request.setRemark("hello, I am respponse " + ctx.channel().remoteAddress());
-                return request;
-            }
-        }, Executors.newCachedThreadPool());
-        remotingServer.start();
-        return remotingServer;
-    }
-
-
     // @Test
     public void test_idle_event() throws InterruptedException, RemotingConnectException,
             RemotingSendRequestException, RemotingTimeoutException {
@@ -82,6 +54,38 @@ public class NettyIdleTest {
         client.shutdown();
         server.shutdown();
         System.out.println("-----------------------------------------------------------------");
+    }
+
+    public static RemotingServer createRemotingServer() throws InterruptedException {
+        NettyServerConfig config = new NettyServerConfig();
+        config.setServerChannelMaxIdleTimeSeconds(30);
+        RemotingServer remotingServer = new NettyRemotingServer(config);
+        remotingServer.registerProcessor(0, new NettyRequestProcessor() {
+            private int i = 0;
+
+
+            @Override
+            public RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request) {
+                System.out.println("processRequest=" + request + " " + (i++));
+                request.setRemark("hello, I am respponse " + ctx.channel().remoteAddress());
+                return request;
+            }
+
+            @Override
+            public boolean rejectRequest() {
+                return false;
+            }
+        }, Executors.newCachedThreadPool());
+        remotingServer.start();
+        return remotingServer;
+    }
+
+    public static RemotingClient createRemotingClient() {
+        NettyClientConfig config = new NettyClientConfig();
+        config.setClientChannelMaxIdleTimeSeconds(15);
+        RemotingClient client = new NettyRemotingClient(config);
+        client.start();
+        return client;
     }
 
 }

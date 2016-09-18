@@ -20,7 +20,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 
 /**
- * Similar C++ smart pointer
  * @author shijia.wxr
  */
 public abstract class ReferenceResource {
@@ -29,12 +28,12 @@ public abstract class ReferenceResource {
     protected volatile boolean cleanupOver = false;
     private volatile long firstShutdownTimestamp = 0;
 
+
     public synchronized boolean hold() {
         if (this.isAvailable()) {
             if (this.refCount.getAndIncrement() > 0) {
                 return true;
-            }
-            else {
+            } else {
                 this.refCount.getAndDecrement();
             }
         }
@@ -42,9 +41,12 @@ public abstract class ReferenceResource {
         return false;
     }
 
+
     public boolean isAvailable() {
         return this.available;
     }
+
+
 
     public void shutdown(final long intervalForcibly) {
         if (this.available) {
@@ -52,6 +54,7 @@ public abstract class ReferenceResource {
             this.firstShutdownTimestamp = System.currentTimeMillis();
             this.release();
         }
+
         else if (this.getRefCount() > 0) {
             if ((System.currentTimeMillis() - this.firstShutdownTimestamp) >= intervalForcibly) {
                 this.refCount.set(-1000 - this.getRefCount());
@@ -60,22 +63,23 @@ public abstract class ReferenceResource {
         }
     }
 
-
-    public long getRefCount() {
-        return this.refCount.get();
-    }
-
     public void release() {
         long value = this.refCount.decrementAndGet();
         if (value > 0)
             return;
 
         synchronized (this) {
+
             this.cleanupOver = this.cleanup(value);
         }
     }
 
+    public long getRefCount() {
+        return this.refCount.get();
+    }
+
     public abstract boolean cleanup(final long currentRef);
+
 
     public boolean isCleanupOver() {
         return this.refCount.get() <= 0 && this.cleanupOver;

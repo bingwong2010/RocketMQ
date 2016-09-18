@@ -29,11 +29,14 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
+import java.util.Date;
 import java.util.List;
 
 
 /**
- * @author: manhong.yqd
+ *
+ * @author manhong.yqd
+ *
  */
 public class ResetOffsetByTimeOldCommand implements SubCommand {
     @Override
@@ -58,9 +61,7 @@ public class ResetOffsetByTimeOldCommand implements SubCommand {
         opt.setRequired(true);
         options.addOption(opt);
 
-        opt =
-                new Option("s", "timestamp", true,
-                    "set the timestamp[currentTimeMillis|yyyy-MM-dd#HH:mm:ss:SSS]");
+        opt = new Option("s", "timestamp", true, "set the timestamp[currentTimeMillis|yyyy-MM-dd#HH:mm:ss:SSS]");
         opt.setRequired(true);
         options.addOption(opt);
 
@@ -69,39 +70,6 @@ public class ResetOffsetByTimeOldCommand implements SubCommand {
         options.addOption(opt);
         return options;
     }
-
-
-    public static void resetOffset(DefaultMQAdminExt defaultMQAdminExt, String consumerGroup, String topic,
-            long timestamp, boolean force, String timeStampStr) throws RemotingException, MQBrokerException,
-            InterruptedException, MQClientException {
-        List<RollbackStats> rollbackStatsList =
-                defaultMQAdminExt.resetOffsetByTimestampOld(consumerGroup, topic, timestamp, force);
-        System.out
-            .printf(
-                "rollback consumer offset by specified consumerGroup[%s], topic[%s], force[%s], timestamp(string)[%s], timestamp(long)[%s]\n",
-                consumerGroup, topic, force, timeStampStr, timestamp);
-
-        System.out.printf("%-20s  %-20s  %-20s  %-20s  %-20s  %-20s\n",//
-            "#brokerName",//
-            "#queueId",//
-            "#brokerOffset",//
-            "#consumerOffset",//
-            "#timestampOffset",//
-            "#rollbackOffset" //
-        );
-
-        for (RollbackStats rollbackStats : rollbackStatsList) {
-            System.out.printf("%-20s  %-20d  %-20d  %-20d  %-20d  %-20d\n",//
-                UtilAll.frontStringAtLeast(rollbackStats.getBrokerName(), 32),//
-                rollbackStats.getQueueId(),//
-                rollbackStats.getBrokerOffset(),//
-                rollbackStats.getConsumerOffset(),//
-                rollbackStats.getTimestampOffset(),//
-                rollbackStats.getRollbackOffset() //
-                );
-        }
-    }
-
 
     @Override
     public void execute(CommandLine commandLine, Options options, RPCHook rpcHook) {
@@ -113,25 +81,58 @@ public class ResetOffsetByTimeOldCommand implements SubCommand {
             String timeStampStr = commandLine.getOptionValue("s").trim();
             long timestamp = 0;
             try {
-                timestamp = Long.valueOf(timeStampStr);
-            }
-            catch (NumberFormatException e) {
-                timestamp = UtilAll.parseDate(timeStampStr, UtilAll.yyyy_MM_dd_HH_mm_ss_SSS).getTime();
+                timestamp = Long.parseLong(timeStampStr);
+            } catch (NumberFormatException e) {
+
+                Date date = UtilAll.parseDate(timeStampStr, UtilAll.yyyy_MM_dd_HH_mm_ss_SSS);
+                if (date != null) {
+                    timestamp = UtilAll.parseDate(timeStampStr, UtilAll.yyyy_MM_dd_HH_mm_ss_SSS).getTime();
+                } else {
+                    System.out.println("specified timestamp invalid.");
+                    return;
+                }
+
+                boolean force = true;
+                if (commandLine.hasOption('f')) {
+                    force = Boolean.valueOf(commandLine.getOptionValue("f").trim());
+                }
+
+                defaultMQAdminExt.start();
+                resetOffset(defaultMQAdminExt, consumerGroup, topic, timestamp, force, timeStampStr);
             }
 
-            boolean force = true;
-            if (commandLine.hasOption('f')) {
-                force = Boolean.valueOf(commandLine.getOptionValue("f").trim());
-            }
-
-            defaultMQAdminExt.start();
-            resetOffset(defaultMQAdminExt, consumerGroup, topic, timestamp, force, timeStampStr);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
+        }
+    }
+
+    public static void resetOffset(DefaultMQAdminExt defaultMQAdminExt, String consumerGroup, String topic, long timestamp, boolean force,
+                                   String timeStampStr) throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
+        List<RollbackStats> rollbackStatsList = defaultMQAdminExt.resetOffsetByTimestampOld(consumerGroup, topic, timestamp, force);
+        System.out.printf(
+                "rollback consumer offset by specified consumerGroup[%s], topic[%s], force[%s], timestamp(string)[%s], timestamp(long)[%s]%n",
+                consumerGroup, topic, force, timeStampStr, timestamp);
+
+        System.out.printf("%-20s  %-20s  %-20s  %-20s  %-20s  %-20s%n",//
+                "#brokerName",//
+                "#queueId",//
+                "#brokerOffset",//
+                "#consumerOffset",//
+                "#timestampOffset",//
+                "#rollbackOffset" //
+        );
+
+        for (RollbackStats rollbackStats : rollbackStatsList) {
+            System.out.printf("%-20s  %-20d  %-20d  %-20d  %-20d  %-20d%n",//
+                    UtilAll.frontStringAtLeast(rollbackStats.getBrokerName(), 32),//
+                    rollbackStats.getQueueId(),//
+                    rollbackStats.getBrokerOffset(),//
+                    rollbackStats.getConsumerOffset(),//
+                    rollbackStats.getTimestampOffset(),//
+                    rollbackStats.getRollbackOffset() //
+            );
         }
     }
 }

@@ -24,6 +24,19 @@ package com.alibaba.rocketmq.common.protocol.heartbeat;
  * @author shijia.wxr
  */
 public enum ConsumeType {
-    CONSUME_ACTIVELY,
-    CONSUME_PASSIVELY,
+
+    CONSUME_ACTIVELY("PULL"),
+
+    CONSUME_PASSIVELY("PUSH");
+
+    private String typeCN;
+
+    ConsumeType(String typeCN) {
+        this.typeCN = typeCN;
+    }
+
+
+    public String getTypeCN() {
+        return typeCN;
+    }
 }

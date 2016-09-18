@@ -18,7 +18,8 @@
 package com.alibaba.rocketmq.common.admin;
 
 /**
- * @author: manhong.yqd
+ *
+ * @author manhong.yqd
  */
 public class RollbackStats {
     private String brokerName;

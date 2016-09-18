@@ -29,6 +29,8 @@ public class DispatchRequest {
     private final long consumeQueueOffset;
     private final String keys;
     private final boolean success;
+    private final String uniqKey;
+
     private final int sysFlag;
     private final long preparedTransactionOffset;
 
@@ -42,6 +44,7 @@ public class DispatchRequest {
             final long storeTimestamp,// 6
             final long consumeQueueOffset,// 7
             final String keys,// 8
+            final String uniqKey,
             final int sysFlag,// 9
             final long preparedTransactionOffset// 10
     ) {
@@ -53,12 +56,12 @@ public class DispatchRequest {
         this.storeTimestamp = storeTimestamp;
         this.consumeQueueOffset = consumeQueueOffset;
         this.keys = keys;
+        this.uniqKey = uniqKey;
 
         this.sysFlag = sysFlag;
         this.preparedTransactionOffset = preparedTransactionOffset;
         this.success = true;
     }
-
 
     public DispatchRequest(int size) {
         // 1
@@ -77,12 +80,12 @@ public class DispatchRequest {
         this.consumeQueueOffset = 0;
         // 8
         this.keys = "";
-
+        //9
+        this.uniqKey = null;
         this.sysFlag = 0;
         this.preparedTransactionOffset = 0;
         this.success = false;
     }
-
 
     public DispatchRequest(int size, boolean success) {
         // 1
@@ -101,7 +104,8 @@ public class DispatchRequest {
         this.consumeQueueOffset = 0;
         // 8
         this.keys = "";
-
+        // 9
+        this.uniqKey = null;
         this.sysFlag = 0;
         this.preparedTransactionOffset = 0;
         this.success = success;
@@ -161,4 +165,10 @@ public class DispatchRequest {
     public boolean isSuccess() {
         return success;
     }
+
+    public String getUniqKey() {
+        return uniqKey;
+    }
+
+
 }

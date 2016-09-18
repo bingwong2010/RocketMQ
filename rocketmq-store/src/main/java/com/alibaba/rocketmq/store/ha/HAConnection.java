@@ -40,6 +40,7 @@ public class HAConnection {
     private final String clientAddr;
     private WriteSocketService writeSocketService;
     private ReadSocketService readSocketService;
+
     private volatile long slaveRequestOffset = -1;
     private volatile long slaveAckOffset = -1;
 
@@ -76,8 +77,7 @@ public class HAConnection {
         if (this.socketChannel != null) {
             try {
                 this.socketChannel.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 HAConnection.log.error("", e);
             }
         }
@@ -88,6 +88,11 @@ public class HAConnection {
         return socketChannel;
     }
 
+    /**
+
+     *
+     * @author shijia.wxr
+     */
     class ReadSocketService extends ServiceThread {
         private static final int ReadMaxBufferSize = 1024 * 1024;
         private final Selector selector;
@@ -118,13 +123,13 @@ public class HAConnection {
                         break;
                     }
 
+
                     long interval = HAConnection.this.haService.getDefaultMessageStore().getSystemClock().now() - this.lastReadTimestamp;
                     if (interval > HAConnection.this.haService.getDefaultMessageStore().getMessageStoreConfig().getHaHousekeepingInterval()) {
                         log.warn("ha housekeeping, found this connection[" + HAConnection.this.clientAddr + "] expired, " + interval);
                         break;
                     }
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     HAConnection.log.error(this.getServiceName() + " service has exception.", e);
                     break;
                 }
@@ -134,7 +139,9 @@ public class HAConnection {
 
             writeSocketService.makeStop();
 
+
             haService.removeConnection(HAConnection.this);
+
 
             HAConnection.this.haService.getConnectionCount().decrementAndGet();
 
@@ -146,14 +153,17 @@ public class HAConnection {
             try {
                 this.selector.close();
                 this.socketChannel.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 HAConnection.log.error("", e);
             }
 
             HAConnection.log.info(this.getServiceName() + " service end");
         }
 
+        @Override
+        public String getServiceName() {
+            return ReadSocketService.class.getSimpleName();
+        }
 
         private boolean processReadEvent() {
             int readSizeZeroTimes = 0;
@@ -174,26 +184,25 @@ public class HAConnection {
                             long readOffset = this.byteBufferRead.getLong(pos - 8);
                             this.processPostion = pos;
 
+
                             HAConnection.this.slaveAckOffset = readOffset;
                             if (HAConnection.this.slaveRequestOffset < 0) {
                                 HAConnection.this.slaveRequestOffset = readOffset;
                                 log.info("slave[" + HAConnection.this.clientAddr + "] request offset " + readOffset);
                             }
 
+
                             HAConnection.this.haService.notifyTransferSome(HAConnection.this.slaveAckOffset);
                         }
-                    }
-                    else if (readSize == 0) {
+                    } else if (readSize == 0) {
                         if (++readSizeZeroTimes >= 3) {
                             break;
                         }
-                    }
-                    else {
+                    } else {
                         log.error("read socket[" + HAConnection.this.clientAddr + "] < 0");
                         return false;
                     }
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     log.error("processReadEvent exception", e);
                     return false;
                 }
@@ -201,17 +210,17 @@ public class HAConnection {
 
             return true;
         }
-
-
-        @Override
-        public String getServiceName() {
-            return ReadSocketService.class.getSimpleName();
-        }
     }
 
+    /**
+
+     *
+     * @author shijia.wxr
+     */
     class WriteSocketService extends ServiceThread {
         private final Selector selector;
         private final SocketChannel socketChannel;
+
         private final int HEADER_SIZE = 8 + 4;
         private final ByteBuffer byteBufferHeader = ByteBuffer.allocate(HEADER_SIZE);
         private long nextTransferFromWhere = -1;
@@ -241,21 +250,22 @@ public class HAConnection {
                         continue;
                     }
 
+
+
                     if (-1 == this.nextTransferFromWhere) {
                         if (0 == HAConnection.this.slaveRequestOffset) {
                             long masterOffset = HAConnection.this.haService.getDefaultMessageStore().getCommitLog().getMaxOffset();
                             masterOffset =
                                     masterOffset
                                             - (masterOffset % HAConnection.this.haService.getDefaultMessageStore().getMessageStoreConfig()
-                                                .getMapedFileSizeCommitLog());
+                                            .getMapedFileSizeCommitLog());
 
                             if (masterOffset < 0) {
                                 masterOffset = 0;
                             }
 
                             this.nextTransferFromWhere = masterOffset;
-                        }
-                        else {
+                        } else {
                             this.nextTransferFromWhere = HAConnection.this.slaveRequestOffset;
                         }
 
@@ -264,11 +274,14 @@ public class HAConnection {
                     }
 
                     if (this.lastWriteOver) {
+
                         long interval =
                                 HAConnection.this.haService.getDefaultMessageStore().getSystemClock().now() - this.lastWriteTimestamp;
 
                         if (interval > HAConnection.this.haService.getDefaultMessageStore().getMessageStoreConfig()
-                            .getHaSendHeartbeatInterval()) {
+                                .getHaSendHeartbeatInterval()) {
+
+                            // Build Header
                             this.byteBufferHeader.position(0);
                             this.byteBufferHeader.limit(HEADER_SIZE);
                             this.byteBufferHeader.putLong(this.nextTransferFromWhere);
@@ -280,6 +293,7 @@ public class HAConnection {
                                 continue;
                         }
                     }
+
                     else {
                         this.lastWriteOver = this.transferData();
                         if (!this.lastWriteOver)
@@ -300,6 +314,7 @@ public class HAConnection {
                         selectResult.getByteBuffer().limit(size);
                         this.selectMapedBufferResult = selectResult;
 
+                        // Build Header
                         this.byteBufferHeader.position(0);
                         this.byteBufferHeader.limit(HEADER_SIZE);
                         this.byteBufferHeader.putLong(thisOffset);
@@ -307,16 +322,17 @@ public class HAConnection {
                         this.byteBufferHeader.flip();
 
                         this.lastWriteOver = this.transferData();
-                    }
-                    else {
+                    } else {
+
                         HAConnection.this.haService.getWaitNotifyObject().allWaitForRunning(100);
                     }
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
+
                     HAConnection.log.error(this.getServiceName() + " service has exception.", e);
                     break;
                 }
             }
+
 
             if (this.selectMapedBufferResult != null) {
                 this.selectMapedBufferResult.release();
@@ -325,6 +341,7 @@ public class HAConnection {
             this.makeStop();
 
             readSocketService.makeStop();
+
 
             haService.removeConnection(HAConnection.this);
 
@@ -336,14 +353,17 @@ public class HAConnection {
             try {
                 this.selector.close();
                 this.socketChannel.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 HAConnection.log.error("", e);
             }
 
             HAConnection.log.info(this.getServiceName() + " service end");
         }
 
+
+        /**
+
+         */
         private boolean transferData() throws Exception {
             int writeSizeZeroTimes = 0;
             // Write Header
@@ -352,13 +372,11 @@ public class HAConnection {
                 if (writeSize > 0) {
                     writeSizeZeroTimes = 0;
                     this.lastWriteTimestamp = HAConnection.this.haService.getDefaultMessageStore().getSystemClock().now();
-                }
-                else if (writeSize == 0) {
+                } else if (writeSize == 0) {
                     if (++writeSizeZeroTimes >= 3) {
                         break;
                     }
-                }
-                else {
+                } else {
                     throw new Exception("ha master write header error < 0");
                 }
             }
@@ -376,13 +394,11 @@ public class HAConnection {
                     if (writeSize > 0) {
                         writeSizeZeroTimes = 0;
                         this.lastWriteTimestamp = HAConnection.this.haService.getDefaultMessageStore().getSystemClock().now();
-                    }
-                    else if (writeSize == 0) {
+                    } else if (writeSize == 0) {
                         if (++writeSizeZeroTimes >= 3) {
                             break;
                         }
-                    }
-                    else {
+                    } else {
                         throw new Exception("ha master write body error < 0");
                     }
                 }

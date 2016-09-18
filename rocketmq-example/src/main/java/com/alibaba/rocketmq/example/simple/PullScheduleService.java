@@ -17,11 +17,7 @@
 
 package com.alibaba.rocketmq.example.simple;
 
-import com.alibaba.rocketmq.client.consumer.MQPullConsumer;
-import com.alibaba.rocketmq.client.consumer.MQPullConsumerScheduleService;
-import com.alibaba.rocketmq.client.consumer.PullResult;
-import com.alibaba.rocketmq.client.consumer.PullTaskCallback;
-import com.alibaba.rocketmq.client.consumer.PullTaskContext;
+import com.alibaba.rocketmq.client.consumer.*;
 import com.alibaba.rocketmq.client.exception.MQClientException;
 import com.alibaba.rocketmq.common.message.MessageQueue;
 import com.alibaba.rocketmq.common.protocol.heartbeat.MessageModel;
@@ -39,6 +35,7 @@ public class PullScheduleService {
             public void doPullTask(MessageQueue mq, PullTaskContext context) {
                 MQPullConsumer consumer = context.getPullConsumer();
                 try {
+
                     long offset = consumer.fetchConsumeOffset(mq, false);
                     if (offset < 0)
                         offset = 0;
@@ -46,22 +43,21 @@ public class PullScheduleService {
                     PullResult pullResult = consumer.pull(mq, "*", offset, 32);
                     System.out.println(offset + "\t" + mq + "\t" + pullResult);
                     switch (pullResult.getPullStatus()) {
-                    case FOUND:
-                        break;
-                    case NO_MATCHED_MSG:
-                        break;
-                    case NO_NEW_MSG:
-                    case OFFSET_ILLEGAL:
-                        break;
-                    default:
-                        break;
+                        case FOUND:
+                            break;
+                        case NO_MATCHED_MSG:
+                            break;
+                        case NO_NEW_MSG:
+                        case OFFSET_ILLEGAL:
+                            break;
+                        default:
+                            break;
                     }
-
                     consumer.updateConsumeOffset(mq, pullResult.getNextBeginOffset());
 
+
                     context.setPullNextDelayTimeMillis(100);
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }

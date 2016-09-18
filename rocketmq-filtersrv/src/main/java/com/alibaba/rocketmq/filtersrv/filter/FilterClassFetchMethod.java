@@ -18,5 +18,5 @@
 package com.alibaba.rocketmq.filtersrv.filter;
 
 public interface FilterClassFetchMethod {
-    String fetch(final String topic, final String consumerGroup, final String className);
+    public String fetch(final String topic, final String consumerGroup, final String className);
 }

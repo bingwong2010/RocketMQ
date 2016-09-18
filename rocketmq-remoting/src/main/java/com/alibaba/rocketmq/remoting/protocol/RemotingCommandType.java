@@ -18,6 +18,7 @@ package com.alibaba.rocketmq.remoting.protocol;
 
 /**
  * @author shijia.wxr
+ *
  */
 public enum RemotingCommandType {
     REQUEST_COMMAND,

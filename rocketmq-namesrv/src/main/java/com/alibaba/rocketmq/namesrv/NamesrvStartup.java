@@ -20,7 +20,6 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import com.alibaba.rocketmq.common.MQVersion;
 import com.alibaba.rocketmq.common.MixAll;
-import com.alibaba.rocketmq.common.conflict.PackageConflictDetect;
 import com.alibaba.rocketmq.common.constant.LoggerName;
 import com.alibaba.rocketmq.common.namesrv.NamesrvConfig;
 import com.alibaba.rocketmq.remoting.netty.NettyServerConfig;
@@ -48,47 +47,35 @@ public class NamesrvStartup {
     public static Properties properties = null;
     public static CommandLine commandLine = null;
 
-
-    public static Options buildCommandlineOptions(final Options options) {
-        Option opt = new Option("c", "configFile", true, "Name server config properties file");
-        opt.setRequired(false);
-        options.addOption(opt);
-
-        opt = new Option("p", "printConfigItem", false, "Print all config item");
-        opt.setRequired(false);
-        options.addOption(opt);
-
-        return options;
-    }
-
-
     public static void main(String[] args) {
         main0(args);
     }
 
-
     public static NamesrvController main0(String[] args) {
         System.setProperty(RemotingCommand.RemotingVersionKey, Integer.toString(MQVersion.CurrentVersion));
 
+
         if (null == System.getProperty(NettySystemConfig.SystemPropertySocketSndbufSize)) {
-            NettySystemConfig.SocketSndbufSize = 2048;
+            NettySystemConfig.socketSndbufSize = 4096;
         }
 
+
         if (null == System.getProperty(NettySystemConfig.SystemPropertySocketRcvbufSize)) {
-            NettySystemConfig.SocketRcvbufSize = 1024;
+            NettySystemConfig.socketRcvbufSize = 4096;
         }
 
         try {
-            PackageConflictDetect.detectFastjson();
+            //PackageConflictDetect.detectFastjson();
 
             Options options = ServerUtil.buildCommandlineOptions(new Options());
             commandLine =
                     ServerUtil.parseCmdLine("mqnamesrv", args, buildCommandlineOptions(options),
-                        new PosixParser());
+                            new PosixParser());
             if (null == commandLine) {
                 System.exit(-1);
                 return null;
             }
+
 
             final NamesrvConfig namesrvConfig = new NamesrvConfig();
             final NettyServerConfig nettyServerConfig = new NettyServerConfig();
@@ -105,6 +92,7 @@ public class NamesrvStartup {
                     in.close();
                 }
             }
+
 
             if (commandLine.hasOption('p')) {
                 MixAll.printObjectProperties(null, namesrvConfig);
@@ -127,8 +115,10 @@ public class NamesrvStartup {
             configurator.doConfigure(namesrvConfig.getRocketmqHome() + "/conf/logback_namesrv.xml");
             final Logger log = LoggerFactory.getLogger(LoggerName.NamesrvLoggerName);
 
+
             MixAll.printObjectProperties(log, namesrvConfig);
             MixAll.printObjectProperties(log, nettyServerConfig);
+
 
             final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig);
             boolean initResult = controller.initialize();
@@ -157,6 +147,7 @@ public class NamesrvStartup {
                 }
             }, "ShutdownHook"));
 
+
             controller.start();
 
             String tip = "The Name Server boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
@@ -164,12 +155,23 @@ public class NamesrvStartup {
             System.out.println(tip);
 
             return controller;
-        }
-        catch (Throwable e) {
+        } catch (Throwable e) {
             e.printStackTrace();
             System.exit(-1);
         }
 
         return null;
+    }
+
+    public static Options buildCommandlineOptions(final Options options) {
+        Option opt = new Option("c", "configFile", true, "Name server config properties file");
+        opt.setRequired(false);
+        options.addOption(opt);
+
+        opt = new Option("p", "printConfigItem", false, "Print all config item");
+        opt.setRequired(false);
+        options.addOption(opt);
+
+        return options;
     }
 }

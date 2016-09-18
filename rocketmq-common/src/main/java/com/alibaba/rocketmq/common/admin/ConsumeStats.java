@@ -25,7 +25,9 @@ import java.util.Map.Entry;
 
 
 /**
+ *
  * @author shijia.wxr
+ *
  */
 public class ConsumeStats extends RemotingSerializable {
     private HashMap<MessageQueue, OffsetWrapper> offsetTable = new HashMap<MessageQueue, OffsetWrapper>();

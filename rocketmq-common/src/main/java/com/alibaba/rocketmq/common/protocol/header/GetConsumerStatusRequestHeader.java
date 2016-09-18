@@ -24,7 +24,8 @@ import com.alibaba.rocketmq.remoting.exception.RemotingCommandException;
 
 
 /**
- * @author: manhong.yqd
+ * @author manhong.yqd
+ *
  */
 public class GetConsumerStatusRequestHeader implements CommandCustomHeader {
     @CFNotNull
@@ -37,6 +38,7 @@ public class GetConsumerStatusRequestHeader implements CommandCustomHeader {
 
     @Override
     public void checkFields() throws RemotingCommandException {
+        // TODO Auto-generated method stub
     }
 
 

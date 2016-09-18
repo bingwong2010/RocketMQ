@@ -18,6 +18,7 @@ package com.alibaba.rocketmq.remoting.netty;
 
 /**
  * @author shijia.wxr
+ *
  */
 public enum NettyEventType {
     CONNECT,

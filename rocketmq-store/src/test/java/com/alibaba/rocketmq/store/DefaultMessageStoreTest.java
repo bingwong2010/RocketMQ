@@ -35,14 +35,80 @@ import static org.junit.Assert.assertTrue;
  * @author shijia.wxr
  */
 public class DefaultMessageStoreTest {
-    private static int QUEUE_TOTAL = 100;
-    private static AtomicInteger QueueId = new AtomicInteger(0);
-    private static SocketAddress BornHost;
-    private static SocketAddress StoreHost;
-    private static byte[] MessageBody;
-
     private static final String StoreMessage = "Once, there was a chance for me!";
 
+    private static int QUEUE_TOTAL = 100;
+
+    private static AtomicInteger QueueId = new AtomicInteger(0);
+
+    private static SocketAddress BornHost;
+
+    private static SocketAddress StoreHost;
+
+    private static byte[] MessageBody;
+
+    @BeforeClass
+    public static void setUpBeforeClass() throws Exception {
+        StoreHost = new InetSocketAddress(InetAddress.getLocalHost(), 8123);
+        BornHost = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0);
+
+    }
+
+    @AfterClass
+    public static void tearDownAfterClass() throws Exception {
+    }
+
+    @Test
+    public void test_write_read() throws Exception {
+        System.out.println("================================================================");
+        long totalMsgs = 10000;
+        QUEUE_TOTAL = 1;
+
+
+        MessageBody = StoreMessage.getBytes();
+
+        MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
+        messageStoreConfig.setMapedFileSizeCommitLog(1024 * 8);
+        messageStoreConfig.setMapedFileSizeConsumeQueue(1024 * 4);
+        messageStoreConfig.setMaxHashSlotNum(100);
+        messageStoreConfig.setMaxIndexNum(100 * 10);
+
+        MessageStore master = new DefaultMessageStore(messageStoreConfig, null, null, null);
+
+        boolean load = master.load();
+        assertTrue(load);
+
+
+        master.start();
+        for (long i = 0; i < totalMsgs; i++) {
+            PutMessageResult result = master.putMessage(buildMessage());
+
+            System.out.println(i + "\t" + result.getAppendMessageResult().getMsgId());
+        }
+
+
+        for (long i = 0; i < totalMsgs; i++) {
+            try {
+                GetMessageResult result = master.getMessage("GROUP_A", "TOPIC_A", 0, i, 1024 * 1024, null);
+                if (result == null) {
+                    System.out.println("result == null " + i);
+                }
+                assertTrue(result != null);
+                result.release();
+                System.out.println("read " + i + " OK");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+
+
+        master.shutdown();
+
+
+        master.destroy();
+        System.out.println("================================================================");
+    }
 
     public MessageExtBrokerInner buildMessage() {
         MessageExtBrokerInner msg = new MessageExtBrokerInner();
@@ -60,84 +126,26 @@ public class DefaultMessageStoreTest {
         return msg;
     }
 
-
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
-        StoreHost = new InetSocketAddress(InetAddress.getLocalHost(), 8123);
-        BornHost = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0);
-
-    }
-
-
-    @AfterClass
-    public static void tearDownAfterClass() throws Exception {
-    }
-
-
-    @Test
-    public void test_write_read() throws Exception {
-        System.out.println("================================================================");
-        long totalMsgs = 10000;
-        QUEUE_TOTAL = 1;
-
-        MessageBody = StoreMessage.getBytes();
-
-        MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
-        messageStoreConfig.setMapedFileSizeCommitLog(1024 * 8);
-        messageStoreConfig.setMapedFileSizeConsumeQueue(1024 * 4);
-        messageStoreConfig.setMaxHashSlotNum(100);
-        messageStoreConfig.setMaxIndexNum(100 * 10);
-
-        MessageStore master = new DefaultMessageStore(messageStoreConfig, null, null, null);
-        boolean load = master.load();
-        assertTrue(load);
-
-        master.start();
-        for (long i = 0; i < totalMsgs; i++) {
-            PutMessageResult result = master.putMessage(buildMessage());
-
-            System.out.println(i + "\t" + result.getAppendMessageResult().getMsgId());
-        }
-
-        for (long i = 0; i < totalMsgs; i++) {
-            try {
-                GetMessageResult result = master.getMessage("GROUP_A", "TOPIC_A", 0, i, 1024 * 1024, null);
-                if (result == null) {
-                    System.out.println("result == null " + i);
-                }
-                assertTrue(result != null);
-                result.release();
-                System.out.println("read " + i + " OK");
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
-
-        }
-
-        master.shutdown();
-
-        master.destroy();
-        System.out.println("================================================================");
-    }
-
-
     @Test
     public void test_group_commit() throws Exception {
         System.out.println("================================================================");
         long totalMsgs = 10000;
         QUEUE_TOTAL = 1;
 
+
         MessageBody = StoreMessage.getBytes();
 
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
         messageStoreConfig.setMapedFileSizeCommitLog(1024 * 8);
 
+
         messageStoreConfig.setFlushDiskType(FlushDiskType.SYNC_FLUSH);
 
         MessageStore master = new DefaultMessageStore(messageStoreConfig, null, null, null);
+
         boolean load = master.load();
         assertTrue(load);
+
 
         master.start();
         for (long i = 0; i < totalMsgs; i++) {
@@ -145,6 +153,7 @@ public class DefaultMessageStoreTest {
 
             System.out.println(i + "\t" + result.getAppendMessageResult().getMsgId());
         }
+
 
         for (long i = 0; i < totalMsgs; i++) {
             try {
@@ -155,14 +164,15 @@ public class DefaultMessageStoreTest {
                 assertTrue(result != null);
                 result.release();
                 System.out.println("read " + i + " OK");
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
         }
 
+
         master.shutdown();
+
 
         master.destroy();
         System.out.println("================================================================");

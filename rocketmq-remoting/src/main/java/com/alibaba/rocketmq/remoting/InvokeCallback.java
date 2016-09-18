@@ -21,7 +21,8 @@ import com.alibaba.rocketmq.remoting.netty.ResponseFuture;
 
 /**
  * @author shijia.wxr
+ *
  */
 public interface InvokeCallback {
-    void operationComplete(final ResponseFuture responseFuture);
+    public void operationComplete(final ResponseFuture responseFuture);
 }

@@ -21,7 +21,6 @@ import com.alibaba.rocketmq.client.consumer.PullResult;
 import com.alibaba.rocketmq.client.exception.MQClientException;
 import com.alibaba.rocketmq.common.message.MessageQueue;
 
-
 public class PullConsumerTest {
     public static void main(String[] args) throws MQClientException {
         DefaultMQPullConsumer consumer = new DefaultMQPullConsumer("please_rename_unique_group_name_5");
@@ -39,8 +38,7 @@ public class PullConsumerTest {
             PullResult pullResult = consumer.pullBlockIfNotFound(mq, null, offset, 32);
             System.out.println(System.currentTimeMillis() - beginTime);
             System.out.println(pullResult);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 

@@ -45,20 +45,22 @@ public class OneMessageTransfer extends AbstractReferenceCounted implements File
         return this.byteBufferHeader.position() + this.selectMapedBufferResult.getByteBuffer().position();
     }
 
+    @Override
+    public long transfered() {
+        return transfered;
+    }
 
     @Override
     public long count() {
         return this.byteBufferHeader.limit() + this.selectMapedBufferResult.getSize();
     }
 
-
     @Override
     public long transferTo(WritableByteChannel target, long position) throws IOException {
         if (this.byteBufferHeader.hasRemaining()) {
             transfered += target.write(this.byteBufferHeader);
             return transfered;
-        }
-        else if (this.selectMapedBufferResult.getByteBuffer().hasRemaining()) {
+        } else if (this.selectMapedBufferResult.getByteBuffer().hasRemaining()) {
             transfered += target.write(this.selectMapedBufferResult.getByteBuffer());
             return transfered;
         }
@@ -66,20 +68,12 @@ public class OneMessageTransfer extends AbstractReferenceCounted implements File
         return 0;
     }
 
-
     public void close() {
         this.deallocate();
     }
 
-
     @Override
     protected void deallocate() {
         this.selectMapedBufferResult.release();
-    }
-
-
-    @Override
-    public long transfered() {
-        return transfered;
     }
 }

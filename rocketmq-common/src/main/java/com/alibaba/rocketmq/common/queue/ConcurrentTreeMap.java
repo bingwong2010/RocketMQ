@@ -29,15 +29,14 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * thread safe
- * 
+ *
  * @auther lansheng.zj
  */
 public class ConcurrentTreeMap<K, V> {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BrokerLoggerName);
-
+    private final ReentrantLock lock;
     private TreeMap<K, V> tree;
     private RoundQueue<K> roundQueue;
-    private final ReentrantLock lock;
 
 
     public ConcurrentTreeMap(int capacity, Comparator<? super K> comparator) {
@@ -51,8 +50,7 @@ public class ConcurrentTreeMap<K, V> {
         lock.lock();
         try {
             return tree.pollFirstEntry();
-        }
-        finally {
+        } finally {
             lock.unlock();
         }
     }
@@ -70,12 +68,12 @@ public class ConcurrentTreeMap<K, V> {
                 log.warn("putIfAbsentAndRetExsit success. {}", key);
                 return exsit;
             }
+
             else {
                 V exsit = tree.get(key);
                 return exsit;
             }
-        }
-        finally {
+        } finally {
             lock.unlock();
         }
     }

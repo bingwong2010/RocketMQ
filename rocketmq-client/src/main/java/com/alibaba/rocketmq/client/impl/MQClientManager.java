@@ -43,6 +43,9 @@ public class MQClientManager {
         return instance;
     }
 
+    public MQClientInstance getAndCreateMQClientInstance(final ClientConfig clientConfig) {
+        return getAndCreateMQClientInstance(clientConfig, null);
+    }
 
     public MQClientInstance getAndCreateMQClientInstance(final ClientConfig clientConfig, RPCHook rpcHook) {
         String clientId = clientConfig.buildMQClientId();
@@ -61,12 +64,6 @@ public class MQClientManager {
 
         return instance;
     }
-
-
-    public MQClientInstance getAndCreateMQClientInstance(final ClientConfig clientConfig) {
-        return getAndCreateMQClientInstance(clientConfig, null);
-    }
-
 
     public void removeClientFactory(final String clientId) {
         this.factoryTable.remove(clientId);

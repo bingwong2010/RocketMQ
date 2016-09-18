@@ -37,7 +37,7 @@ public class ClientHousekeepingService implements ChannelEventListener {
     private final BrokerController brokerController;
 
     private ScheduledExecutorService scheduledExecutorService = Executors
-        .newSingleThreadScheduledExecutor(new ThreadFactoryImpl("ClientHousekeepingScheduledThread"));
+            .newSingleThreadScheduledExecutor(new ThreadFactoryImpl("ClientHousekeepingScheduledThread"));
 
 
     public ClientHousekeepingService(final BrokerController brokerController) {
@@ -46,24 +46,18 @@ public class ClientHousekeepingService implements ChannelEventListener {
 
 
     public void start() {
+
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 try {
                     ClientHousekeepingService.this.scanExceptionChannel();
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     log.error("", e);
                 }
             }
         }, 1000 * 10, 1000 * 10, TimeUnit.MILLISECONDS);
     }
-
-
-    public void shutdown() {
-        this.scheduledExecutorService.shutdown();
-    }
-
 
     private void scanExceptionChannel() {
         this.brokerController.getProducerManager().scanNotActiveChannel();
@@ -71,6 +65,9 @@ public class ClientHousekeepingService implements ChannelEventListener {
         this.brokerController.getFilterServerManager().scanNotActiveChannel();
     }
 
+    public void shutdown() {
+        this.scheduledExecutorService.shutdown();
+    }
 
     @Override
     public void onChannelConnect(String remoteAddr, Channel channel) {

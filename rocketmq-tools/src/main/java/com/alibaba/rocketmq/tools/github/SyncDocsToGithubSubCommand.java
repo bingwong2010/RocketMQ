@@ -58,27 +58,6 @@ public class SyncDocsToGithubSubCommand implements SubCommand {
         return options;
     }
 
-
-    private static boolean syncIssue(final GHRepository rep, final int issueId, final String body) {
-        try {
-            GHIssue issue = rep.getIssue(issueId);
-            issue.setBody(body);
-            return true;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return false;
-    }
-
-
-    private static boolean syncWiki(final GHRepository rep, final String wikiName, final String body) {
-
-        return false;
-    }
-
-
     @Override
     public void execute(CommandLine commandLine, Options options, RPCHook rpcHook) {
         String userName = commandLine.getOptionValue('u').trim();
@@ -99,7 +78,7 @@ public class SyncDocsToGithubSubCommand implements SubCommand {
                         int issueId = Integer.parseInt(file.getName());
                         String body = MixAll.file2String(file);
                         boolean result = syncIssue(rep, issueId, body);
-                        System.out.printf("Sync issue <%d> to github.com %s\n", issueId, result ? "OK"
+                        System.out.printf("Sync issue <%d> to github.com %s%n", issueId, result ? "OK"
                                 : "Failed");
                     }
                 }
@@ -109,6 +88,7 @@ public class SyncDocsToGithubSubCommand implements SubCommand {
                 File dir = new File(System.getenv(MixAll.ROCKETMQ_HOME_ENV) + "/" + "wiki");
                 File[] files = dir.listFiles();
                 if (files != null) {
+                    // ascending order
                     Arrays.sort(files);
                     for (File file : files) {
                         String fileName = file.getName();
@@ -119,14 +99,30 @@ public class SyncDocsToGithubSubCommand implements SubCommand {
 
                         String body = MixAll.file2String(file);
                         boolean result = syncWiki(rep, fileName, body);
-                        System.out.printf("Sync wiki <%s> to github.com %s\n", fileName, result ? "OK"
+                        System.out.printf("Sync wiki <%s> to github.com %s%n", fileName, result ? "OK"
                                 : "Failed");
                     }
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private static boolean syncIssue(final GHRepository rep, final int issueId, final String body) {
+        try {
+            GHIssue issue = rep.getIssue(issueId);
+            issue.setBody(body);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    private static boolean syncWiki(final GHRepository rep, final String wikiName, final String body) {
+
+        return false;
     }
 }

@@ -19,20 +19,28 @@ package com.alibaba.rocketmq.broker.transaction;
 
 import java.util.List;
 
+
 public interface TransactionStore {
-    boolean open();
+    public boolean open();
 
-    void close();
 
-    boolean put(final List<TransactionRecord> trs);
+    public void close();
 
-    void remove(final List<Long> pks);
 
-    List<TransactionRecord> traverse(final long pk, final int nums);
+    public boolean put(final List<TransactionRecord> trs);
 
-    long totalRecords();
 
-    long minPK();
+    public void remove(final List<Long> pks);
 
-    long maxPK();
+
+    public List<TransactionRecord> traverse(final long pk, final int nums);
+
+
+    public long totalRecords();
+
+
+    public long minPK();
+
+
+    public long maxPK();
 }

@@ -25,30 +25,10 @@ import java.util.Map;
 
 /**
  * @author manhong.yqd
+ *
  */
 public class RocketMQSerializable {
     public static final Charset CHARSET_UTF8 = Charset.forName("UTF-8");
-
-
-    private static int calTotalLen(int remark, int ext) {
-        // int code(~32767)
-        int length = 2
-                // LanguageCode language
-                + 1
-                // int version(~32767)
-                + 2
-                // int opaque
-                + 4
-                // int flag
-                + 4
-                // String remark
-                + 4 + remark
-                // HashMap<String, String> extFields
-                + 4 + ext;
-
-        return length;
-    }
-
 
     public static byte[] rocketMQProtocolEncode(RemotingCommand cmd) {
         // String remark
@@ -100,39 +80,6 @@ public class RocketMQSerializable {
         return headerBuffer.array();
     }
 
-
-    public static RemotingCommand rocketMQProtocolDecode(final byte[] headerArray) {
-        RemotingCommand cmd = new RemotingCommand();
-        ByteBuffer headerBuffer = ByteBuffer.wrap(headerArray);
-        // int code(~32767)
-        cmd.setCode(headerBuffer.getShort());
-        // LanguageCode language
-        cmd.setLanguage(LanguageCode.valueOf(headerBuffer.get()));
-        // int version(~32767)
-        cmd.setVersion(headerBuffer.getShort());
-        // int opaque
-        cmd.setOpaque(headerBuffer.getInt());
-        // int flag
-        cmd.setFlag(headerBuffer.getInt());
-        // String remark
-        int remarkLength = headerBuffer.getInt();
-        if (remarkLength > 0) {
-            byte[] remarkContent = new byte[remarkLength];
-            headerBuffer.get(remarkContent);
-            cmd.setRemark(new String(remarkContent, RemotingSerializable.CHARSET_UTF8));
-        }
-
-        // HashMap<String, String> extFields
-        int extFieldsLength = headerBuffer.getInt();
-        if (extFieldsLength > 0) {
-            byte[] extFieldsBytes = new byte[extFieldsLength];
-            headerBuffer.get(extFieldsBytes);
-            cmd.setExtFields(mapDeserialize(extFieldsBytes));
-        }
-        return cmd;
-    }
-
-
     public static byte[] mapSerialize(HashMap<String, String> map) {
         // keySize+key+valSize+val
         // keySize+key+valSize+val
@@ -175,6 +122,55 @@ public class RocketMQSerializable {
         return content.array();
     }
 
+    private static int calTotalLen(int remark, int ext) {
+        // int code(~32767)
+        int length = 2
+                // LanguageCode language
+                + 1
+                // int version(~32767)
+                + 2
+                // int opaque
+                + 4
+                // int flag
+                + 4
+                // String remark
+                + 4 + remark
+                // HashMap<String, String> extFields
+                + 4 + ext;
+
+        return length;
+    }
+
+    public static RemotingCommand rocketMQProtocolDecode(final byte[] headerArray) {
+        RemotingCommand cmd = new RemotingCommand();
+        ByteBuffer headerBuffer = ByteBuffer.wrap(headerArray);
+        // int code(~32767)
+        cmd.setCode(headerBuffer.getShort());
+        // LanguageCode language
+        cmd.setLanguage(LanguageCode.valueOf(headerBuffer.get()));
+        // int version(~32767)
+        cmd.setVersion(headerBuffer.getShort());
+        // int opaque
+        cmd.setOpaque(headerBuffer.getInt());
+        // int flag
+        cmd.setFlag(headerBuffer.getInt());
+        // String remark
+        int remarkLength = headerBuffer.getInt();
+        if (remarkLength > 0) {
+            byte[] remarkContent = new byte[remarkLength];
+            headerBuffer.get(remarkContent);
+            cmd.setRemark(new String(remarkContent, RemotingSerializable.CHARSET_UTF8));
+        }
+
+        // HashMap<String, String> extFields
+        int extFieldsLength = headerBuffer.getInt();
+        if (extFieldsLength > 0) {
+            byte[] extFieldsBytes = new byte[extFieldsLength];
+            headerBuffer.get(extFieldsBytes);
+            cmd.setExtFields(mapDeserialize(extFieldsBytes));
+        }
+        return cmd;
+    }
 
     public static HashMap<String, String> mapDeserialize(byte[] bytes) {
         if (bytes == null || bytes.length <= 0)
@@ -209,26 +205,10 @@ public class RocketMQSerializable {
             return true;
         }
         for (int i = 0; i < strLen; i++) {
-            if ((Character.isWhitespace(str.charAt(i)) == false)) {
+            if (!Character.isWhitespace(str.charAt(i))) {
                 return false;
             }
         }
         return true;
-    }
-
-
-    public static void main(String[] args) {
-        HashMap<String, String> map = new HashMap<String, String>();
-        map.put("aaa", "bbb");
-        map.put(null, "aa");
-        map.put("ccc", null);
-
-        byte[] aa = mapSerialize(map);
-        System.out.println(aa.length);
-
-        HashMap<String, String> map2 = mapDeserialize(aa);
-        System.out.println(map2);
-
-        System.out.println((short) 32766);
     }
 }

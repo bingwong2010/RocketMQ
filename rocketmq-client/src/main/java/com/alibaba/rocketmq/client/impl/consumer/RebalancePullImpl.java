@@ -39,39 +39,23 @@ public class RebalancePullImpl extends RebalanceImpl {
     }
 
 
-    public RebalancePullImpl(String consumerGroup, MessageModel messageModel,
-            AllocateMessageQueueStrategy allocateMessageQueueStrategy, MQClientInstance mQClientFactory,
-            DefaultMQPullConsumerImpl defaultMQPullConsumerImpl) {
+    public RebalancePullImpl(String consumerGroup, MessageModel messageModel, AllocateMessageQueueStrategy allocateMessageQueueStrategy,
+                             MQClientInstance mQClientFactory, DefaultMQPullConsumerImpl defaultMQPullConsumerImpl) {
         super(consumerGroup, messageModel, allocateMessageQueueStrategy, mQClientFactory);
         this.defaultMQPullConsumerImpl = defaultMQPullConsumerImpl;
     }
 
-
-    @Override
-    public long computePullFromWhere(MessageQueue mq) {
-        return 0;
-    }
-
-
-    @Override
-    public void dispatchPullRequest(List<PullRequest> pullRequestList) {
-    }
-
-
     @Override
     public void messageQueueChanged(String topic, Set<MessageQueue> mqAll, Set<MessageQueue> mqDivided) {
-        MessageQueueListener messageQueueListener =
-                this.defaultMQPullConsumerImpl.getDefaultMQPullConsumer().getMessageQueueListener();
+        MessageQueueListener messageQueueListener = this.defaultMQPullConsumerImpl.getDefaultMQPullConsumer().getMessageQueueListener();
         if (messageQueueListener != null) {
             try {
                 messageQueueListener.messageQueueChanged(topic, mqAll, mqDivided);
-            }
-            catch (Throwable e) {
+            } catch (Throwable e) {
                 log.error("messageQueueChanged exception", e);
             }
         }
     }
-
 
     @Override
     public boolean removeUnnecessaryMessageQueue(MessageQueue mq, ProcessQueue pq) {
@@ -80,9 +64,22 @@ public class RebalancePullImpl extends RebalanceImpl {
         return true;
     }
 
-
     @Override
     public ConsumeType consumeType() {
         return ConsumeType.CONSUME_ACTIVELY;
+    }
+
+    @Override
+    public void removeDirtyOffset(final MessageQueue mq) {
+        this.defaultMQPullConsumerImpl.getOffsetStore().removeOffset(mq);
+    }
+
+    @Override
+    public long computePullFromWhere(MessageQueue mq) {
+        return 0;
+    }
+
+    @Override
+    public void dispatchPullRequest(List<PullRequest> pullRequestList) {
     }
 }

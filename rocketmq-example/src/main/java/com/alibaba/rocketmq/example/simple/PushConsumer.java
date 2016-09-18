@@ -30,34 +30,26 @@ import java.util.List;
 public class PushConsumer {
 
     public static void main(String[] args) throws InterruptedException, MQClientException {
-        DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("CID_001");
-        consumer.subscribe("TopicTest1", "TagA || TagC || TagD");
-        consumer.subscribe("TopicTest2", "*");
-        consumer.subscribe("TopicTest3", "*");
+
+        DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("CID_JODIE_1");
+
+
+        consumer.subscribe("Jodie_topic_1023", "*");
+
         consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
 
         consumer.registerMessageListener(new MessageListenerConcurrently() {
 
+            /**
+
+             */
             @Override
-            public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
-                    ConsumeConcurrentlyContext context) {
+            public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
                 System.out.println(Thread.currentThread().getName() + " Receive New Messages: " + msgs);
-
-                MessageExt msg = msgs.get(0);
-                if (msg.getTopic().equals("TopicTest1")) {
-                    if (msg.getTags() != null && msg.getTags().equals("TagA")) {
-                    }
-                    else if (msg.getTags() != null && msg.getTags().equals("TagC")) {
-                    }
-                    else if (msg.getTags() != null && msg.getTags().equals("TagD")) {
-                    }
-                }
-                else if (msg.getTopic().equals("TopicTest2")) {
-                }
-
                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
             }
         });
+
 
         consumer.start();
 

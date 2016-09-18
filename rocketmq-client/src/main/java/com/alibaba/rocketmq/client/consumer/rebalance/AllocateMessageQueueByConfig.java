@@ -21,15 +21,12 @@ import com.alibaba.rocketmq.common.message.MessageQueue;
 
 import java.util.List;
 
+
+/**
+ * @author shijia.wxr
+ */
 public class AllocateMessageQueueByConfig implements AllocateMessageQueueStrategy {
     private List<MessageQueue> messageQueueList;
-
-
-    @Override
-    public String getName() {
-        return "CONFIG";
-    }
-
 
     @Override
     public List<MessageQueue> allocate(String consumerGroup, String currentCID, List<MessageQueue> mqAll,
@@ -37,6 +34,10 @@ public class AllocateMessageQueueByConfig implements AllocateMessageQueueStrateg
         return this.messageQueueList;
     }
 
+    @Override
+    public String getName() {
+        return "CONFIG";
+    }
 
     public List<MessageQueue> getMessageQueueList() {
         return messageQueueList;

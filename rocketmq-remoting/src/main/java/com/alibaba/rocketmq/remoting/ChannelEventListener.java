@@ -21,6 +21,7 @@ import io.netty.channel.Channel;
 
 /**
  * @author shijia.wxr
+ *
  */
 public interface ChannelEventListener {
     void onChannelConnect(final String remoteAddr, final Channel channel);

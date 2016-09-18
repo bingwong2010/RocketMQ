@@ -30,7 +30,6 @@ import java.nio.channels.FileChannel.MapMode;
 
 
 /**
- *
  * @author shijia.wxr
  */
 public class StoreCheckpoint {
@@ -64,8 +63,7 @@ public class StoreCheckpoint {
                     + UtilAll.timeMillisToHumanString(this.logicsMsgTimestamp));
             log.info("store checkpoint file indexMsgTimestamp " + this.indexMsgTimestamp + ", "
                     + UtilAll.timeMillisToHumanString(this.indexMsgTimestamp));
-        }
-        else {
+        } else {
             log.info("store checkpoint file not exists, " + scpPath);
         }
     }
@@ -79,8 +77,7 @@ public class StoreCheckpoint {
 
         try {
             this.fileChannel.close();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -122,7 +119,8 @@ public class StoreCheckpoint {
     public long getMinTimestamp() {
         long min = Math.min(this.physicMsgTimestamp, this.logicsMsgTimestamp);
 
-        // bugfix see https://github.com/alibaba/RocketMQ/issues/467
+
+        // fixed https://github.com/alibaba/RocketMQ/issues/467
         min -= 1000 * 3;
         if (min < 0)
             min = 0;

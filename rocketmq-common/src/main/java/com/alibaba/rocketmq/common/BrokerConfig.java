@@ -28,11 +28,9 @@ import java.net.UnknownHostException;
  * @author shijia.wxr
  */
 public class BrokerConfig {
-    private String rocketmqHome = System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY,
-            System.getenv(MixAll.ROCKETMQ_HOME_ENV));
+    private String rocketmqHome = System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY, System.getenv(MixAll.ROCKETMQ_HOME_ENV));
     @ImportantField
-    private String namesrvAddr = System.getProperty(MixAll.NAMESRV_ADDR_PROPERTY,
-            System.getenv(MixAll.NAMESRV_ADDR_ENV));
+    private String namesrvAddr = System.getProperty(MixAll.NAMESRV_ADDR_PROPERTY, System.getenv(MixAll.NAMESRV_ADDR_ENV));
     @ImportantField
     private String brokerIP1 = RemotingUtil.getLocalAddress();
     private String brokerIP2 = RemotingUtil.getLocalAddress();
@@ -46,10 +44,13 @@ public class BrokerConfig {
     private int defaultTopicQueueNums = 8;
     @ImportantField
     private boolean autoCreateTopicEnable = true;
+
     private boolean clusterTopicEnable = true;
+
     private boolean brokerTopicEnable = true;
     @ImportantField
     private boolean autoCreateSubscriptionGroup = true;
+    private String messageStorePlugIn = "";
 
     private int sendMessageThreadPoolNums = 16 + Runtime.getRuntime().availableProcessors() * 4;
     private int pullMessageThreadPoolNums = 16 + Runtime.getRuntime().availableProcessors() * 2;
@@ -62,13 +63,10 @@ public class BrokerConfig {
 
     @ImportantField
     private boolean rejectTransactionMessage = false;
-
     @ImportantField
     private boolean fetchNamesrvAddrByAddressServer = false;
-
-    private int sendThreadPoolQueueCapacity = 100000;
-
-    private int pullThreadPoolQueueCapacity = 100000;
+    private int sendThreadPoolQueueCapacity = 10000;
+    private int pullThreadPoolQueueCapacity = 10000;
 
     private int filterServerNums = 0;
 
@@ -77,18 +75,70 @@ public class BrokerConfig {
     private long shortPollingTimeMills = 1000;
 
     private boolean notifyConsumerIdsChangedEnable = true;
+
     private boolean highSpeedMode = false;
 
-    private boolean transferMsgByHeap = false;
+    private boolean commercialEnable = true;
+    private int commercialTimerCount = 1;
+    private int commercialTransCount = 1;
+    private int commercialBigCount = 1;
+
+    private boolean transferMsgByHeap = true;
+    private int maxDelayTime = 40;
 
 
-    public boolean isTransferMsgByHeap() {
-        return transferMsgByHeap;
+    private String regionId = "DefaultRegion";
+    private int registerBrokerTimeoutMills = 6000;
+
+    private boolean slaveReadEnable = false;
+
+    private boolean disableConsumeIfConsumerReadSlowly = false;
+    private long consumerFallbehindThreshold = 1024 * 1024 * 1024 * 16;
+
+    private long waitTimeMillsInSendQueue = 200;
+
+    private long startAcceptSendRequestTimeStamp = 0L;
+
+    public long getStartAcceptSendRequestTimeStamp() {
+        return startAcceptSendRequestTimeStamp;
     }
 
-    public void setTransferMsgByHeap(final boolean transferMsgByHeap) {
-        this.transferMsgByHeap = transferMsgByHeap;
+    public void setStartAcceptSendRequestTimeStamp(final long startAcceptSendRequestTimeStamp) {
+        this.startAcceptSendRequestTimeStamp = startAcceptSendRequestTimeStamp;
     }
+
+    public long getWaitTimeMillsInSendQueue() {
+        return waitTimeMillsInSendQueue;
+    }
+
+    public void setWaitTimeMillsInSendQueue(final long waitTimeMillsInSendQueue) {
+        this.waitTimeMillsInSendQueue = waitTimeMillsInSendQueue;
+    }
+
+    public long getConsumerFallbehindThreshold() {
+        return consumerFallbehindThreshold;
+    }
+
+    public void setConsumerFallbehindThreshold(final long consumerFallbehindThreshold) {
+        this.consumerFallbehindThreshold = consumerFallbehindThreshold;
+    }
+
+    public boolean isDisableConsumeIfConsumerReadSlowly() {
+        return disableConsumeIfConsumerReadSlowly;
+    }
+
+    public void setDisableConsumeIfConsumerReadSlowly(final boolean disableConsumeIfConsumerReadSlowly) {
+        this.disableConsumeIfConsumerReadSlowly = disableConsumeIfConsumerReadSlowly;
+    }
+
+    public boolean isSlaveReadEnable() {
+        return slaveReadEnable;
+    }
+
+    public void setSlaveReadEnable(final boolean slaveReadEnable) {
+        this.slaveReadEnable = slaveReadEnable;
+    }
+
     public static String localHostName() {
         try {
             return InetAddress.getLocalHost().getHostName();
@@ -99,13 +149,47 @@ public class BrokerConfig {
         return "DEFAULT_BROKER";
     }
 
+    public int getRegisterBrokerTimeoutMills() {
+        return registerBrokerTimeoutMills;
+    }
+
+    public void setRegisterBrokerTimeoutMills(final int registerBrokerTimeoutMills) {
+        this.registerBrokerTimeoutMills = registerBrokerTimeoutMills;
+    }
+
+    public String getRegionId() {
+        return regionId;
+    }
+
+    public void setRegionId(final String regionId) {
+        this.regionId = regionId;
+    }
+
+    public boolean isTransferMsgByHeap() {
+        return transferMsgByHeap;
+    }
+
+    public void setTransferMsgByHeap(final boolean transferMsgByHeap) {
+        this.transferMsgByHeap = transferMsgByHeap;
+    }
+
+    public String getMessageStorePlugIn() {
+        return messageStorePlugIn;
+    }
+
+    public void setMessageStorePlugIn(String messageStorePlugIn) {
+        this.messageStorePlugIn = messageStorePlugIn;
+    }
+
     public boolean isHighSpeedMode() {
         return highSpeedMode;
     }
 
+
     public void setHighSpeedMode(final boolean highSpeedMode) {
         this.highSpeedMode = highSpeedMode;
     }
+
 
     public String getRocketmqHome() {
         return rocketmqHome;
@@ -374,5 +458,48 @@ public class BrokerConfig {
 
     public void setClientManageThreadPoolNums(int clientManageThreadPoolNums) {
         this.clientManageThreadPoolNums = clientManageThreadPoolNums;
+    }
+
+
+    public boolean isCommercialEnable() {
+        return commercialEnable;
+    }
+
+
+    public void setCommercialEnable(final boolean commercialEnable) {
+        this.commercialEnable = commercialEnable;
+    }
+
+    public int getCommercialTimerCount() {
+        return commercialTimerCount;
+    }
+
+    public void setCommercialTimerCount(final int commercialTimerCount) {
+        this.commercialTimerCount = commercialTimerCount;
+    }
+
+    public int getCommercialTransCount() {
+        return commercialTransCount;
+    }
+
+    public void setCommercialTransCount(final int commercialTransCount) {
+        this.commercialTransCount = commercialTransCount;
+    }
+
+    public int getCommercialBigCount() {
+        return commercialBigCount;
+    }
+
+    public void setCommercialBigCount(final int commercialBigCount) {
+        this.commercialBigCount = commercialBigCount;
+    }
+
+    public int getMaxDelayTime() {
+        return maxDelayTime;
+    }
+
+
+    public void setMaxDelayTime(final int maxDelayTime) {
+        this.maxDelayTime = maxDelayTime;
     }
 }

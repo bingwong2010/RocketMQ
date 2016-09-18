@@ -55,7 +55,7 @@ public class BrokerConsumeStatsSubCommad implements SubCommand {
         options.addOption(opt);
 
         opt = new Option("t", "timeoutMillis", true, "request timeout Millis");
-        opt.setRequired(true);
+        opt.setRequired(false);
         options.addOption(opt);
 
         opt = new Option("l", "level", true, "threshold of print diff");
@@ -90,7 +90,7 @@ public class BrokerConsumeStatsSubCommad implements SubCommand {
             }
 
             ConsumeStatsList consumeStatsList = defaultMQAdminExt.fetchConsumeStatsInBroker(brokerAddr, isOrder, timeoutMillis);
-            System.out.printf("%-32s  %-32s  %-32s  %-4s  %-20s  %-20s  %-20s  %s\n",//
+            System.out.printf("%-32s  %-32s  %-32s  %-4s  %-20s  %-20s  %-20s  %s%n",//
                     "#Topic",//
                     "#Group",//
                     "#Broker Name",//
@@ -99,28 +99,29 @@ public class BrokerConsumeStatsSubCommad implements SubCommand {
                     "#Consumer Offset",//
                     "#Diff", //
                     "#LastTime");
-            for (Map<String, List<ConsumeStats>> map : consumeStatsList.getConsumeStatsList()){
-                for (String group : map.keySet()){
-                    List<ConsumeStats> consumeStatsArray = map.get(group);
-                    for (ConsumeStats consumeStats : consumeStatsArray){
+            for (Map<String, List<ConsumeStats>> map : consumeStatsList.getConsumeStatsList()) {
+                for (Map.Entry<String, List<ConsumeStats>> entry : map.entrySet()) {
+                    String group = entry.getKey();
+                    List<ConsumeStats> consumeStatsArray = entry.getValue();
+                    for (ConsumeStats consumeStats : consumeStatsArray) {
                         List<MessageQueue> mqList = new LinkedList<MessageQueue>();
                         mqList.addAll(consumeStats.getOffsetTable().keySet());
                         Collections.sort(mqList);
                         for (MessageQueue mq : mqList) {
                             OffsetWrapper offsetWrapper = consumeStats.getOffsetTable().get(mq);
                             long diff = offsetWrapper.getBrokerOffset() - offsetWrapper.getConsumerOffset();
-                            if (diff < diffLevel){
+
+                            if (diff < diffLevel) {
                                 continue;
                             }
                             String lastTime = "-";
                             try {
                                 lastTime = UtilAll.formatDate(new Date(offsetWrapper.getLastTimestamp()), UtilAll.yyyy_MM_dd_HH_mm_ss);
-                            }
-                            catch (Exception e) {
+                            } catch (Exception e) {
                                 //
                             }
                             if (offsetWrapper.getLastTimestamp() > 0)
-                                System.out.printf("%-32s  %-32s  %-32s  %-4d  %-20d  %-20d  %-20d  %s\n",//
+                                System.out.printf("%-32s  %-32s  %-32s  %-4d  %-20d  %-20d  %-20d  %s%n",//
                                         UtilAll.frontStringAtLeast(mq.getTopic(), 32),//
                                         group,
                                         UtilAll.frontStringAtLeast(mq.getBrokerName(), 32),//
@@ -135,12 +136,10 @@ public class BrokerConsumeStatsSubCommad implements SubCommand {
                 }
             }
             System.out.println();
-            System.out.printf("Diff Total: %d\n", consumeStatsList.getTotalDiff());
-        }
-        catch (Exception e) {
+            System.out.printf("Diff Total: %d%n", consumeStatsList.getTotalDiff());
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
     }

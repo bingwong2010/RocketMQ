@@ -19,7 +19,6 @@ package com.alibaba.rocketmq.store;
 import com.alibaba.rocketmq.common.ServiceThread;
 import com.alibaba.rocketmq.common.UtilAll;
 import com.alibaba.rocketmq.common.constant.LoggerName;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +29,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+
+/**
+ * Create MapedFile in advance
+ *
+ * @author shijia.wxr
+ */
 public class AllocateMapedFileService extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.StoreLoggerName);
     private static int WaitTimeOut = 1000 * 5;
@@ -78,17 +83,14 @@ public class AllocateMapedFileService extends ServiceThread {
                 if (!waitOK) {
                     log.warn("create mmap timeout " + result.getFilePath() + " " + result.getFileSize());
                     return null;
-                }
-                else {
+                } else {
                     this.requestTable.remove(nextFilePath);
                     return result.getMapedFile();
                 }
-            }
-            else {
+            } else {
                 log.error("find preallocate mmap failed, this never happen");
             }
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             log.warn(this.getServiceName() + " service has exception. ", e);
         }
 
@@ -108,8 +110,7 @@ public class AllocateMapedFileService extends ServiceThread {
 
         try {
             this.thread.join(this.getJointime());
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
@@ -164,43 +165,39 @@ public class AllocateMapedFileService extends ServiceThread {
 
                 // pre write mappedFile
                 if (mapedFile.getFileSize() >= this.messageStore.getMessageStoreConfig()
-                    .getMapedFileSizeCommitLog() //
+                        .getMapedFileSizeCommitLog() //
                         && //
                         this.messageStore.getMessageStoreConfig().isWarmMapedFileEnable()) {
                     mapedFile.warmMappedFile(this.messageStore.getMessageStoreConfig().getFlushDiskType(),
-                        this.messageStore.getMessageStoreConfig().getFlushLeastPagesWhenWarmMapedFile());
+                            this.messageStore.getMessageStoreConfig().getFlushLeastPagesWhenWarmMapedFile());
                 }
 
                 req.setMapedFile(mapedFile);
                 this.hasException = false;
                 isSuccess = true;
             }
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             log.warn(this.getServiceName() + " service has exception, maybe by shutdown");
             this.hasException = true;
             return false;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             log.warn(this.getServiceName() + " service has exception. ", e);
             this.hasException = true;
             if (null != req) {
                 requestQueue.offer(req);
                 try {
                     Thread.sleep(1);
-                }
-                catch (InterruptedException e1) {
+                } catch (InterruptedException e1) {
                 }
             }
-        }
-        finally {
+        } finally {
             if (req != null && isSuccess)
                 req.getCountDownLatch().countDown();
         }
         return true;
     }
 
-    class AllocateRequest implements Comparable<AllocateRequest> {
+    static class AllocateRequest implements Comparable<AllocateRequest> {
         // Full file path
         private String filePath;
         private int fileSize;
@@ -259,19 +256,16 @@ public class AllocateMapedFileService extends ServiceThread {
                 return 1;
             else if (this.fileSize > other.fileSize) {
                 return -1;
-            }
-            else {
+            } else {
                 int mIndex = this.filePath.lastIndexOf(File.separator);
                 long mName = Long.parseLong(this.filePath.substring(mIndex + 1));
                 int oIndex = other.filePath.lastIndexOf(File.separator);
                 long oName = Long.parseLong(other.filePath.substring(oIndex + 1));
                 if (mName < oName) {
                     return -1;
-                }
-                else if (mName > oName) {
+                } else if (mName > oName) {
                     return 1;
-                }
-                else {
+                } else {
                     return 0;
                 }
             }
@@ -302,8 +296,7 @@ public class AllocateMapedFileService extends ServiceThread {
             if (filePath == null) {
                 if (other.filePath != null)
                     return false;
-            }
-            else if (!filePath.equals(other.filePath))
+            } else if (!filePath.equals(other.filePath))
                 return false;
             if (fileSize != other.fileSize)
                 return false;
