@@ -45,7 +45,7 @@ It offers a variety of features as follows:
 ----------
 
 ## Contributing
-We are always very happy to have contributions, whether for trivial cleanups,big new features or other material rewards. more details see [here](https://github.com/alibaba/RocketMQ/wiki/How-to-donate) 
+We are always very happy to have contributions, whether for trivial cleanups,big new features or other material rewards. more details see [here](https://github.com/alibaba/RocketMQ/wiki/how-to-be) 
  
 ----------
 ## License
