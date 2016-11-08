@@ -20,29 +20,12 @@ package com.alibaba.rocketmq.broker.transaction.jdbc;
 import com.alibaba.rocketmq.broker.transaction.TransactionRecord;
 import com.alibaba.rocketmq.broker.transaction.TransactionStore;
 import org.junit.Assert;
-import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
 
 public class JDBCTransactionStoreTest {
-
-    @Test
-    public void test_derby_open() {
-        JDBCTransactionStoreConfig config = new JDBCTransactionStoreConfig();
-        config.setJdbcDriverClass("org.apache.derby.jdbc.EmbeddedDriver");
-        config.setJdbcURL("jdbc:derby:xxx;create=true");
-        config.setJdbcUser("xxx");
-        config.setJdbcPassword("xxx");
-        TransactionStore store = new JDBCTransactionStore(config);
-
-        boolean open = store.open();
-        System.out.println(open);
-        Assert.assertTrue(open);
-        store.close();
-    }
-
 
     // @Test
     public void test_mysql_open() {
