@@ -76,18 +76,34 @@
             <timezone>+8</timezone>
         </developer>
         <developer>
-            <id>manhong</id>
-            <name>manhong</name>
-            <email>manhong.yqd@alibaba-inc.com</email>
-            <url>https://github.com/YangJodie</url>
-            <timezone>8</timezone>
+            <id>Xinyu Zhou</id>
+            <name>Xinyu Zhou</name>
+            <email>zhou@xinyu.im</email>
+            <url>https://github.com/zhouxinyu</url>
+               <roles>
+                <role>committer</role>
+              </roles>
+            <timezone>+8</timezone>
         </developer>
-        <developer>
-            <id>mouyu</id>
-            <name>mouyu</name>
-            <email>lollipop_jin@126.com</email>
-            <url>https://github.com/lollipopjin</url>
-            <timezone>8</timezone>
+      <developer>
+            <id>Wei Zhou</id>
+            <name>Wei Zhou</name>
+            <email>zhouwei198732@gmail.com</email>
+            <url>https://github.com/zhouwei198732</url>
+               <roles>
+                <role>committer</role>
+              </roles>
+            <timezone>+8</timezone>
+        </developer>
+      <developer>
+            <id>jinjixiang</id>
+            <name>jinjixiang</name>
+            <email>canna1989115@gmail.com</email>
+            <url>https://github.com/jinjixiang</url>
+               <roles>
+                <role>committer</role>
+              </roles>
+            <timezone>+8</timezone>
         </developer>
     </developers>
 
