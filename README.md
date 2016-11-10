@@ -27,7 +27,7 @@ It offers a variety of features as follows:
 * Documentation: <https://github.com/alibaba/RocketMQ/wiki>
 * Wiki: <https://github.com/alibaba/RocketMQ/wiki>
 * Issues: <https://github.com/alibaba/RocketMQ/issues>
-* Ask: <http://stackoverflow.com/questions/tagged/rocketmq>
+* Ask: <http://stackoverflow.com/questions/tagged/rocketmq> or <https://www.quora.com/topic/RocketMQ>
 * [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/alibaba/RocketMQ?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
  
 
