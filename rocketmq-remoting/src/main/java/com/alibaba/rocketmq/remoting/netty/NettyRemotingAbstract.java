@@ -379,8 +379,8 @@ public abstract class NettyRemotingAbstract {
                 String info = String.format(
                         "invokeOnewayImpl tryAcquire semaphore timeout, %dms, waiting thread nums: %d semaphoreAsyncValue: %d", //
                         timeoutMillis, //
-                        this.semaphoreAsync.getQueueLength(), //
-                        this.semaphoreAsync.availablePermits()//
+                        this.semaphoreOneway.getQueueLength(), //
+                        this.semaphoreOneway.availablePermits()//
                 );
                 plog.warn(info);
                 throw new RemotingTimeoutException(info);
