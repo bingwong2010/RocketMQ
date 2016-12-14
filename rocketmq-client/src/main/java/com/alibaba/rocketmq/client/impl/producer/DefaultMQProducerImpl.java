@@ -283,7 +283,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         break;
                     case UNKNOW:
                         thisHeader.setCommitOrRollback(MessageSysFlag.TransactionNotType);
-                        log.warn("when broker check, client donot know this transaction state, {}", thisHeader);
+                        log.warn("when broker check, client does not know this transaction state, {}", thisHeader);
                         break;
                     default:
                         break;
@@ -496,7 +496,6 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false);
                         log.warn(String.format("sendKernelImpl exception, throw exception, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq), e);
                         log.warn(msg.toString());
-                        exception = e;
 
                         log.warn("sendKernelImpl exception", e);
                         log.warn(msg.toString());
@@ -551,7 +550,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             topicPublishInfo = this.topicPublishInfoTable.get(topic);
         }
 
-        if (topicPublishInfo.isHaveTopicRouterInfo() || (topicPublishInfo != null && topicPublishInfo.ok())) {
+        if (topicPublishInfo.isHaveTopicRouterInfo() || topicPublishInfo.ok()) {
             return topicPublishInfo;
         } else {
             this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic, true, this.defaultMQProducer);
@@ -761,6 +760,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 try {
                     hook.sendMessageBefore(context);
                 } catch (Throwable e) {
+                    log.warn("failed to executeSendMessageHookBefore", e);
                 }
             }
         }
@@ -772,6 +772,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 try {
                     hook.sendMessageAfter(context);
                 } catch (Throwable e) {
+                    log.warn("failed to executeSendMessageHookAfter", e);
                 }
             }
         }
@@ -784,7 +785,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         try {
             this.sendDefaultImpl(msg, CommunicationMode.ONEWAY, null, this.defaultMQProducer.getSendMsgTimeout());
         } catch (MQBrokerException e) {
-            throw new MQClientException("unknow exception", e);
+            throw new MQClientException("unknown exception", e);
         }
     }
 
@@ -828,7 +829,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         try {
             this.sendKernelImpl(msg, mq, CommunicationMode.ASYNC, sendCallback, null, timeout);
         } catch (MQBrokerException e) {
-            throw new MQClientException("unknow exception", e);
+            throw new MQClientException("unknown exception", e);
         }
     }
 
@@ -842,7 +843,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         try {
             this.sendKernelImpl(msg, mq, CommunicationMode.ONEWAY, null, null, this.defaultMQProducer.getSendMsgTimeout());
         } catch (MQBrokerException e) {
-            throw new MQClientException("unknow exception", e);
+            throw new MQClientException("unknown exception", e);
         }
     }
 
@@ -875,7 +876,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             try {
                 mq = selector.select(topicPublishInfo.getMessageQueueList(), msg, arg);
             } catch (Throwable e) {
-                throw new MQClientException("select message queue throwed exception.", e);
+                throw new MQClientException("select message queue throws exception.", e);
             }
 
             if (mq != null) {
@@ -913,7 +914,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         try {
             this.sendSelectImpl(msg, selector, arg, CommunicationMode.ONEWAY, null, this.defaultMQProducer.getSendMsgTimeout());
         } catch (MQBrokerException e) {
-            throw new MQClientException("unknow exception", e);
+            throw new MQClientException("unknown exception", e);
         }
     }
 
