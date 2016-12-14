@@ -760,6 +760,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 try {
                     hook.sendMessageBefore(context);
                 } catch (Throwable e) {
+                    log.warn("failed to executeSendMessageHookBefore", e);
                 }
             }
         }
@@ -771,6 +772,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 try {
                     hook.sendMessageAfter(context);
                 } catch (Throwable e) {
+                    log.warn("failed to executeSendMessageHookAfter", e);
                 }
             }
         }
